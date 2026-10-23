@@ -29,7 +29,8 @@ grids). Practical studies often refine only part of the mesh, so the CLI require
   then covers the core discretisation only; the layers' own error is fixed across levels, so
   Richardson extrapolation cannot see it and it needs a separate boundary-layer study. With total
   cell counts, give `--layer-cells` (the fixed layer cell count): otherwise r is computed from
-  cells that were not refined, understates the core ratio, and a warning blocks the clean pass.
+  cells that were not refined, understates the core ratio, and a warning blocks the clean pass. The warning is attached only to
+  results with an uncertainty estimate; a divergent or degenerate verdict does not depend on r's size.
 - `boundary-layer`: wall-normal layer refinement only, with the core fixed. Cell counts do not
   measure this, so `--h` (first-layer heights) is required; the growth ratio and the
   layer-to-core transition ratio should be the same on every level, and $d$ is irrelevant.

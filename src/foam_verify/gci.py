@@ -272,12 +272,15 @@ def grid_convergence(
 
 
 def _with_scope(res: GCIResult, scope: Scope, extra: list[str]) -> GCIResult:
+    # The scope warnings concern the size of an uncertainty estimate, so they are attached only
+    # to results that have one: a divergent or degenerate verdict does not depend on them.
     def tag(r: GCIResult) -> GCIResult:
+        add = extra if r.uncertainty is not None else []
         return replace(
             r,
             scope=scope,
-            warnings=(*r.warnings, *extra),
-            clean_pass=r.clean_pass and not extra,
+            warnings=(*r.warnings, *add),
+            clean_pass=r.clean_pass and not add,
         )
 
     out = tag(res)

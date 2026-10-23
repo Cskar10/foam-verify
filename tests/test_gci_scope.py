@@ -72,3 +72,21 @@ def test_scope_is_carried_into_every_triplet() -> None:
 def test_layer_cells_misuse(kwargs: dict, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         grid_convergence(CONVERGED, **kwargs)
+
+
+def test_missing_layer_cells_warning_only_with_an_uncertainty() -> None:
+    # Divergent data: the layer count cannot change the outcome.
+    res = grid_convergence([1.0, 1.5, 1.7], cells=(8000, 1000, 125), dim=3, scope="core")
+    assert res.verdict is Verdict.DIVERGENT
+    assert res.uncertainty is None
+    assert not any("layer" in w for w in res.warnings)
+
+
+def test_missing_layer_cells_warning_follows_each_triplet() -> None:
+    # Grids 1-3 converge (warned); grids 2-4 diverge (no layer warning).
+    cells = (8000, 1000, 125, 64)
+    res = grid_convergence([1.0, 1.04, 1.2, 1.25], cells=cells, dim=3, scope="core")
+    first, second = res.triplets
+    assert any("understates" in w for w in first.warnings)
+    assert second.uncertainty is None
+    assert not any("understates" in w for w in second.warnings)
