@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+dist/
+build/
+*.egg-info/
+.env
+
+# Full OpenFOAM case folders are large and rebuildable: commit generator scripts,
+# postProcessing/ outputs, mesh headers and provenance instead (see studies/).
+processor*/
+*.foam

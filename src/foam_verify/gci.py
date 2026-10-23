@@ -1,0 +1,478 @@
+"""Grid convergence: observed order, Richardson extrapolation and the grid convergence index.
+
+Follows the procedure of Celik et al. (2008), "Procedure for Estimation and Reporting of
+Uncertainty Due to Discretization in CFD Applications", J. Fluids Eng. 130(7) 078001, with the
+convergence classification of Eca and Hoekstra (2014), J. Comput. Phys. 262, 104-130.
+
+Grid 1 is always the finest. Every function here is pure arithmetic on numbers the caller
+supplies; nothing reads files or runs a solver. docs/gci.md records each convention and its
+source, including the ones that are foam-verify's own choices.
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass, replace
+from enum import StrEnum
+from typing import Any
+
+
+class Verdict(StrEnum):
+    MONOTONIC = "monotonic_convergence"
+    OSCILLATORY = "oscillatory_convergence"
+    DIVERGENT = "divergence"
+    DEGENERATE = "degenerate"
+    TWO_GRID = "two_grid"
+    ORDER_UNRESOLVED = "order_unresolved"
+
+
+class Method(StrEnum):
+    """How the uncertainty in the result was obtained."""
+
+    GCI = "gci"
+    ASSUMED_ORDER_GCI = "assumed_order_gci"
+    SPREAD_BOUND = "spread_bound"
+    NONE = "none"
+
+
+@dataclass(frozen=True)
+class Options:
+    formal_order: float = 2.0
+    # Safety factors (Celik et al. 2008 Eq. 7; Roache for two grids or a doubtful order).
+    fs_three_grid: float = 1.25
+    fs_fallback: float = 3.0
+    # Celik et al. 2008, step 2: "It is desirable that ... r ... be greater than 1.3."
+    min_refinement_ratio: float = 1.3
+    # GCI_32 / (r21^p GCI_21) should be close to 1 in the asymptotic range.
+    asymptotic_band: tuple[float, float] = (0.9, 1.1)
+    # An observed order outside [p_min, p_max_factor * formal_order] gets Fs = 3 and a warning.
+    p_min: float = 0.5
+    p_max_factor: float = 2.0
+    # Differences at or below round_off_rel * max|phi| count as zero.
+    round_off_rel: float = 1e-10
+    p_tol: float = 1e-12
+    p_max_iter: int = 500
+    # Oscillatory triplets: U = spread_factor * (max - min) / (n_grids - 1). See docs/gci.md.
+    spread_factor: float = 3.0
+
+
+class ObservedOrderError(ArithmeticError):
+    """The observed order of accuracy could not be determined."""
+
+
+@dataclass(frozen=True)
+class Richardson:
+    """Richardson extrapolation and GCI numbers, as defined in Celik et al. (2008) Eqs. 3-7.
+
+    Relative quantities are fractions, not percent. They are None when the value they are
+    relative to is zero.
+    """
+
+    p: float
+    # How p was obtained: "closed_form" (equal ratios), "fixed_point" or "bisection" when
+    # observed, or "assumed" (the formal order, for two grids).
+    p_solver: str
+    p_iterations: int
+    safety_factor: float
+    phi_ext: float
+    e_a: float | None
+    e_ext: float | None
+    gci_fine: float | None
+    gci_coarse: float | None
+    asymptotic_ratio: float | None
+
+
+@dataclass(frozen=True)
+class GCIResult:
+    verdict: Verdict
+    clean_pass: bool
+    method: Method
+    phi: tuple[float, ...]
+    h: tuple[float, ...]
+    r21: float
+    r32: float | None
+    convergence_ratio: float | None
+    # Present whenever the arithmetic is defined. richardson_used says whether the
+    # uncertainty below comes from it; for oscillatory triplets it is shown for reference only.
+    richardson: Richardson | None
+    richardson_used: bool
+    uncertainty: float | None
+    band: tuple[float, float] | None
+    reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+    notes: tuple[str, ...] = ()
+    triplets: tuple[GCIResult, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def refinement_ratio(n_fine: float, n_coarse: float, dim: int) -> float:
+    """r = h_coarse / h_fine = (N_fine / N_coarse)^(1/d) for the same domain."""
+    return (n_fine / n_coarse) ** (1.0 / dim)
+
+
+def divergence_threshold(r21: float, r32: float) -> float:
+    """Largest convergence ratio R = eps21/eps32 that still means monotonic convergence.
+
+    For phi = phi0 + c h^p, R = (r21^p - 1) / (r21^p (r32^p - 1)) (Eca and Hoekstra 2014,
+    Eq. 3), which falls strictly as p grows, so p > 0 exactly when R < lim_{p->0} R =
+    ln r21 / ln r32. With equal ratios this is the familiar R < 1. docs/gci.md has the proof.
+    """
+    return math.log(r21) / math.log(r32)
+
+
+def _ln_rp_minus_s(a: float, s: float) -> float:
+    """ln(e^a - s) for a = p ln r > 0, without overflow or cancellation."""
+    return a + (math.log(-math.expm1(-a)) if s > 0 else math.log1p(math.exp(-a)))
+
+
+def _order_residual(p: float, ln_ratio: float, ln_r21: float, ln_r32: float, s: float) -> float:
+    """Celik et al. (2008) Eq. 3 without its outer absolute value: zero at the observed order."""
+    q = _ln_rp_minus_s(p * ln_r21, s) - _ln_rp_minus_s(p * ln_r32, s)
+    return p * ln_r21 - ln_ratio - q
+
+
+def observed_order(
+    eps21: float,
+    eps32: float,
+    r21: float,
+    r32: float,
+    *,
+    tol: float = 1e-12,
+    max_iter: int = 500,
+) -> tuple[float, int, str]:
+    """Observed order p from Celik et al. (2008) Eq. 3, for a convergent triplet.
+
+    Returns (p, iterations, solver). Equal ratios give p in closed form. Otherwise Celik's
+    fixed-point iteration runs first, starting from the first term (q = 0). It can diverge
+    when r21 and r32 differ a lot, and its absolute value admits a spurious fixed point, so
+    its answer is checked against the signed equation, and bisection on that equation (whose
+    root is unique) takes over if the check fails. Raises ObservedOrderError if both fail.
+    """
+    if eps21 == 0 or eps32 == 0:
+        raise ObservedOrderError("a solution difference is zero; p is undefined")
+    ratio = eps32 / eps21
+    s = math.copysign(1.0, ratio)
+    ln_r21, ln_r32 = math.log(r21), math.log(r32)
+    ln_ratio = math.log(abs(ratio))
+    p = abs(ln_ratio) / ln_r21
+    if math.isclose(r21, r32, rel_tol=1e-12):
+        return p, 0, "closed_form"
+
+    def residual(x: float) -> float:
+        return _order_residual(x, ln_ratio, ln_r21, ln_r32, s)
+
+    for k in range(1, max_iter + 1):
+        if not 0 < p < 1e4:
+            break
+        q = _ln_rp_minus_s(p * ln_r21, s) - _ln_rp_minus_s(p * ln_r32, s)
+        p_new = abs(ln_ratio + q) / ln_r21
+        if abs(p_new - p) <= tol * max(1.0, p_new):
+            if abs(residual(p_new)) <= 1e-9:
+                return p_new, k, "fixed_point"
+            break
+        p = p_new
+
+    lo, hi = 1e-12, 1.0
+    if residual(lo) >= 0:
+        raise ObservedOrderError("the observed order is not positive (p <= 0)")
+    while residual(hi) <= 0:
+        hi *= 2.0
+        if hi > 1e4:
+            raise ObservedOrderError("no observed order below p = 1e4")
+    for k in range(1, 400):
+        mid = 0.5 * (lo + hi)
+        if residual(mid) > 0:
+            hi = mid
+        else:
+            lo = mid
+        if hi - lo <= tol * max(1.0, hi):
+            return 0.5 * (lo + hi), k, "bisection"
+    raise ObservedOrderError("bisection for p did not converge")
+
+
+def grid_convergence(
+    values: Sequence[float],
+    *,
+    cells: Sequence[float] | None = None,
+    dim: int | None = None,
+    h: Sequence[float] | None = None,
+    options: Options | None = None,
+) -> GCIResult:
+    """Assess a grid study. values, cells and h are ordered finest grid first.
+
+    Give either cell counts with the number of refined directions (cells, dim) or
+    representative cell sizes (h). Four or more grids give one result per consecutive
+    triplet; the returned verdict is the finest triplet's, with all triplets attached.
+    """
+    opt = options or Options()
+    if not opt.formal_order > 0:
+        raise ValueError("formal_order must be positive")
+    phi = _finite_tuple(values, "values")
+    if len(phi) < 2:
+        raise ValueError("a grid study needs at least two grids")
+    sizes = _sizes(len(phi), cells, dim, h)
+    if len(phi) == 2:
+        return _two_grid(phi, sizes, opt)
+
+    triplets = [_triplet(phi[i : i + 3], sizes[i : i + 3], opt) for i in range(len(phi) - 2)]
+    finest = triplets[0]
+    if len(triplets) == 1:
+        return finest
+    notes = [
+        *finest.notes,
+        f"{len(phi)} grids: one result per consecutive triplet; the verdict is from grids 1-3.",
+    ]
+    for i, t in enumerate(triplets[1:], start=2):
+        if t.verdict is not Verdict.MONOTONIC:
+            notes.append(f"coarser triplet (grids {i}-{i + 2}): {t.verdict.value}")
+    return replace(finest, notes=tuple(notes), triplets=tuple(triplets))
+
+
+def _finite_tuple(xs: Sequence[float], name: str) -> tuple[float, ...]:
+    out = tuple(float(x) for x in xs)
+    if not all(math.isfinite(x) for x in out):
+        raise ValueError(f"{name} must all be finite numbers")
+    return out
+
+
+def _sizes(
+    n: int, cells: Sequence[float] | None, dim: int | None, h: Sequence[float] | None
+) -> tuple[float, ...]:
+    if (cells is None) == (h is None):
+        raise ValueError("give exactly one of cells (with dim) or h")
+    if h is not None:
+        sizes = _finite_tuple(h, "h")
+        if len(sizes) != n:
+            raise ValueError("h must have one entry per value")
+        if sizes[0] <= 0 or any(b <= a for a, b in zip(sizes, sizes[1:], strict=False)):
+            raise ValueError("h must be positive and strictly increasing (finest grid first)")
+        return sizes
+    assert cells is not None
+    if dim not in (1, 2, 3):
+        raise ValueError("dim (number of refined directions) must be 1, 2 or 3")
+    counts = _finite_tuple(cells, "cells")
+    if len(counts) != n:
+        raise ValueError("cells must have one entry per value")
+    if counts[-1] <= 0 or any(b >= a for a, b in zip(counts, counts[1:], strict=False)):
+        raise ValueError("cells must be positive and strictly decreasing (finest grid first)")
+    # Same domain on every level, so h_i / h_1 = (N_1 / N_i)^(1/d).
+    return tuple(refinement_ratio(counts[0], c, dim) for c in counts)
+
+
+def _ratio_warnings(ratios: Sequence[tuple[str, float]], opt: Options) -> list[str]:
+    return [
+        f"{name} = {r:.4g} is below {opt.min_refinement_ratio:g} (Celik et al. 2008 step 2): "
+        "the grids are too similar for a reliable estimate"
+        for name, r in ratios
+        if r < opt.min_refinement_ratio
+    ]
+
+
+def _relative(num: float, den: float) -> float | None:
+    return abs(num / den) if den != 0 else None
+
+
+def _band(phi1: float, u: float) -> tuple[float, float]:
+    return (phi1 - u, phi1 + u)
+
+
+def _p_in_range(p: float, opt: Options) -> bool:
+    return opt.p_min <= p <= opt.p_max_factor * opt.formal_order
+
+
+def _richardson(
+    phi: tuple[float, ...],
+    r21: float,
+    r32: float | None,
+    p: float,
+    p_solver: str,
+    iterations: int,
+    fs: float,
+) -> Richardson:
+    phi1, phi2 = phi[0], phi[1]
+    r21p = r21**p
+    phi_ext = (r21p * phi1 - phi2) / (r21p - 1.0)
+    e_a = _relative(phi1 - phi2, phi1)
+    e_ext = _relative(phi_ext - phi1, phi_ext)
+    gci_fine = fs * e_a / (r21p - 1.0) if e_a is not None else None
+    gci_coarse = asymptotic = None
+    if r32 is not None:
+        e_a32 = _relative(phi2 - phi[2], phi2)
+        if e_a32 is not None:
+            gci_coarse = fs * e_a32 / (r32**p - 1.0)
+            if gci_fine:
+                asymptotic = gci_coarse / (r21p * gci_fine)
+    return Richardson(
+        p=p,
+        p_solver=p_solver,
+        p_iterations=iterations,
+        safety_factor=fs,
+        phi_ext=phi_ext,
+        e_a=e_a,
+        e_ext=e_ext,
+        gci_fine=gci_fine,
+        gci_coarse=gci_coarse,
+        asymptotic_ratio=asymptotic,
+    )
+
+
+def _two_grid(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCIResult:
+    r21 = h[1] / h[0]
+    eps21 = phi[1] - phi[0]
+    warnings = _ratio_warnings([("r21", r21)], opt)
+    base = {"phi": phi, "h": h, "r21": r21, "r32": None, "convergence_ratio": None}
+    if abs(eps21) <= opt.round_off_rel * max(abs(x) for x in phi):
+        return GCIResult(
+            verdict=Verdict.DEGENERATE,
+            clean_pass=False,
+            method=Method.NONE,
+            richardson=None,
+            richardson_used=False,
+            uncertainty=None,
+            band=None,
+            reasons=(
+                "the two solutions agree to round-off, so there is no difference to "
+                "extrapolate from; add a third grid",
+            ),
+            warnings=tuple(warnings),
+            **base,
+        )
+    p = opt.formal_order
+    fs = opt.fs_fallback
+    rich = _richardson(phi, r21, None, p, "assumed", 0, fs)
+    u = fs * abs(eps21) / (r21**p - 1.0)
+    warnings.append(
+        f"only two grids: the observed order cannot be estimated, so the GCI assumes the formal "
+        f"order p = {p:g} with Fs = {fs:g} (Roache); a third grid is needed to check it"
+    )
+    return GCIResult(
+        verdict=Verdict.TWO_GRID,
+        clean_pass=False,
+        method=Method.ASSUMED_ORDER_GCI,
+        richardson=rich,
+        richardson_used=True,
+        uncertainty=u,
+        band=_band(phi[0], u),
+        reasons=("two-grid estimate at an assumed order of accuracy",),
+        warnings=tuple(warnings),
+        **base,
+    )
+
+
+def _triplet(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCIResult:
+    phi1, phi2, phi3 = phi
+    r21, r32 = h[1] / h[0], h[2] / h[1]
+    eps21, eps32 = phi2 - phi1, phi3 - phi2
+    warnings = _ratio_warnings([("r21", r21), ("r32", r32)], opt)
+    zero = opt.round_off_rel * max(abs(x) for x in phi)
+
+    def result(verdict: Verdict, reasons: Sequence[str], **kw: Any) -> GCIResult:
+        fields: dict[str, Any] = {
+            "clean_pass": False,
+            "method": Method.NONE,
+            "convergence_ratio": None,
+            "richardson": None,
+            "richardson_used": False,
+            "uncertainty": None,
+            "band": None,
+            "warnings": tuple(warnings),
+        }
+        fields.update(kw)
+        return GCIResult(
+            verdict=verdict, phi=phi, h=h, r21=r21, r32=r32, reasons=tuple(reasons), **fields
+        )
+
+    if abs(eps21) <= zero or abs(eps32) <= zero:
+        which = [
+            name
+            for name, eps in (("phi2 - phi1", eps21), ("phi3 - phi2", eps32))
+            if abs(eps) <= zero
+        ]
+        return result(
+            Verdict.DEGENERATE,
+            [
+                f"{' and '.join(which)} is zero to round-off, so the observed order is undefined "
+                "(Celik et al. 2008, step 3)",
+                "this can mean oscillatory convergence or a discretisation that reproduces the "
+                "exact solution; refine further or report the values as they are",
+            ],
+        )
+
+    R = eps21 / eps32
+    limit = divergence_threshold(r21, r32) if R > 0 else 1.0
+    if abs(R) >= limit:
+        kind = "monotonic" if R > 0 else "oscillatory"
+        test = "|R| >= 1" if math.isclose(limit, 1.0) else f"R >= ln r21 / ln r32 = {limit:.4g}"
+        return result(
+            Verdict.DIVERGENT,
+            [
+                f"convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = {R:.4g}: {test}, "
+                f"{kind} divergence (Eca and Hoekstra 2014)",
+                "the solution is not grid-converged, so no GCI is given",
+            ],
+            convergence_ratio=R,
+        )
+
+    try:
+        p, iterations, solver = observed_order(
+            eps21, eps32, r21, r32, tol=opt.p_tol, max_iter=opt.p_max_iter
+        )
+    except ObservedOrderError as exc:
+        return result(
+            Verdict.ORDER_UNRESOLVED,
+            [f"observed order of accuracy could not be determined: {exc}"],
+            convergence_ratio=R,
+        )
+
+    p_ok = _p_in_range(p, opt)
+    fs = opt.fs_three_grid if p_ok else opt.fs_fallback
+    rich = _richardson(phi, r21, r32, p, solver, iterations, fs)
+    if not p_ok:
+        warnings.append(
+            f"observed order p = {p:.4g} is outside [{opt.p_min:g}, "
+            f"{opt.p_max_factor * opt.formal_order:g}] for a formal order of "
+            f"{opt.formal_order:g}, so Fs = {fs:g} is used"
+        )
+
+    if R > 0:
+        lo, hi = opt.asymptotic_band
+        a = rich.asymptotic_ratio
+        if a is None:
+            warnings.append("asymptotic-range ratio is undefined (a solution value is zero)")
+        elif not lo <= a <= hi:
+            warnings.append(
+                f"asymptotic-range ratio GCI_32/(r21^p GCI_21) = {a:.4g} is outside "
+                f"[{lo:g}, {hi:g}]: the grids may not be in the asymptotic range"
+            )
+        u = fs * abs(eps21) / (r21**p - 1.0)
+        return result(
+            Verdict.MONOTONIC,
+            [f"convergence ratio R = {R:.4g}: monotonic convergence (0 < R < {limit:.4g})"],
+            clean_pass=not warnings,
+            method=Method.GCI,
+            convergence_ratio=R,
+            richardson=rich,
+            richardson_used=True,
+            uncertainty=u,
+            band=_band(phi1, u),
+        )
+
+    spread = max(phi) - min(phi)
+    u = opt.spread_factor * spread / (len(phi) - 1)
+    warnings.append(
+        "oscillatory convergence: the Richardson GCI assumes monotonic behaviour, so the "
+        f"uncertainty is a spread bound, {opt.spread_factor:g} x (max - min)/(n - 1), and the "
+        "Richardson numbers are shown for reference only"
+    )
+    return result(
+        Verdict.OSCILLATORY,
+        [f"convergence ratio R = {R:.4g}: oscillatory convergence (-1 < R < 0)"],
+        method=Method.SPREAD_BOUND,
+        convergence_ratio=R,
+        richardson=rich,
+        uncertainty=u,
+        band=_band(phi1, u),
+    )

@@ -1,0 +1,47 @@
+{
+  "source": "Celik, Ghia, Roache and Freitas (2008), Procedure for Estimation and Reporting of Uncertainty Due to Discretization in CFD Applications, J. Fluids Eng. 130(7) 078001, Table 1",
+  "copied_from": "https://www.asme.org/wwwasmeorg/media/resourcefiles/shop/journals/jfenumaccuracy.pdf (page 7 of the PDF), retrieved 2026-10-24",
+  "pdf_sha256": "3e22d96c3c0ac7c27e7daabcca92ca6e8b09e30d7ae7d8f24ffd273c01fa2397",
+  "note": "Values are strings so that the printed precision is kept. Percentages are as printed. The data are two-dimensional (Celik and Karatekin 1997), so dim = 2.",
+  "columns": [
+    {
+      "name": "reattachment_length",
+      "description": "dimensionless reattachment length (with monotonic convergence)",
+      "N": [18000, 8000, 4500],
+      "r21": "1.5",
+      "r32": "1.333",
+      "phi": ["6.063", "5.972", "5.863"],
+      "p": "1.53",
+      "phi_ext": "6.1685",
+      "e_a_pct": "1.5",
+      "e_ext_pct": "1.7",
+      "gci_fine_pct": "2.2"
+    },
+    {
+      "name": "axial_velocity_p_below_1",
+      "description": "axial velocity at x/H=8, y=0.0526 (p < 1)",
+      "N": [18000, 4500, 980],
+      "r21": "2.0",
+      "r32": "2.143",
+      "phi": ["10.7880", "10.7250", "10.6050"],
+      "p": "0.75",
+      "phi_ext": "10.8801",
+      "e_a_pct": "0.6",
+      "e_ext_pct": "0.9",
+      "gci_fine_pct": "1.1"
+    },
+    {
+      "name": "axial_velocity_oscillatory",
+      "description": "axial velocity at x/H=8, y=0.0526 (with oscillatory convergence)",
+      "N": [18000, 4500, 980],
+      "r21": "2.0",
+      "r32": "2.143",
+      "phi": ["6.0042", "5.9624", "6.0909"],
+      "p": "1.51",
+      "phi_ext": "6.0269",
+      "e_a_pct": "0.7",
+      "e_ext_pct": "0.4",
+      "gci_fine_pct": "0.5"
+    }
+  ]
+}
