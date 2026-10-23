@@ -27,6 +27,32 @@ class Verdict(StrEnum):
     ORDER_UNRESOLVED = "order_unresolved"
 
 
+class Scope(StrEnum):
+    """Which part of the mesh was refined between levels."""
+
+    MESH = "mesh"  # every cell, near-wall layers included (Celik et al. 2008 assume this)
+    CORE = "core"  # core volume only; the near-wall layers were identical on every level
+    BOUNDARY_LAYER = "boundary_layer"  # wall-normal layer refinement only; core fixed
+
+
+SCOPE_NOTES = {
+    Scope.MESH: (
+        "scope mesh: assumes every cell, near-wall layers included, was refined by the same "
+        "ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+    ),
+    Scope.CORE: (
+        "scope core: the uncertainty covers the core-volume discretisation only; the near-wall "
+        "layers were the same on every level, so their discretisation error is not included and "
+        "needs its own boundary-layer study"
+    ),
+    Scope.BOUNDARY_LAYER: (
+        "scope boundary_layer: the uncertainty covers wall-normal layer refinement only, with the "
+        "core mesh fixed; h should be the first-layer height, with the growth ratio and the "
+        "core-transition ratio held constant across levels"
+    ),
+}
+
+
 class Method(StrEnum):
     """How the uncertainty in the result was obtained."""
 
@@ -103,6 +129,7 @@ class GCIResult:
     warnings: tuple[str, ...]
     notes: tuple[str, ...] = ()
     triplets: tuple[GCIResult, ...] = ()
+    scope: Scope = Scope.MESH
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -199,6 +226,8 @@ def grid_convergence(
     cells: Sequence[float] | None = None,
     dim: int | None = None,
     h: Sequence[float] | None = None,
+    scope: Scope = Scope.MESH,
+    layer_cells: float | None = None,
     options: Options | None = None,
 ) -> GCIResult:
     """Assess a grid study. values, cells and h are ordered finest grid first.
@@ -206,14 +235,58 @@ def grid_convergence(
     Give either cell counts with the number of refined directions (cells, dim) or
     representative cell sizes (h). Four or more grids give one result per consecutive
     triplet; the returned verdict is the finest triplet's, with all triplets attached.
+
+    scope says which part of the mesh was refined (see Scope). For Scope.CORE with total
+    cell counts, layer_cells is the fixed number of near-wall layer cells, subtracted from
+    every level so that r measures the core refinement. Scope.BOUNDARY_LAYER needs h
+    (first-layer heights): cell counts do not measure wall-normal refinement.
     """
     opt = options or Options()
     if not opt.formal_order > 0:
         raise ValueError("formal_order must be positive")
+    scope = Scope(scope)
     phi = _finite_tuple(values, "values")
     if len(phi) < 2:
         raise ValueError("a grid study needs at least two grids")
+    if layer_cells is not None:
+        if scope is not Scope.CORE:
+            raise ValueError("layer_cells applies only to scope core")
+        if cells is None:
+            raise ValueError("layer_cells needs cells (total cell counts)")
+        if not 0 <= layer_cells < min(cells):
+            raise ValueError("layer_cells must be non-negative and below every cell count")
+        cells = [c - layer_cells for c in cells]
+    if scope is Scope.BOUNDARY_LAYER and h is None:
+        raise ValueError(
+            "scope boundary_layer needs h (first-layer heights, finest first): cell counts do "
+            "not measure wall-normal refinement"
+        )
     sizes = _sizes(len(phi), cells, dim, h)
+    extra: list[str] = []
+    if scope is Scope.CORE and cells is not None and layer_cells is None:
+        extra.append(
+            "scope core with total cell counts: the fixed layer cells are counted as refined, "
+            "so r understates the core refinement ratio; give layer_cells (0 if negligible)"
+        )
+    return _with_scope(_assess(phi, sizes, opt), scope, extra)
+
+
+def _with_scope(res: GCIResult, scope: Scope, extra: list[str]) -> GCIResult:
+    def tag(r: GCIResult) -> GCIResult:
+        return replace(
+            r,
+            scope=scope,
+            warnings=(*r.warnings, *extra),
+            clean_pass=r.clean_pass and not extra,
+        )
+
+    out = tag(res)
+    return replace(
+        out, notes=(SCOPE_NOTES[scope], *out.notes), triplets=tuple(tag(t) for t in res.triplets)
+    )
+
+
+def _assess(phi: tuple[float, ...], sizes: tuple[float, ...], opt: Options) -> GCIResult:
     if len(phi) == 2:
         return _two_grid(phi, sizes, opt)
 

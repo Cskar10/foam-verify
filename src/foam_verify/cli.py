@@ -11,7 +11,7 @@ import sys
 from collections.abc import Sequence
 
 from . import __version__
-from .gci import GCIResult, Options, grid_convergence
+from .gci import GCIResult, Options, Scope, grid_convergence
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -33,6 +33,21 @@ def _parser() -> argparse.ArgumentParser:
     gci.add_argument(
         "--dim", type=int, choices=(1, 2, 3), help="refined directions (required with --cells)"
     )
+    gci.add_argument(
+        "--refined",
+        required=True,
+        choices=("mesh", "core", "boundary-layer"),
+        help="what was refined between levels: the whole mesh including near-wall layers, the "
+        "core volume only (layers identical on every level), or the near-wall layers only "
+        "(core fixed; give first-layer heights with --h)",
+    )
+    gci.add_argument(
+        "--layer-cells",
+        type=float,
+        metavar="N",
+        help="with --refined core and --cells: the fixed number of layer cells, subtracted "
+        "from every level so that r measures the core refinement",
+    )
     gci.add_argument("--formal-order", type=float, default=2.0, metavar="P")
     gci.add_argument("--json", action="store_true", help="print the full result as JSON")
     return parser
@@ -48,7 +63,7 @@ def _num(x: float | None) -> str:
 
 def format_result(res: GCIResult) -> str:
     status = "clean pass" if res.clean_pass else "not a clean pass"
-    lines = [f"verdict: {res.verdict.value} ({status})"]
+    lines = [f"verdict: {res.verdict.value} ({status})", f"refined: {res.scope.value}"]
     ratios = f"r21 = {res.r21:.4g}" + (f", r32 = {res.r32:.4g}" if res.r32 is not None else "")
     if res.convergence_ratio is not None:
         ratios += f", R = {res.convergence_ratio:.4g}"
@@ -96,6 +111,8 @@ def _cmd_gci(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             cells=args.cells,
             dim=args.dim,
             h=args.h,
+            scope=Scope(args.refined.replace("-", "_")),
+            layer_cells=args.layer_cells,
             options=Options(formal_order=args.formal_order),
         )
     except ValueError as exc:

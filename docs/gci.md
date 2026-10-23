@@ -17,6 +17,26 @@ finest throughout.
   *J. Fluids Eng.* 116, 405-413. Source of Fs = 3 for two grids. Not yet re-read for this code;
   the value is the one Celik et al. and Eça and Hoekstra both use for unreliable estimates.
 
+## Refinement scope (asked first)
+
+Richardson extrapolation assumes one cell size h for the whole mesh, refined by the same ratio
+everywhere (Celik et al. 2008, step 2; Eça and Hoekstra 2014, section 2: geometrically similar
+grids). Practical studies often refine only part of the mesh, so the CLI requires `--refined`:
+
+- `mesh`: every cell, near-wall layers included. The only scope the papers' procedure covers in
+  full.
+- `core`: the core volume only, with identical near-wall layers on every level. The uncertainty
+  then covers the core discretisation only; the layers' own error is fixed across levels, so
+  Richardson extrapolation cannot see it and it needs a separate boundary-layer study. With total
+  cell counts, give `--layer-cells` (the fixed layer cell count): otherwise r is computed from
+  cells that were not refined, understates the core ratio, and a warning blocks the clean pass.
+- `boundary-layer`: wall-normal layer refinement only, with the core fixed. Cell counts do not
+  measure this, so `--h` (first-layer heights) is required; the growth ratio and the
+  layer-to-core transition ratio should be the same on every level, and $d$ is irrelevant.
+
+The scope is reported with every result. This is foam-verify's convention for making the
+assumption explicit; neither paper defines partial-scope studies.
+
 ## Formulas (Celik et al. 2008)
 
 | Quantity | Implementation | Source |
