@@ -32,4 +32,8 @@ $ make setup   # uv sync
 $ make ci      # ruff + pytest
 ```
 
+## Author
+
+[Chris Skarakis](https://www.linkedin.com/in/chris-skarakis-511276217/)
+
 Built with AI assistance; the tests and the published reference values carry the claims.
