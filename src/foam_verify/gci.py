@@ -399,12 +399,16 @@ def _two_grid(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCI
     r21 = h[1] / h[0]
     eps21 = phi[1] - phi[0]
     warnings = _ratio_warnings([("r21", r21)], opt)
-    base = {"phi": phi, "h": h, "r21": r21, "r32": None, "convergence_ratio": None}
     if abs(eps21) <= opt.round_off_rel * max(abs(x) for x in phi):
         return GCIResult(
             verdict=Verdict.DEGENERATE,
             clean_pass=False,
             method=Method.NONE,
+            phi=phi,
+            h=h,
+            r21=r21,
+            r32=None,
+            convergence_ratio=None,
             richardson=None,
             richardson_used=False,
             uncertainty=None,
@@ -414,7 +418,6 @@ def _two_grid(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCI
                 "extrapolate from; add a third grid",
             ),
             warnings=tuple(warnings),
-            **base,
         )
     p = opt.formal_order
     fs = opt.fs_fallback
@@ -428,13 +431,17 @@ def _two_grid(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCI
         verdict=Verdict.TWO_GRID,
         clean_pass=False,
         method=Method.ASSUMED_ORDER_GCI,
+        phi=phi,
+        h=h,
+        r21=r21,
+        r32=None,
+        convergence_ratio=None,
         richardson=rich,
         richardson_used=True,
         uncertainty=u,
         band=_band(phi[0], u),
         reasons=("two-grid estimate at an assumed order of accuracy",),
         warnings=tuple(warnings),
-        **base,
     )
 
 
