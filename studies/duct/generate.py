@@ -135,6 +135,8 @@ functions
         type            solverInfo;
         libs            (utilityFunctionObjects);
         fields          (U p);
+        executeControl  timeStep;
+        executeInterval 10;  // solverInfo writes whenever it executes
         writeControl    timeStep;
         writeInterval   10;
     }

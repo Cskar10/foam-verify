@@ -1,0 +1,261 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2512                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _87ed40d2-20251219 OPENFOAM=2512 version=2512
+Arch   : "LSB;label=32;scalar=64"
+Exec   : simpleFoam
+Date   : Oct 25 2026
+Time   : 23:48:13
+Host   : 2e52cbdb1018
+PID    : 226
+I/O    : uncollated
+Case   : /work/studies/duct/build/n40
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: convergence criteria
+    field p	 tolerance 1e-10
+    field U	 tolerance 1e-10
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+No MRF models present
+
+Creating finite-volume options from "system/fvOptions"
+
+Selecting finite volume options type meanVelocityForce
+    Source: momentumSource
+    State: active
+    - selecting all cells
+    - selected 1600 cell(s) with volume 0.05
+    Initial pressure gradient = 0
+
+
+Starting time loop
+
+wallShearStress wallShearStress:
+    processing (1) wall patches:
+        walls
+
+surfaceFieldValue wallStress:
+...
+Time = 7983
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.81058956161e-16, Final residual = 3.81058956161e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0671500994074, Final residual = 0.000454046838873, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0577812648333, Final residual = 0.0003583603718, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0293642845257, Final residual = 0.000237611851651, No Iterations 7
+time step continuity errors : sum local = 2.02847450208e-16, global = -2.00679045863e-16, cumulative = -1.53845601487e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.56 s  ClockTime = 21 s
+
+Time = 7984
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.68470748834e-16, Final residual = 3.68470748834e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.101958800702, Final residual = 0.000767323660164, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0959565141076, Final residual = 0.000723311013243, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0345888641087, Final residual = 0.00031844336127, No Iterations 7
+time step continuity errors : sum local = 2.16501621318e-16, global = -2.15281893874e-16, cumulative = -1.53867129677e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.56 s  ClockTime = 21 s
+
+Time = 7985
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.80509411523e-16, Final residual = 3.80509411523e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.084293531867, Final residual = 0.000460850864122, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0845832295347, Final residual = 0.000506830693185, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0332195170223, Final residual = 0.000282070955582, No Iterations 8
+time step continuity errors : sum local = 1.76996004658e-16, global = -1.72117094882e-16, cumulative = -1.53884341386e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.56 s  ClockTime = 21 s
+
+Time = 7986
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.75345402572e-16, Final residual = 3.75345402572e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.100845658233, Final residual = 0.000806696653223, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.127971448692, Final residual = 0.0009352408929, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0371512938374, Final residual = 0.000300835539464, No Iterations 7
+time step continuity errors : sum local = 2.24700900248e-16, global = -2.19008838842e-16, cumulative = -1.5390624227e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.57 s  ClockTime = 21 s
+
+Time = 7987
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.70983258365e-16, Final residual = 3.70983258365e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0921038581913, Final residual = 0.000766486828603, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0911710815179, Final residual = 0.000748099945444, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0345063264297, Final residual = 0.000270438576525, No Iterations 5
+time step continuity errors : sum local = 2.01593841447e-16, global = -1.9928991183e-16, cumulative = -1.53926171261e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.58 s  ClockTime = 21 s
+
+Time = 7988
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.6744008535e-16, Final residual = 3.6744008535e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0877793789815, Final residual = 0.000556537575298, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0723063921981, Final residual = 0.000426928945127, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0325117246181, Final residual = 0.000143194385154, No Iterations 5
+time step continuity errors : sum local = 1.76013446439e-16, global = -1.75877921168e-16, cumulative = -1.53943759053e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.58 s  ClockTime = 21 s
+
+Time = 7989
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.79264917441e-16, Final residual = 3.79264917441e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.112186880228, Final residual = 0.000814731603957, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0798797229282, Final residual = 0.000609822124536, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0334535477279, Final residual = 0.000205900460915, No Iterations 4
+time step continuity errors : sum local = 1.8516140227e-16, global = -1.85025876998e-16, cumulative = -1.53962261641e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.58 s  ClockTime = 21 s
+
+Time = 7990
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.72088762559e-16, Final residual = 3.72088762559e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0828129462559, Final residual = 0.000371594369304, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0676914225394, Final residual = 0.000325095849783, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0324137229189, Final residual = 0.000225966259141, No Iterations 5
+time step continuity errors : sum local = 1.36609473733e-16, global = -1.36609473733e-16, cumulative = -1.53975922588e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.58 s  ClockTime = 21 s
+
+Time = 7991
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.75050316347e-16, Final residual = 3.75050316347e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.123726112627, Final residual = 0.000936681357302, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.12666298281, Final residual = 0.000985999600914, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0372793362383, Final residual = 0.00022839170034, No Iterations 5
+time step continuity errors : sum local = 1.66492796112e-16, global = -1.65137543397e-16, cumulative = -1.53992436343e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.58 s  ClockTime = 21 s
+
+Time = 7992
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.7881801149e-16, Final residual = 3.7881801149e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.108539779088, Final residual = 0.000663299041567, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0847077302581, Final residual = 0.000491460906448, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0328642737322, Final residual = 0.000247485841676, No Iterations 7
+time step continuity errors : sum local = 1.91056751583e-16, global = -1.91056751583e-16, cumulative = -1.54011542018e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7993
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 1.02096198998e-15, Final residual = 1.02096198998e-15, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.0968951242522, Final residual = 0.000759179043796, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.101505449848, Final residual = 0.000765008068874, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0836234556455, Final residual = 0.000673538681512, No Iterations 5
+time step continuity errors : sum local = 1.53922827175e-16, global = -1.44436058166e-16, cumulative = -1.54025985624e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7994
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 5.23465858075e-16, Final residual = 5.23465858075e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.161543315395, Final residual = 0.00102469328807, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.170981072227, Final residual = 0.00107617929163, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0878659613738, Final residual = 0.000446466721243, No Iterations 4
+time step continuity errors : sum local = 1.38303539628e-16, global = -1.34102256209e-16, cumulative = -1.54039395849e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7995
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 5.36678450749e-16, Final residual = 5.36678450749e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.149595818947, Final residual = 0.00099707702266, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.151025955356, Final residual = 0.00110776956788, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0793515582235, Final residual = 0.000542506370567, No Iterations 6
+time step continuity errors : sum local = 2.00069182141e-16, global = -1.91124514218e-16, cumulative = -1.54058508301e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7996
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 7.70125868232e-16, Final residual = 7.70125868232e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.152181204265, Final residual = 0.00112579405156, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.159072993274, Final residual = 0.00115047135808, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0892072440904, Final residual = 0.000482214944899, No Iterations 5
+time step continuity errors : sum local = 1.32543715586e-16, global = -1.25496401465e-16, cumulative = -1.54071057941e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7997
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 7.85688459183e-16, Final residual = 7.85688459183e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.195828002838, Final residual = 0.00138765922359, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.188028948724, Final residual = 0.00147191142968, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0920513181988, Final residual = 0.000450413734335, No Iterations 6
+time step continuity errors : sum local = 2.3493305825e-16, global = -2.34390957164e-16, cumulative = -1.54094497037e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.59 s  ClockTime = 21 s
+
+Time = 7998
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 7.5239717332e-16, Final residual = 7.5239717332e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.204931025253, Final residual = 0.00155385597109, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.17861503075, Final residual = 0.00138580171292, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0851093752881, Final residual = 0.00051921305436, No Iterations 7
+time step continuity errors : sum local = 1.44944277934e-16, global = -1.38303539628e-16, cumulative = -1.54108327391e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.6 s  ClockTime = 21 s
+
+Time = 7999
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 5.53434216439e-16, Final residual = 5.53434216439e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.243628723807, Final residual = 0.00170939906277, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.240946989304, Final residual = 0.00160092557829, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.0959392018285, Final residual = 0.000693732410142, No Iterations 5
+time step continuity errors : sum local = 1.68051336735e-16, global = -1.64934255489e-16, cumulative = -1.54124820816e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.6 s  ClockTime = 21 s
+
+Time = 8000
+
+DILUPBiCGStab:  Solving for Ux, Initial residual = 5.38555883403e-16, Final residual = 5.38555883403e-16, No Iterations 0
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.133828533391, Final residual = 0.000683455733257, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.126210223339, Final residual = 0.000592811078222, No Iterations 2
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+GAMG:  Solving for p, Initial residual = 0.089733831577, Final residual = 0.000667294065181, No Iterations 7
+time step continuity errors : sum local = 2.42996811908e-16, global = -2.39608680119e-16, cumulative = -1.54148781684e-12
+Pressure gradient source: uncorrected Ubar = 1, pressure gradient = 0.283857475142
+ExecutionTime = 20.61 s  ClockTime = 21 s
+
+End
+
