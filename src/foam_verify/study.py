@@ -27,6 +27,18 @@ study.toml, levels finest first:
     window = 0.1               # window_mean: last fraction of samples...
     min_samples = 50           # ...but at least this many
     scale = 1.0                # multiplies the reduced value (unit or non-dimensional factor)
+
+A QoI can instead be the extremum of a sampled profile: a probes function object with one
+point per column, read at its last row. The discrete extremum and its two neighbours are
+fitted with a parabola, so the value moves smoothly with the field rather than jumping from
+probe to probe. Give profile and axis instead of column:
+
+    [[qoi]]
+    name = "u_min"
+    file = "postProcessing/centreline/*/U"
+    profile = "min"            # min | max
+    axis = "y"                 # probe coordinate along the profile: x | y | z
+    component = "x"
 """
 
 from __future__ import annotations
@@ -43,9 +55,11 @@ from .gci import GCIResult, Options, Scope, grid_convergence
 
 MANIFEST = "study.toml"
 REDUCTIONS = ("last", "window_mean")
+PROFILES = ("min", "max")
 _COMPONENTS = {"x": 0, "y": 1, "z": 2, "0": 0, "1": 1, "2": 2}
 _TWO_D_PATCHES = ("empty", "wedge")
 _TOKEN = re.compile(r"\([^()]*\)|\S+")
+_PROBE = re.compile(r"#\s*Probe\s+(\d+)\s*\(([^()]*)\)")
 
 
 class StudyError(ValueError):
@@ -63,12 +77,14 @@ class Level:
 class QoI:
     name: str
     file: str
-    column: str | int
+    column: str | int | None
     component: int | None = None
     reduction: str = "last"
     window: float = 0.1
     min_samples: int = 50
     scale: float = 1.0
+    profile: str | None = None
+    axis: int | None = None
 
 
 @dataclass(frozen=True)
@@ -172,14 +188,40 @@ def _parse_qoi(item: object, i: int) -> QoI:
     if not isinstance(item, dict):
         raise StudyError(f"{where} must be a table")
     raw = cast(dict[str, Any], item)
-    allowed = {"name", "file", "column", "component", "reduction", "window", "min_samples", "scale"}
+    allowed = {
+        "name",
+        "file",
+        "column",
+        "component",
+        "reduction",
+        "window",
+        "min_samples",
+        "scale",
+        "profile",
+        "axis",
+    }
     _check_keys(raw, allowed, where)
-    for key in ("name", "file", "column"):
+    for key in ("name", "file"):
         if key not in raw:
             raise StudyError(f"{where}: {key} is required")
-    column = raw["column"]
-    if isinstance(column, bool) or not isinstance(column, str | int):
-        raise StudyError(f"{where}: column must be a header name or a 0-based index")
+    profile = raw.get("profile")
+    axis = None
+    column = raw.get("column")
+    if profile is None:
+        if "axis" in raw:
+            raise StudyError(f"{where}: axis applies only to a profile qoi")
+        if isinstance(column, bool) or not isinstance(column, str | int):
+            raise StudyError(f"{where}: column is required: a header name or a 0-based index")
+    else:
+        if profile not in PROFILES:
+            raise StudyError(f"{where}: profile must be min or max")
+        if column is not None:
+            raise StudyError(f"{where}: a profile qoi uses every probe column; drop column")
+        if raw.get("reduction", "last") != "last":
+            raise StudyError(f"{where}: a profile qoi is read at its last row; drop reduction")
+        if str(raw.get("axis")) not in ("x", "y", "z"):
+            raise StudyError(f"{where}: axis must be x, y or z for a profile qoi")
+        axis = _COMPONENTS[str(raw["axis"])]
     component = raw.get("component")
     if component is not None:
         if str(component) not in _COMPONENTS:
@@ -206,6 +248,8 @@ def _parse_qoi(item: object, i: int) -> QoI:
         window=window,
         min_samples=min_samples,
         scale=float(scale),
+        profile=None if profile is None else str(profile),
+        axis=axis,
     )
 
 
@@ -323,7 +367,9 @@ def _start_time(path: Path) -> float:
         return math.inf
 
 
-def _column_index(header: list[str], column: str | int, path: Path) -> int:
+def _column_index(header: list[str], column: str | int | None, path: Path) -> int:
+    if column is None:
+        raise StudyError(f"{path}: no column given")
     if isinstance(column, int):
         if column < 0 or (header and column >= len(header)):
             raise StudyError(f"{path}: column {column} is out of range")
@@ -416,6 +462,102 @@ def reduce_series(series: Series, qoi: QoI) -> tuple[float, int, str | None]:
     return qoi.scale * math.fsum(window) / want, want, note
 
 
+@dataclass(frozen=True)
+class Profile:
+    """Probe values along a line at one time: coordinates along the axis, sorted."""
+
+    coords: tuple[float, ...]
+    values: tuple[float, ...]
+    time: float
+    file: str
+
+
+def _read_profile(path: Path, qoi: QoI) -> Profile:
+    axis = qoi.axis if qoi.axis is not None else 0
+    coords: dict[int, float] = {}
+    last: tuple[int, str] | None = None
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        match = _PROBE.match(stripped)
+        if match:
+            parts = match.group(2).split()
+            if axis >= len(parts):
+                raise StudyError(f"{path}:{n}: probe location has no axis {axis}")
+            coords[int(match.group(1))] = float(parts[axis])
+        elif stripped and not stripped.startswith("#"):
+            last = (n, stripped)
+    if not coords:
+        raise StudyError(f"{path}: no '# Probe i (x y z)' lines: not a probes file")
+    if last is None:
+        raise StudyError(f"{path}: no data rows")
+    n, row = last
+    tokens = _TOKEN.findall(row)
+    if len(tokens) - 1 != len(coords):
+        raise StudyError(f"{path}:{n}: {len(tokens) - 1} values for {len(coords)} probes")
+    points = sorted(
+        (coords[i], _value(tok, qoi.component, path, n)) for i, tok in enumerate(tokens[1:])
+    )
+    if len({c for c, _ in points}) != len(points):
+        raise StudyError(f"{path}: two probes share a coordinate along the profile axis")
+    return Profile(
+        coords=tuple(c for c, _ in points),
+        values=tuple(v for _, v in points),
+        time=_value(tokens[0], None, path, n),
+        file=str(path),
+    )
+
+
+def read_profile(case: Path, qoi: QoI) -> Profile:
+    """The last row of the latest file matching qoi.file, one value per probe."""
+    case = case.resolve()
+    files = sorted(
+        (_inside(p, case, "qoi file") for p in case.glob(qoi.file) if p.is_file()),
+        key=lambda p: (_start_time(p), str(p)),
+    )
+    if not files:
+        raise StudyError(f"{case}: no file matches {qoi.file!r} for qoi {qoi.name}")
+    profile = _read_profile(files[-1], qoi)
+    return Profile(profile.coords, profile.values, profile.time, str(files[-1].relative_to(case)))
+
+
+def profile_extremum(profile: Profile, kind: str) -> tuple[float, float, str | None]:
+    """(value, location, note): the parabola through the discrete extremum and its neighbours.
+
+    At the end of the profile there is no neighbour on one side, so the probe value itself is
+    returned with a note.
+    """
+    if kind not in PROFILES:
+        raise ValueError(f"kind must be min or max, got {kind!r}")
+    x, y = profile.coords, profile.values
+    pick = min if kind == "min" else max
+    i = pick(range(len(y)), key=y.__getitem__)
+    if i == 0 or i == len(y) - 1:
+        note = f"profile {kind} is at the end of the sampled line; no parabola fit"
+        return y[i], x[i], note
+    x0, x1, x2 = x[i - 1], x[i], x[i + 1]
+    y0, y1, y2 = y[i - 1], y[i], y[i + 1]
+    d01 = (y1 - y0) / (x1 - x0)
+    a = ((y2 - y1) / (x2 - x1) - d01) / (x2 - x0)
+    if a == 0:
+        return y1, x1, f"profile {kind}: three collinear probes, no parabola fit"
+    # y = y0 + d01 (s - x0) + a (s - x0)(s - x1); vertex where dy/ds = 0
+    s = 0.5 * (x0 + x1) - d01 / (2.0 * a)
+    return y0 + d01 * (s - x0) + a * (s - x0) * (s - x1), s, None
+
+
+def _qoi_value(case: Path, qoi: QoI, axis_names: str = "xyz") -> tuple[float, int, list[str]]:
+    if qoi.profile is None:
+        value, used, note = reduce_series(read_series(case, qoi), qoi)
+        return value, used, [] if note is None else [note]
+    profile = read_profile(case, qoi)
+    value, where, note = profile_extremum(profile, qoi.profile)
+    axis = axis_names[qoi.axis if qoi.axis is not None else 0]
+    notes = [f"{qoi.profile} at {axis} = {where:.6g} (t = {profile.time:g})"]
+    if note:
+        notes.append(note)
+    return qoi.scale * value, len(profile.values), notes
+
+
 # --- the study --------------------------------------------------------------------------
 
 
@@ -459,11 +601,10 @@ def assess_study(study: Study) -> StudyResult:
         samples: list[int] = []
         notes: list[str] = []
         for lv in study.levels:
-            value, used, note = reduce_series(read_series(lv.path, qoi), qoi)
+            value, used, level_notes = _qoi_value(lv.path, qoi)
             values.append(value)
             samples.append(used)
-            if note:
-                notes.append(f"level {lv.name}: {note}")
+            notes.extend(f"level {lv.name}: {note}" for note in level_notes)
         if study.scope is Scope.BOUNDARY_LAYER:
             heights = [lv.first_layer_height for lv in study.levels]
             gci = grid_convergence(

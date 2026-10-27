@@ -1,0 +1,63 @@
+# Lid-driven cavity, Re = 100, icoFoam. See generate.py and README.md.
+# Velocities are in units of the lid speed (1 m/s); probe coordinates are in metres (L = 0.1).
+name = "lid-driven-cavity-re100"
+dim = 2
+formal_order = 2
+refined = "mesh"
+
+[[levels]]
+name = "160x160"
+path = "n160"
+
+[[levels]]
+name = "80x80"
+path = "n80"
+
+[[levels]]
+name = "40x40"
+path = "n40"
+
+[[levels]]
+name = "20x20"
+path = "n20"
+
+# u on the vertical centreline at Ghia et al.'s (1982) points y = 64/128, 58/128, 109/128 of L.
+[[qoi]]
+name = "u(y=0.5)"
+file = "postProcessing/ghiaPoints/*/U"
+column = "0"
+component = "x"
+
+[[qoi]]
+name = "u(y=0.4531)"
+file = "postProcessing/ghiaPoints/*/U"
+column = "1"
+component = "x"
+
+[[qoi]]
+name = "u(y=0.8516)"
+file = "postProcessing/ghiaPoints/*/U"
+column = "2"
+component = "x"
+
+# Extrema of the centreline profiles (255 probes, spacing L/256, parabola at the extremum).
+[[qoi]]
+name = "u_min"
+file = "postProcessing/verticalCentreline/*/U"
+profile = "min"
+axis = "y"
+component = "x"
+
+[[qoi]]
+name = "v_max"
+file = "postProcessing/horizontalCentreline/*/U"
+profile = "max"
+axis = "x"
+component = "y"
+
+[[qoi]]
+name = "v_min"
+file = "postProcessing/horizontalCentreline/*/U"
+profile = "min"
+axis = "x"
+component = "y"

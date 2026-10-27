@@ -15,6 +15,8 @@ from foam_verify.study import (
     cell_count,
     load_study,
     patch_types,
+    profile_extremum,
+    read_profile,
     read_series,
     reduce_series,
 )
@@ -264,3 +266,94 @@ def test_boundary_layer_study_uses_first_layer_heights(tmp_path: Path) -> None:
     assert qoi.gci.scope is Scope.BOUNDARY_LAYER
     assert qoi.gci.richardson is not None
     assert qoi.gci.richardson.p == pytest.approx(2.0, abs=1e-9)
+
+
+# --- profile extrema --------------------------------------------------------------------
+
+
+def write_probes(path: Path, xs: list[float], values: list[float], order: list[int]) -> None:
+    """A probes file with vector values (v, 0, 0), probes listed in the given order."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"# Probe {i} ({xs[k]} 0.05 0.005)" for i, k in enumerate(order)]
+    lines.append("# Time " + " ".join(str(i) for i in range(len(order))))
+    lines.append("0.5 " + " ".join("(0 0 0)" for _ in order))
+    lines.append("1 " + " ".join(f"({values[k]!r} 0 0)" for k in order))
+    path.write_text("\n".join(lines) + "\n")
+
+
+def test_parabola_minimum_is_recovered_exactly(tmp_path: Path) -> None:
+    xs = [k / 10 for k in range(1, 10)]
+    values = [2.0 + 3.0 * (x - 0.437) ** 2 for x in xs]
+    write_probes(tmp_path / "pp/0/U", xs, values, order=[4, 0, 8, 2, 6, 1, 7, 3, 5])
+    qoi = QoI("m", "pp/*/U", None, component=0, profile="min", axis=0)
+    profile = read_profile(tmp_path, qoi)
+    assert profile.coords == tuple(xs) and profile.time == 1.0
+    value, where, note = profile_extremum(profile, "min")
+    assert value == pytest.approx(2.0, abs=1e-12)
+    assert where == pytest.approx(0.437, abs=1e-12)
+    assert note is None
+    value, where, note = profile_extremum(profile, "max")
+    assert (value, where) == (values[-1], xs[-1]) and note is not None
+
+
+def test_fitted_extremum_error_is_third_order_in_the_spacing() -> None:
+    from foam_verify.study import Profile
+
+    def f(x: float) -> float:  # minimum -0.25 at x = 0.5; cubic term shifts the fit
+        return (x - 0.5) ** 2 - 0.25 + 0.4 * (x - 0.5) ** 3
+
+    errors = []
+    for n in (32, 64):
+        xs = tuple((k + 0.3) / n for k in range(n))
+        prof = Profile(xs, tuple(f(x) for x in xs), 0.0, "f")
+        errors.append(abs(profile_extremum(prof, "min")[0] + 0.25))
+    assert errors[1] < errors[0] / 6
+
+
+def test_real_probes_file_as_a_profile() -> None:
+    # Two probes at y = 0.05 and 0.08: the minimum of u is the end probe, with a note.
+    qoi = QoI("u", "postProcessing/probes/0/U", None, component=0, profile="min", axis=1)
+    profile = read_profile(REAL, qoi)
+    assert profile.coords == (0.05, 0.08)
+    value, where, note = profile_extremum(profile, "min")
+    assert value == pytest.approx(-0.196068) and where == 0.05
+    assert note is not None and "end" in note
+
+
+def test_study_with_a_profile_qoi(study_dir: Path) -> None:
+    xs = [k / 10 for k in range(1, 10)]
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        values = [-phi(h) - (x - 0.42) ** 2 for x in xs]
+        write_probes(study_dir / name / "postProcessing/line/0/U", xs, values, list(range(9)))
+    path = study_dir / "study.toml"
+    path.write_text(
+        path.read_text()
+        + '\n[[qoi]]\nname = "peak"\nfile = "postProcessing/line/*/U"\nprofile = "max"\n'
+        'axis = "x"\ncomponent = "x"\nscale = -1\n'
+    )
+    res = assess_study(load_study(study_dir))
+    peak = res.qois[1]
+    assert peak.values == pytest.approx([phi(0.1), phi(0.2), phi(0.4)])
+    assert peak.samples == (9, 9, 9)
+    assert any("max at x = 0.42" in note for note in peak.notes)
+    assert peak.gci.richardson is not None
+    assert peak.gci.richardson.p == pytest.approx(2.0, abs=1e-9)
+
+
+@pytest.mark.parametrize(
+    ("qoi", "message"),
+    [
+        ('profile = "min"\naxis = "y"\ncolumn = 1', "drop column"),
+        ('profile = "min"', "axis must be"),
+        ('profile = "mean"\naxis = "y"', "profile must be"),
+        ('profile = "min"\naxis = "y"\nreduction = "window_mean"', "drop reduction"),
+        ('column = 1\naxis = "y"', "axis applies only"),
+        ("", "column is required"),
+    ],
+)
+def test_profile_manifest_errors(study_dir: Path, qoi: str, message: str) -> None:
+    path = study_dir / "study.toml"
+    text = path.read_text().split("[[qoi]]")[0]
+    path.write_text(text + f'[[qoi]]\nname = "q"\nfile = "x"\n{qoi}\n')
+    with pytest.raises(StudyError, match=message):
+        load_study(study_dir)
