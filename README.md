@@ -4,8 +4,10 @@ Read-only verification of OpenFOAM results. It answers "can I trust this number?
 convergence index (GCI), iterative convergence of the quantities you report, settings consistency
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
-**Status: early development.** Only the GCI engine exists so far. There are no published results
-yet; this README will lead with them once they are committed.
+**Status: early development.** The GCI engine, the `study.toml` reader and the iterative
+convergence check exist, and two studies are committed under `studies/` (a square duct with an
+exact answer, and the lid-driven cavity). The `report` command comes next; this README will lead
+with its results once they are committed.
 
 ## GCI from numbers
 
@@ -24,6 +26,15 @@ The verdict is one of `monotonic_convergence`, `oscillatory_convergence`, `diver
 `degenerate`, `two_grid` or `order_unresolved`. Only a monotonic triplet with no warnings is a
 clean pass, and the exit code is 0 only then. The maths, its sources and the conventions that are
 this tool's own are in [docs/gci.md](docs/gci.md).
+
+## Iterative convergence
+
+Residuals are not the quantity you report. For a study, foam-verify also reads the history of
+each QoI on every level and asks whether the value itself has stopped moving: `converged`,
+`oscillating` or `drifting`, with the iterative uncertainty u_it, half the range over the last
+window of samples. On the levels behind the headline result, u_it must be at most a tenth of the
+GCI uncertainty, or iterative error contaminates the grid study. The method, its sources and this
+tool's own conventions are in [docs/iterative.md](docs/iterative.md).
 
 ## Development
 

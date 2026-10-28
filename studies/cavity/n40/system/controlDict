@@ -50,7 +50,9 @@ functions
         libs            (sampling);
         interpolationScheme cellPoint;
         fields          (U);
-        writeControl    writeTime;
+        timeStart       7.5;
+        writeControl    runTime;
+        writeInterval   0.05;
         writePrecision  12;
         log             false;
         probeLocations
@@ -320,7 +322,9 @@ functions
         libs            (sampling);
         interpolationScheme cellPoint;
         fields          (U);
-        writeControl    writeTime;
+        timeStart       7.5;
+        writeControl    runTime;
+        writeInterval   0.05;
         writePrecision  12;
         log             false;
         probeLocations

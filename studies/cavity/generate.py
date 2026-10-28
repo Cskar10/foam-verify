@@ -14,7 +14,9 @@ every level is read at the same physical points:
 - u on the vertical centreline at three of Ghia et al.'s (1982) points, y = 64/128, 58/128
   and 109/128 of L, written every 0.05 s;
 - the profiles u(y) on the vertical centreline and v(x) on the horizontal one, 255 points each
-  (spacing L/256), written at the end only; foam-verify takes their extrema.
+  (spacing L/256), written every 0.05 s over the last 2.5 s (t = 7.5 to 10 s, 51 rows);
+  foam-verify takes their extrema, and the rows give each extremum a history that fills the
+  default iterative-convergence window of 50 samples, the same window as the point QoIs.
 Standard library only, so it runs on any host Python 3.11+.
 """
 
@@ -32,6 +34,8 @@ NU = 0.001
 COURANT = 0.5
 END_TIME = 10
 SAMPLE_INTERVAL = 0.05
+PROFILE_START = 7.5  # the profiles are written over the last 2.5 s only (51 rows)
+PROFILE_INTERVAL = SAMPLE_INTERVAL
 GHIA_Y = (64, 58, 109)  # Ghia et al. (1982) grid indices, y = k/128 of L
 PROFILE_POINTS = 255  # k/256 of L, k = 1 ... 255
 Z = 0.005  # mid-plane of the one-cell-thick mesh
@@ -120,7 +124,11 @@ def control(n: int) -> str:
     vertical = [point(0.5 * L, k / 256 * L) for k in range(1, PROFILE_POINTS + 1)]
     horizontal = [point(k / 256 * L, 0.5 * L) for k in range(1, PROFILE_POINTS + 1)]
     every = f"writeControl    runTime;\n        writeInterval   {SAMPLE_INTERVAL};"
-    final = "writeControl    writeTime;"
+    profile = (
+        f"timeStart       {PROFILE_START};\n"
+        "        writeControl    runTime;\n"
+        f"        writeInterval   {PROFILE_INTERVAL};"
+    )
     return foam(
         "dictionary",
         "controlDict",
@@ -144,8 +152,8 @@ runTimeModifiable false;
 functions
 {{
 {probes("ghiaPoints", ghia, every)}
-{probes("verticalCentreline", vertical, final)}
-{probes("horizontalCentreline", horizontal, final)}
+{probes("verticalCentreline", vertical, profile)}
+{probes("horizontalCentreline", horizontal, profile)}
     residuals
     {{
         type            solverInfo;

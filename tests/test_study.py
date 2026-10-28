@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import math
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
 from foam_verify.gci import Scope, Verdict
+from foam_verify.iterative import Verdict as IterativeVerdict
 from foam_verify.study import (
     QoI,
     StudyError,
@@ -17,6 +20,7 @@ from foam_verify.study import (
     patch_types,
     profile_extremum,
     read_profile,
+    read_profiles,
     read_series,
     reduce_series,
 )
@@ -211,6 +215,67 @@ def test_restart_files_join_in_start_time_order(tmp_path: Path) -> None:
     assert series.y == (10, 20, 31, 41)
 
 
+# --- iterative convergence in a study ---------------------------------------------------
+
+
+def write_history(case: Path, values: list[float]) -> None:
+    out = case / "postProcessing" / "avg" / "0" / "surfaceFieldValue.dat"
+    rows = "".join(f"{i}\t{v!r}\n" for i, v in enumerate(values, start=1))
+    out.write_text("# Time\tareaAverage(p)\n" + rows)
+
+
+def test_two_samples_per_level_cannot_show_iterative_convergence(study_dir: Path) -> None:
+    # The grid study passes on its own; the histories are too short to say the values settled.
+    (qoi,) = assess_study(load_study(study_dir)).qois
+    assert qoi.gci.clean_pass
+    assert [r.verdict for r in qoi.iterative] == [IterativeVerdict.INSUFFICIENT_DATA] * 3
+    assert qoi.contamination is not None and not qoi.contamination.clean_pass
+    assert qoi.contamination.warnings[0].startswith("level fine: insufficient_data")
+
+
+def test_settled_histories_pass_the_contamination_check(study_dir: Path) -> None:
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        write_history(study_dir / name, [phi(h) + 0.5 * math.exp(-i / 20) for i in range(500)])
+    res = assess_study(load_study(study_dir))
+    (qoi,) = res.qois
+    assert qoi.values == pytest.approx([phi(0.1), phi(0.2), phi(0.4)], abs=1e-9)
+    for it in qoi.iterative:
+        assert it.verdict is IterativeVerdict.CONVERGED and it.clean_pass
+        assert it.samples == 500 and it.window == 50 and it.window_x == (451, 500)
+    check = qoi.contamination
+    assert check is not None and check.clean_pass and check.warnings == ()
+    assert check.u_num == qoi.gci.uncertainty
+    assert check.worst_ratio is not None and check.worst_ratio < 1e-6
+    assert res.to_dict()["qois"][0]["iterative"][0]["verdict"] == "converged"
+
+
+def test_a_drifting_level_blocks_the_contamination_check(study_dir: Path) -> None:
+    # The medium level still climbs 3e-5 per sample to the same last value: the GCI cannot
+    # see it, the history can.
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        slope = 3e-5 if name == "medium" else 0.0
+        write_history(study_dir / name, [phi(h) - slope * (499 - i) for i in range(500)])
+    (qoi,) = assess_study(load_study(study_dir)).qois
+    assert qoi.gci.clean_pass
+    verdicts = [r.verdict for r in qoi.iterative]
+    assert verdicts == [
+        IterativeVerdict.CONVERGED,
+        IterativeVerdict.DRIFTING,
+        IterativeVerdict.CONVERGED,
+    ]
+    assert qoi.contamination is not None and not qoi.contamination.clean_pass
+    assert any(w.startswith("level medium: drifting") for w in qoi.contamination.warnings)
+
+
+def test_window_and_min_samples_set_the_iterative_window(study_dir: Path) -> None:
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        write_history(study_dir / name, [phi(h)] * 500)
+    path = study_dir / "study.toml"
+    path.write_text(path.read_text() + "window = 0.5\nmin_samples = 10\n")
+    (qoi,) = assess_study(load_study(study_dir)).qois
+    assert [r.window for r in qoi.iterative] == [250] * 3
+
+
 # --- manifest validation ----------------------------------------------------------------
 
 
@@ -281,6 +346,17 @@ def write_probes(path: Path, xs: list[float], values: list[float], order: list[i
     path.write_text("\n".join(lines) + "\n")
 
 
+def write_probe_rows(
+    path: Path, xs: Sequence[float], rows: Sequence[tuple[float, Sequence[float]]]
+) -> None:
+    """A probes file with vector values (v, 0, 0), one row per (time, values)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"# Probe {i} ({x} 0.05 0.005)" for i, x in enumerate(xs)]
+    lines.append("# Time " + " ".join(str(i) for i in range(len(xs))))
+    lines += [f"{t:g} " + " ".join(f"({v!r} 0 0)" for v in values) for t, values in rows]
+    path.write_text("\n".join(lines) + "\n")
+
+
 def test_parabola_minimum_is_recovered_exactly(tmp_path: Path) -> None:
     xs = [k / 10 for k in range(1, 10)]
     values = [2.0 + 3.0 * (x - 0.437) ** 2 for x in xs]
@@ -320,17 +396,47 @@ def test_real_probes_file_as_a_profile() -> None:
     assert note is not None and "end" in note
 
 
+PEAK = (
+    '\n[[qoi]]\nname = "peak"\nfile = "postProcessing/line/*/U"\nprofile = "max"\n'
+    'axis = "x"\ncomponent = "x"\nscale = -1\n'
+)
+
+
+def test_profile_rows_join_across_restarts(tmp_path: Path) -> None:
+    xs = [0.25, 0.5, 0.75]
+    write_probe_rows(tmp_path / "pp/0/U", xs, [(t, [t, t, t]) for t in (1, 2, 3)])
+    write_probe_rows(tmp_path / "pp/2.5/U", xs, [(t, [-t, -t, -t]) for t in (3, 4)])
+    qoi = QoI("m", "pp/*/U", None, component=0, profile="min", axis=0)
+    profiles = read_profiles(tmp_path, qoi)
+    assert [p.time for p in profiles] == [1, 2, 3, 4]
+    assert [p.values[0] for p in profiles] == [1, 2, -3, -4]  # the restart file covers t = 3
+    assert [p.file for p in profiles] == ["pp/0/U", "pp/0/U", "pp/2.5/U", "pp/2.5/U"]
+    assert read_profile(tmp_path, qoi) == profiles[-1]
+
+
+def test_profile_qoi_history_is_the_extremum_of_every_row(study_dir: Path) -> None:
+    xs = [k / 10 for k in range(1, 10)]
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        rows = [(t, [-phi(h) - (x - 0.42) ** 2 - math.exp(-t) for x in xs]) for t in range(1, 61)]
+        write_probe_rows(study_dir / name / "postProcessing/line/0/U", xs, rows)
+    path = study_dir / "study.toml"
+    path.write_text(path.read_text() + PEAK)
+    peak = assess_study(load_study(study_dir)).qois[1]
+    assert peak.values == pytest.approx([phi(0.1), phi(0.2), phi(0.4)], abs=1e-12)
+    for it, h in zip(peak.iterative, (0.1, 0.2, 0.4), strict=True):
+        assert it.verdict is IterativeVerdict.CONVERGED and it.clean_pass
+        assert it.samples == 60 and it.window == 50 and it.window_x == (11, 60)
+        assert it.maximum == pytest.approx(phi(h) + math.exp(-11), abs=1e-12)
+    assert peak.contamination is not None and peak.contamination.clean_pass
+
+
 def test_study_with_a_profile_qoi(study_dir: Path) -> None:
     xs = [k / 10 for k in range(1, 10)]
     for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
         values = [-phi(h) - (x - 0.42) ** 2 for x in xs]
         write_probes(study_dir / name / "postProcessing/line/0/U", xs, values, list(range(9)))
     path = study_dir / "study.toml"
-    path.write_text(
-        path.read_text()
-        + '\n[[qoi]]\nname = "peak"\nfile = "postProcessing/line/*/U"\nprofile = "max"\n'
-        'axis = "x"\ncomponent = "x"\nscale = -1\n'
-    )
+    path.write_text(path.read_text() + PEAK)
     res = assess_study(load_study(study_dir))
     peak = res.qois[1]
     assert peak.values == pytest.approx([phi(0.1), phi(0.2), phi(0.4)])

@@ -49,6 +49,11 @@ divide noise by noise: after the first 100 iterations they stay between 0.016 an
 level (`postProcessing/residuals`, every 10th iteration). By residuals the case never
 converges; by the quantity reported it converged thousands of iterations before the end.
 
+foam-verify's iterative check ([docs/iterative.md](../../docs/iterative.md)) reads f Re over the
+last 80 samples, iterations 7210 to 8000: converged on every level, with a relative range of at
+most 1.4e-12. The iterative uncertainty is 3.7e-9 of the GCI uncertainty, so iterative error does
+not contaminate the grid study.
+
 ## Reproduce
 
 From the repository root, with the pinned image in `studies/README.md`:

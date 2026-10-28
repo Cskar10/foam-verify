@@ -3,7 +3,9 @@
 A study is a folder holding study.toml and one OpenFOAM case per grid level. Everything here
 reads; nothing writes, runs a solver or leaves the study folder. Cell counts come from the
 note in the header of constant/polyMesh/owner, and quantities of interest from the tables
-that function objects write under postProcessing/.
+that function objects write under postProcessing/. Each QoI's history on every level is also
+checked for iterative convergence over the QoI's window (window, min_samples), and its
+iterative uncertainty compared with the grid study's discretisation uncertainty.
 
 study.toml, levels finest first:
 
@@ -24,14 +26,15 @@ study.toml, levels finest first:
     column = "areaAverage(wallShearStress)"                # header name, or 0-based index
     component = "x"            # vectors only: x | y | z | 0 | 1 | 2
     reduction = "last"         # last | window_mean
-    window = 0.1               # window_mean: last fraction of samples...
+    window = 0.1               # window_mean and the iterative check: last fraction of samples...
     min_samples = 50           # ...but at least this many
     scale = 1.0                # multiplies the reduced value (unit or non-dimensional factor)
 
 A QoI can instead be the extremum of a sampled profile: a probes function object with one
-point per column, read at its last row. The discrete extremum and its two neighbours are
-fitted with a parabola, so the value moves smoothly with the field rather than jumping from
-probe to probe. Give profile and axis instead of column:
+point per column. The value is the extremum of its last row; the extremum of every row is the
+history the iterative check reads. The discrete extremum and its two neighbours are fitted
+with a parabola, so the value moves smoothly with the field rather than jumping from probe to
+probe. Give profile and axis instead of column:
 
     [[qoi]]
     name = "u_min"
@@ -47,11 +50,18 @@ import gzip
 import math
 import re
 import tomllib
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
 from .gci import GCIResult, Options, Scope, grid_convergence
+from .iterative import (
+    ContaminationCheck,
+    IterativeResult,
+    check_contamination,
+    iterative_convergence,
+)
+from .iterative import Options as IterativeOptions
 
 MANIFEST = "study.toml"
 REDUCTIONS = ("last", "window_mean")
@@ -124,6 +134,10 @@ class QoIResult:
     samples: tuple[int, ...]
     notes: tuple[str, ...]
     gci: GCIResult
+    # Iterative convergence of the QoI's history on each level, finest first, and the check
+    # of its iterative uncertainty against the grid study's discretisation uncertainty.
+    iterative: tuple[IterativeResult, ...] = ()
+    contamination: ContaminationCheck | None = None
 
 
 @dataclass(frozen=True)
@@ -472,25 +486,7 @@ class Profile:
     file: str
 
 
-def _read_profile(path: Path, qoi: QoI) -> Profile:
-    axis = qoi.axis if qoi.axis is not None else 0
-    coords: dict[int, float] = {}
-    last: tuple[int, str] | None = None
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        stripped = line.strip()
-        match = _PROBE.match(stripped)
-        if match:
-            parts = match.group(2).split()
-            if axis >= len(parts):
-                raise StudyError(f"{path}:{n}: probe location has no axis {axis}")
-            coords[int(match.group(1))] = float(parts[axis])
-        elif stripped and not stripped.startswith("#"):
-            last = (n, stripped)
-    if not coords:
-        raise StudyError(f"{path}: no '# Probe i (x y z)' lines: not a probes file")
-    if last is None:
-        raise StudyError(f"{path}: no data rows")
-    n, row = last
+def _profile_row(path: Path, coords: dict[int, float], n: int, row: str, qoi: QoI) -> Profile:
     tokens = _TOKEN.findall(row)
     if len(tokens) - 1 != len(coords):
         raise StudyError(f"{path}:{n}: {len(tokens) - 1} values for {len(coords)} probes")
@@ -507,17 +503,60 @@ def _read_profile(path: Path, qoi: QoI) -> Profile:
     )
 
 
-def read_profile(case: Path, qoi: QoI) -> Profile:
-    """The last row of the latest file matching qoi.file, one value per probe."""
-    case = case.resolve()
+def _read_profiles(path: Path, qoi: QoI, *, last_only: bool = False) -> list[Profile]:
+    axis = qoi.axis if qoi.axis is not None else 0
+    coords: dict[int, float] = {}
+    rows: list[tuple[int, str]] = []
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        match = _PROBE.match(stripped)
+        if match:
+            parts = match.group(2).split()
+            if axis >= len(parts):
+                raise StudyError(f"{path}:{n}: probe location has no axis {axis}")
+            coords[int(match.group(1))] = float(parts[axis])
+        elif stripped and not stripped.startswith("#"):
+            if last_only:
+                rows.clear()
+            rows.append((n, stripped))
+    if not coords:
+        raise StudyError(f"{path}: no '# Probe i (x y z)' lines: not a probes file")
+    if not rows:
+        raise StudyError(f"{path}: no data rows")
+    return [_profile_row(path, coords, n, row, qoi) for n, row in rows]
+
+
+def _profile_files(case: Path, qoi: QoI) -> list[Path]:
     files = sorted(
         (_inside(p, case, "qoi file") for p in case.glob(qoi.file) if p.is_file()),
         key=lambda p: (_start_time(p), str(p)),
     )
     if not files:
         raise StudyError(f"{case}: no file matches {qoi.file!r} for qoi {qoi.name}")
-    profile = _read_profile(files[-1], qoi)
-    return Profile(profile.coords, profile.values, profile.time, str(files[-1].relative_to(case)))
+    return files
+
+
+def read_profile(case: Path, qoi: QoI) -> Profile:
+    """The last row of the latest file matching qoi.file, one value per probe."""
+    case = case.resolve()
+    latest = _profile_files(case, qoi)[-1]
+    (profile,) = _read_profiles(latest, qoi, last_only=True)
+    return replace(profile, file=str(latest.relative_to(case)))
+
+
+def read_profiles(case: Path, qoi: QoI) -> tuple[Profile, ...]:
+    """Every row of every file matching qoi.file, joined in start-time order.
+
+    As in read_series, rows that a later (restart) file covers again come from that file.
+    """
+    case = case.resolve()
+    profiles: list[Profile] = []
+    for path in _profile_files(case, qoi):
+        rows = [replace(p, file=str(path.relative_to(case))) for p in _read_profiles(path, qoi)]
+        while profiles and profiles[-1].time >= rows[0].time:
+            profiles.pop()
+        profiles.extend(rows)
+    return tuple(profiles)
 
 
 def profile_extremum(profile: Profile, kind: str) -> tuple[float, float, str | None]:
@@ -545,24 +584,44 @@ def profile_extremum(profile: Profile, kind: str) -> tuple[float, float, str | N
     return y0 + d01 * (s - x0) + a * (s - x0) * (s - x1), s, None
 
 
-def _qoi_value(case: Path, qoi: QoI, axis_names: str = "xyz") -> tuple[float, int, list[str]]:
+def _qoi_value(
+    case: Path, qoi: QoI, axis_names: str = "xyz"
+) -> tuple[float, int, list[str], Series]:
+    """(value, samples used, notes, history): the history is scaled like the value."""
     if qoi.profile is None:
-        value, used, note = reduce_series(read_series(case, qoi), qoi)
-        return value, used, [] if note is None else [note]
-    profile = read_profile(case, qoi)
-    value, where, note = profile_extremum(profile, qoi.profile)
+        series = read_series(case, qoi)
+        value, used, note = reduce_series(series, qoi)
+        history = replace(series, y=tuple(qoi.scale * v for v in series.y))
+        return value, used, [] if note is None else [note], history
+    kind = qoi.profile
+    profiles = read_profiles(case, qoi)
+    profile = profiles[-1]
+    value, where, note = profile_extremum(profile, kind)
     axis = axis_names[qoi.axis if qoi.axis is not None else 0]
-    notes = [f"{qoi.profile} at {axis} = {where:.6g} (t = {profile.time:g})"]
+    notes = [f"{kind} at {axis} = {where:.6g} (t = {profile.time:g})"]
     if note:
         notes.append(note)
-    return qoi.scale * value, len(profile.values), notes
+    history = Series(
+        x=tuple(p.time for p in profiles),
+        y=tuple(qoi.scale * profile_extremum(p, kind)[0] for p in profiles),
+        files=tuple(dict.fromkeys(p.file for p in profiles)),
+    )
+    return qoi.scale * value, len(profile.values), notes, history
+
+
+def _iterative(history: Series, qoi: QoI, level: str) -> IterativeResult:
+    options = IterativeOptions(window=qoi.window, min_samples=qoi.min_samples)
+    try:
+        return iterative_convergence(history.y, history.x, options=options)
+    except ValueError as exc:
+        raise StudyError(f"qoi {qoi.name}, level {level}: {exc}") from exc
 
 
 # --- the study --------------------------------------------------------------------------
 
 
 def assess_study(study: Study) -> StudyResult:
-    """Cell counts, QoI values and the grid convergence assessment of each QoI."""
+    """Cell counts, QoI values, and the grid and iterative convergence of each QoI."""
     warnings: list[str] = []
     infos: list[LevelInfo] = []
     for lv in study.levels:
@@ -595,16 +654,19 @@ def assess_study(study: Study) -> StudyResult:
         warnings.append("the levels have different empty or wedge patches")
 
     options = Options(formal_order=study.formal_order)
+    names = [lv.name for lv in study.levels]
     results: list[QoIResult] = []
     for qoi in study.qois:
         values: list[float] = []
         samples: list[int] = []
         notes: list[str] = []
+        histories: list[IterativeResult] = []
         for lv in study.levels:
-            value, used, level_notes = _qoi_value(lv.path, qoi)
+            value, used, level_notes, history = _qoi_value(lv.path, qoi)
             values.append(value)
             samples.append(used)
             notes.extend(f"level {lv.name}: {note}" for note in level_notes)
+            histories.append(_iterative(history, qoi, lv.name))
         if study.scope is Scope.BOUNDARY_LAYER:
             heights = [lv.first_layer_height for lv in study.levels]
             gci = grid_convergence(
@@ -619,7 +681,21 @@ def assess_study(study: Study) -> StudyResult:
                 layer_cells=study.layer_cells,
                 options=options,
             )
-        results.append(QoIResult(qoi.name, tuple(values), tuple(samples), tuple(notes), gci))
+        # The headline result comes from the finest triplet, or both grids of a two-grid study.
+        contamination = check_contamination(
+            histories, gci.uncertainty, names=names, used=min(3, len(names))
+        )
+        results.append(
+            QoIResult(
+                qoi.name,
+                tuple(values),
+                tuple(samples),
+                tuple(notes),
+                gci,
+                tuple(histories),
+                contamination,
+            )
+        )
 
     return StudyResult(
         name=study.name,

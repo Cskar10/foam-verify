@@ -9,6 +9,7 @@ import pytest
 
 from foam_verify.exact import rectangular_duct_fre
 from foam_verify.gci import Verdict
+from foam_verify.iterative import Verdict as IterativeVerdict
 from foam_verify.study import assess_study, load_study
 
 STUDIES = Path(__file__).resolve().parent.parent / "studies"
@@ -58,3 +59,36 @@ def test_cavity_fitted_minimum_is_below_the_nearest_ghia_point() -> None:
     qois = {q.name: q for q in assess_study(load_study(CAVITY)).qois}
     for fitted, sampled in zip(qois["u_min"].values, qois["u(y=0.4531)"].values, strict=True):
         assert fitted <= sampled
+
+
+# --- iterative convergence ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("study", [DUCT, CAVITY], ids=["duct", "cavity"])
+def test_every_qoi_has_settled_on_every_level(study: Path) -> None:
+    # The QoIs vary by about 1e-12 (relative) over their windows: u_it is far below U.
+    for qoi in assess_study(load_study(study)).qois:
+        assert [r.verdict for r in qoi.iterative] == [IterativeVerdict.CONVERGED] * 4, qoi.name
+        assert all(r.clean_pass for r in qoi.iterative), qoi.name
+        check = qoi.contamination
+        assert check is not None and check.clean_pass, qoi.name
+        assert check.worst_ratio is not None and check.worst_ratio < 1e-6, qoi.name
+
+
+def test_cavity_points_and_profiles_share_one_window() -> None:
+    # The Ghia points are written every 0.05 s from the start, the profiles every 0.05 s from
+    # t = 7.5 s: both windows are the last 50 samples, t = 7.55 to 10 s.
+    qois = assess_study(load_study(CAVITY)).qois
+    samples = {q.name: q.iterative[0].samples for q in qois}
+    assert samples == {
+        "u(y=0.5)": 200,
+        "u(y=0.4531)": 200,
+        "u(y=0.8516)": 200,
+        "u_min": 51,
+        "v_max": 51,
+        "v_min": 51,
+    }
+    for qoi in qois:
+        for res in qoi.iterative:
+            assert res.window == 50, qoi.name
+            assert res.window_x == pytest.approx((7.55, 10.0)), qoi.name

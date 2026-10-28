@@ -49,9 +49,10 @@ foam-verify on the three finest grids: every QoI converges monotonically and is 
   - u at three of Ghia's centreline points, y = 64/128, 58/128 and 109/128 of L, every 0.05 s
     (`postProcessing/ghiaPoints`);
   - the full profiles u(y) on the vertical centreline and v(x) on the horizontal one, 255 points
-    at spacing L/256, at the final time (`postProcessing/*Centreline`). foam-verify takes the
-    extremum of each by fitting a parabola through the lowest (or highest) probe and its two
-    neighbours.
+    at spacing L/256, every 0.05 s over the last 2.5 s, t = 7.5 to 10 s, 51 rows
+    (`postProcessing/*Centreline`). foam-verify takes the extremum of each row by fitting a
+    parabola through the lowest (or highest) probe and its two neighbours. The last row gives
+    the value; every row gives the history for the iterative check.
 
 ## Steady state
 
@@ -59,6 +60,12 @@ The runs are transient, so the steady state is checked on the quantities themsel
 160 x 160 grid the three sampled QoIs are within 1e-6 of their final values from t = 2.6 s,
 1e-8 from t = 3.45 s and 1e-10 from t = 5.0 s. Over the second half of the run they change by
 less than 1e-10 (relative). The coarser grids settle at the same times or earlier.
+
+foam-verify's iterative check ([docs/iterative.md](../../docs/iterative.md)) reads every QoI
+over the same window, the last 50 samples, t = 7.55 to 10 s: the Ghia points from their 200
+samples, the profile extrema from their 51 rows. Every QoI is converged on every level, and the
+iterative uncertainty is at most 2.1e-9 of the GCI uncertainty, so iterative error does not
+contaminate the grid study.
 
 ## Reproduce
 
@@ -71,5 +78,6 @@ $ python3 studies/cavity/generate.py collect
 ```
 
 The four levels run in parallel; 160 x 160 takes about 14 minutes, 80 x 80 about a minute, the coarser two seconds. `build/`
-(the full cases, about 57 MB) is not committed. Each `nN/` keeps the inputs, the mesh `boundary`
-file, the `owner` header, the function-object output and trimmed logs.
+(the full cases, about 61 MB) is not committed. Each `nN/` keeps the inputs, the mesh `boundary`
+file, the `owner` header, the function-object output and trimmed logs: 4.4 MB in all, almost all
+of it the profile rows.
