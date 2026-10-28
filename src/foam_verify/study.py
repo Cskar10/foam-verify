@@ -5,7 +5,8 @@ reads; nothing writes, runs a solver or leaves the study folder. Cell counts com
 note in the header of constant/polyMesh/owner, and quantities of interest from the tables
 that function objects write under postProcessing/. Each QoI's history on every level is also
 checked for iterative convergence over the QoI's window (window, min_samples), and its
-iterative uncertainty compared with the grid study's discretisation uncertainty.
+iterative uncertainty compared with the grid study's discretisation uncertainty. The levels'
+settings are compared too (foam_verify.consistency): they should differ only in the mesh.
 
 study.toml, levels finest first:
 
@@ -54,6 +55,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
+from .consistency import ConsistencyResult, settings_consistency
 from .gci import GCIResult, Options, Scope, grid_convergence
 from .iterative import (
     ContaminationCheck,
@@ -149,6 +151,8 @@ class StudyResult:
     levels: tuple[LevelInfo, ...]
     qois: tuple[QoIResult, ...]
     warnings: tuple[str, ...]
+    # Do the levels differ only in the mesh? Their settings compared entry by entry.
+    consistency: ConsistencyResult | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -697,6 +701,9 @@ def assess_study(study: Study) -> StudyResult:
             )
         )
 
+    consistency = settings_consistency(
+        [lv.path for lv in study.levels], names=names, scope=study.scope, root=study.root
+    )
     return StudyResult(
         name=study.name,
         root=str(study.root),
@@ -705,4 +712,5 @@ def assess_study(study: Study) -> StudyResult:
         levels=tuple(infos),
         qois=tuple(results),
         warnings=tuple(warnings),
+        consistency=consistency,
     )

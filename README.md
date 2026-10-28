@@ -4,10 +4,11 @@ Read-only verification of OpenFOAM results. It answers "can I trust this number?
 convergence index (GCI), iterative convergence of the quantities you report, settings consistency
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
-**Status: early development.** The GCI engine, the `study.toml` reader and the iterative
-convergence check exist, and two studies are committed under `studies/` (a square duct with an
-exact answer, and the lid-driven cavity). The `report` command comes next; this README will lead
-with its results once they are committed.
+**Status: early development.** The GCI engine, the `study.toml` reader, the iterative
+convergence check and the settings consistency check exist, and two studies are committed under
+`studies/` (a square duct with an exact answer, and the lid-driven cavity). A third study
+(`pitzDaily`) and the `report` command come next; this README will lead with the results once
+they are committed.
 
 ## GCI from numbers
 
@@ -35,6 +36,20 @@ each QoI on every level and asks whether the value itself has stopped moving: `c
 window of samples. On the levels behind the headline result, u_it must be at most a tenth of the
 GCI uncertainty, or iterative error contaminates the grid study. The method, its sources and this
 tool's own conventions are in [docs/iterative.md](docs/iterative.md).
+
+## Settings consistency
+
+The levels of a grid study should differ only in the mesh. foam-verify compares their schemes,
+solver settings, physical properties, boundary conditions and near-wall layer settings entry by
+entry, and names any difference by file and key:
+
+```text
+system/fvSchemes: divSchemes/div(phi,U): 'Gauss linear' on 160x160, 80x80, 40x40; 'Gauss upwind' on 20x20
+```
+
+Any difference blocks a clean verdict, except run controls in `controlDict` such as a time step
+that shrinks with the mesh, which are listed as notes. What is compared, and why, is in
+[docs/consistency.md](docs/consistency.md).
 
 ## Development
 

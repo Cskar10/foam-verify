@@ -165,6 +165,16 @@ def test_assess_recovers_order_and_limit(study_dir: Path) -> None:
     assert res.to_dict()["qois"][0]["gci"]["verdict"] == "monotonic_convergence"
 
 
+def test_a_study_without_settings_files_is_not_shown_consistent(study_dir: Path) -> None:
+    # The fixture keeps only mesh headers and function-object output.
+    res = assess_study(load_study(study_dir))
+    check = res.consistency
+    assert check is not None and not check.clean_pass
+    assert check.levels == ("fine", "medium", "coarse")
+    assert check.warnings[0].startswith("no system/fvSchemes or system/fvSolution")
+    assert res.to_dict()["consistency"]["clean_pass"] is False
+
+
 def test_manifest_file_path_works_too(study_dir: Path) -> None:
     assert load_study(study_dir / "study.toml").name == "demo"
 

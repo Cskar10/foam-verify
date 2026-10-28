@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 
+from foam_verify.consistency import settings_consistency
 from foam_verify.exact import rectangular_duct_fre
 from foam_verify.gci import Verdict
 from foam_verify.iterative import Verdict as IterativeVerdict
@@ -92,3 +94,53 @@ def test_cavity_points_and_profiles_share_one_window() -> None:
         for res in qoi.iterative:
             assert res.window == 50, qoi.name
             assert res.window_x == pytest.approx((7.55, 10.0)), qoi.name
+
+
+# --- settings consistency ---------------------------------------------------------------------
+
+
+def test_duct_levels_differ_only_in_the_mesh() -> None:
+    check = assess_study(load_study(DUCT)).consistency
+    assert check is not None and check.clean_pass, check
+    assert check.files == (
+        "system/fvSchemes",
+        "system/fvSolution",
+        "system/fvOptions",
+        "constant/transportProperties",
+        "constant/turbulenceProperties",
+        "0/U",
+        "0/p",
+        "system/controlDict",
+    )
+    assert check.differences == () and check.notes == ()
+
+
+def test_cavity_levels_differ_only_in_the_mesh_and_time_step() -> None:
+    # The time step keeps the Courant number at 0.5, so it halves with the cell size.
+    check = assess_study(load_study(CAVITY)).consistency
+    assert check is not None and check.clean_pass, check
+    (diff,) = check.differences
+    assert (diff.file, diff.key, diff.blocking) == ("system/controlDict", "deltaT", False)
+    assert diff.values == ("0.0003125", "0.000625", "0.00125", "0.0025")
+
+
+def test_a_changed_scheme_on_one_cavity_level_is_caught(tmp_path: Path) -> None:
+    # An evaluation bundle in miniature: the coarsest level uses another convection scheme.
+    names = ("160x160", "80x80", "40x40", "20x20")
+    cases: list[Path] = []
+    for name in names:
+        n = name.split("x")[0]
+        case = tmp_path / f"n{n}"
+        for sub in ("system", "constant", "0"):
+            shutil.copytree(CAVITY / f"n{n}" / sub, case / sub)
+        cases.append(case)
+    schemes = cases[-1] / "system" / "fvSchemes"
+    text = schemes.read_text()
+    assert "div(phi,U)      Gauss linear;" in text
+    schemes.write_text(text.replace("div(phi,U)      Gauss linear;", "div(phi,U) Gauss upwind;"))
+    check = settings_consistency(cases, names=names, root=tmp_path)
+    assert not check.clean_pass
+    assert check.warnings == (
+        "system/fvSchemes: divSchemes/div(phi,U): 'Gauss linear' on 160x160, 80x80, 40x40; "
+        "'Gauss upwind' on 20x20",
+    )
