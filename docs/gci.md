@@ -129,9 +129,17 @@ numbers are still returned, marked `richardson_used = false`.
 
 ## Four or more grids
 
-One result per consecutive triplet. The top-level verdict is from grids 1-3; coarser triplets
-that are not monotonic are listed in `notes`. The least-squares fit of Eça and Hoekstra is a
-planned extension.
+One result per consecutive triplet. The top-level verdict and uncertainty are from grids 1-3.
+
+If a coarser triplet does not converge monotonically, the grids are not all in the asymptotic
+range, and the uncertainty from grids 1-3 rests on that range. When grids 1-3 give an
+uncertainty, a warning then blocks the clean pass; when they give none (divergent, degenerate),
+the coarser verdict is a note. A level that is simply too coarse can be left out of the study,
+where the choice is visible, rather than accepted silently. This is foam-verify's convention:
+Celik et al. describe three grids. The `pitzDaily` study shows why it matters: its finest
+triplet converges monotonically at p = 0.85 while the coarser one diverges, because refining
+moves the walls through the wall-function switch. The least-squares fit of Eça and Hoekstra is
+a planned extension.
 
 ## Celik et al. Table 1 reproduction
 

@@ -144,12 +144,21 @@ def test_zero_fine_value_keeps_the_absolute_uncertainty() -> None:
     assert not res.clean_pass
 
 
-def test_coarser_triplet_problems_are_noted() -> None:
+def test_a_coarser_triplet_that_does_not_converge_blocks_the_clean_pass() -> None:
     h = (1.0, 2.0, 4.0, 8.0)
     res = grid_convergence([1.0, 1.04, 1.16, 1.0], h=h)
-    assert res.verdict is Verdict.MONOTONIC
+    assert res.verdict is Verdict.MONOTONIC and res.uncertainty is not None
+    assert res.triplets[0].clean_pass  # grids 1-3 alone would pass
     assert res.triplets[1].verdict is Verdict.OSCILLATORY
-    assert any("grids 2-4" in n and "oscillatory" in n for n in res.notes)
+    assert not res.clean_pass
+    assert any(w.startswith("coarser triplet (grids 2-4): oscillatory") for w in res.warnings)
+    # Every triplet converging: the clean pass stands.
+    assert grid_convergence([1.0 + 0.01 * x**2 for x in h], h=h).clean_pass
+    # With no uncertainty from grids 1-3 there is nothing to block: the coarser verdict is a note.
+    diverging = grid_convergence([1.0, 1.5, 1.7, 1.0], h=h)
+    assert diverging.verdict is Verdict.DIVERGENT
+    assert any("grids 2-4" in n and "oscillatory" in n for n in diverging.notes)
+    assert not any("coarser triplet" in w for w in diverging.warnings)
 
 
 def test_observed_order_rejects_zero_difference() -> None:

@@ -183,10 +183,14 @@ def test_pitzdaily_quantities_do_not_converge_with_the_mesh() -> None:
     dp = qois["dp"].gci
     assert dp.verdict is Verdict.MONOTONIC and not dp.clean_pass
     assert any("asymptotic-range ratio" in w for w in dp.warnings)
-    # The loss is monotonic on the finest triplet, at a low order; see the README.
+    # The loss converges on the finest triplet, at a low order, and alone would pass; the
+    # coarser triplet's divergence blocks it. See the README.
     dp0 = qois["dp0"].gci
     assert dp0.verdict is Verdict.MONOTONIC and dp0.richardson is not None
     assert dp0.richardson.p == pytest.approx(0.846, abs=0.001)
+    assert dp0.triplets[0].clean_pass and not dp0.clean_pass
+    assert any(w.startswith("coarser triplet (grids 2-4): divergence") for w in dp0.warnings)
+    assert not any(q.gci.clean_pass for q in qois.values())
 
 
 def test_pitzdaily_reattachment_from_the_lower_wall_shear_stress() -> None:

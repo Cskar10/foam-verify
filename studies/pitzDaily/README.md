@@ -23,7 +23,7 @@ foam-verify on the four levels:
 
 | QoI | Finest triplet (139k, 62k, 28k) | Coarser triplet | Clean pass |
 |---|---|---|---|
-| total-pressure loss | monotonic, p = 0.85: 16.48 +/- 1.31 (GCI 8.0%) | divergence | yes |
+| total-pressure loss | monotonic, p = 0.85: 16.48 +/- 1.31 (GCI 8.0%) | divergence | no |
 | static pressure difference | monotonic, p = 0.82; asymptotic-range ratio 0.885, outside [0.9, 1.1] | divergence | no |
 | reattachment length | divergence: R = 0.998 against the threshold 0.992 | divergence (R = 1.65) | no |
 
@@ -52,12 +52,12 @@ the lower wall and three quarters of the upper wall are below the switch; from 6
 both. So the levels do not solve one set of equations ever more finely: the wall model itself
 changes between 12k and 62k, and the grid study's premise does not hold.
 
-The total-pressure loss still gets a clean pass. Its finest triplet is monotonic with p = 0.85,
-which is far from the formal order of 2 but inside the range [0.5, 4] that foam-verify accepts
-(docs/gci.md), and the asymptotic-range ratio is 1.026. The coarser triplet's divergence is
-reported only as a note, so the result stands with its +/- 8% band. That is a gap in the tool,
-not a property of the case: the same four levels give a divergent coarser triplet for every QoI,
-and the finest triplet straddles the change of wall model.
+The total-pressure loss shows what a three-grid study would miss. Its finest triplet is
+monotonic with p = 0.85, far from the formal order of 2 but inside the range [0.5, 4] that
+foam-verify accepts, with an asymptotic-range ratio of 1.026: on its own it would pass, at
++/- 8%. It straddles the change of wall model, though, and the coarser triplet diverges. With
+four or more grids a coarser triplet that does not converge blocks the clean pass
+([docs/gci.md](../../docs/gci.md), Four or more grids), so foam-verify refuses one here.
 
 ## Iterative convergence
 

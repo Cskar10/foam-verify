@@ -301,10 +301,27 @@ def _assess(phi: tuple[float, ...], sizes: tuple[float, ...], opt: Options) -> G
         *finest.notes,
         f"{len(phi)} grids: one result per consecutive triplet; the verdict is from grids 1-3.",
     ]
+    # A coarser triplet that does not converge monotonically shows that the grids are not all
+    # in the asymptotic range, which the finest triplet's uncertainty assumes; see docs/gci.md.
+    blocking: list[str] = []
     for i, t in enumerate(triplets[1:], start=2):
-        if t.verdict is not Verdict.MONOTONIC:
+        if t.verdict is Verdict.MONOTONIC:
+            continue
+        if finest.uncertainty is None:
             notes.append(f"coarser triplet (grids {i}-{i + 2}): {t.verdict.value}")
-    return replace(finest, notes=tuple(notes), triplets=tuple(triplets))
+        else:
+            blocking.append(
+                f"coarser triplet (grids {i}-{i + 2}): {t.verdict.value}, so the grids are not "
+                "all in the asymptotic range; leave out a level that is too coarse rather than "
+                "accept grids 1-3 alone"
+            )
+    return replace(
+        finest,
+        notes=tuple(notes),
+        warnings=(*finest.warnings, *blocking),
+        clean_pass=finest.clean_pass and not blocking,
+        triplets=tuple(triplets),
+    )
 
 
 def _finite_tuple(xs: Sequence[float], name: str) -> tuple[float, ...]:
