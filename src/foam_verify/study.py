@@ -6,7 +6,9 @@ note in the header of constant/polyMesh/owner, and quantities of interest from t
 that function objects write under postProcessing/. Each QoI's history on every level is also
 checked for iterative convergence over the QoI's window (window, min_samples), and its
 iterative uncertainty compared with the grid study's discretisation uncertainty. The levels'
-settings are compared too (foam_verify.consistency): they should differ only in the mesh.
+settings are compared too (foam_verify.consistency): they should differ only in the mesh. And
+the refined directions d are checked against the patches of every level: empty and wedge
+patches, and pairs of patches with one face per cell, which a mesh one cell across has.
 
 study.toml, levels finest first:
 
@@ -160,6 +162,8 @@ class StudyResult:
     warnings: tuple[str, ...]
     # Do the levels differ only in the mesh? Their settings compared entry by entry.
     consistency: ConsistencyResult | None = None
+    # What the mesh checks confirmed, such as a direction that is one cell across.
+    notes: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -370,16 +374,27 @@ def _strip_comments(text: str) -> str:
     return re.sub(r"//[^\n]*|/\*.*?\*/", "", text, flags=re.S)
 
 
-def patch_types(case: Path) -> dict[str, str]:
-    """Patch name to type, from constant/polyMesh/boundary."""
+def _patches(case: Path) -> dict[str, tuple[str, int | None]]:
+    """Patch name to (type, nFaces), from constant/polyMesh/boundary."""
     boundary = case / "constant" / "polyMesh" / "boundary"
     text = _strip_comments(_read_head(boundary, 1 << 20))
-    types: dict[str, str] = {}
+    patches: dict[str, tuple[str, int | None]] = {}
     for name, body in re.findall(r"([^\s{};()]+)\s*\{([^{}]*)\}", text):
         match = re.search(r"\btype\s+([^\s;]+)\s*;", body)
         if match and name != "FoamFile":
-            types[name] = match.group(1)
-    return types
+            faces = re.search(r"\bnFaces\s+(\d+)\s*;", body)
+            patches[name] = (match.group(1), None if faces is None else int(faces.group(1)))
+    return patches
+
+
+def patch_types(case: Path) -> dict[str, str]:
+    """Patch name to type, from constant/polyMesh/boundary."""
+    return {name: kind for name, (kind, _) in _patches(case).items()}
+
+
+def patch_faces(case: Path) -> dict[str, int]:
+    """Patch name to its number of faces, from constant/polyMesh/boundary."""
+    return {name: n for name, (_, n) in _patches(case).items() if n is not None}
 
 
 # --- function-object tables -------------------------------------------------------------
@@ -719,13 +734,56 @@ def _iterative(history: Series, qoi: QoI, level: str) -> IterativeResult:
 # --- the study --------------------------------------------------------------------------
 
 
+def _listing(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+
+
+def _dimension_checks(
+    study: Study, infos: list[LevelInfo], faces: list[dict[str, int]]
+) -> tuple[list[str], list[str]]:
+    """(warnings, notes): the refined directions d against the patches of every level."""
+    warnings: list[str] = []
+    notes: list[str] = []
+    two_d = any(info.two_d_patches for info in infos)
+    # Patches with one face per cell on every level, such as the two halves of a cyclic: the
+    # mesh is one cell across them, so that direction was not refined.
+    thin = sorted(
+        name
+        for name in faces[0]
+        if all(f.get(name) == info.cells for f, info in zip(faces, infos, strict=True))
+    )
+    one_cell = (
+        f"patches {_listing(thin)} have one face per cell on every level, so the mesh is one "
+        "cell across them and that direction is not refined"
+        if len(thin) >= 2
+        else ""
+    )
+    if two_d and study.dim == 3:
+        warnings.append(
+            "dim = 3 but the mesh has empty or wedge patches, which make a case 2-D; check dim"
+        )
+    if study.dim == 3 and not two_d and one_cell:
+        warnings.append(f"dim = 3 but {one_cell}; check dim")
+    if study.dim == 2 and not two_d:
+        if one_cell:
+            notes.append(f"dim = 2 with no empty or wedge patches: {one_cell}")
+        else:
+            warnings.append(
+                "dim = 2 with no empty or wedge patches: assumed one cell across a cyclic or "
+                "symmetric direction that was not refined; check that this holds on every level"
+            )
+    if len({info.two_d_patches for info in infos}) > 1:
+        warnings.append("the levels have different empty or wedge patches")
+    return warnings, notes
+
+
 def assess_study(study: Study) -> StudyResult:
     """Cell counts, QoI values, and the grid and iterative convergence of each QoI."""
-    warnings: list[str] = []
     infos: list[LevelInfo] = []
+    faces: list[dict[str, int]] = []
     for lv in study.levels:
-        types = patch_types(lv.path)
-        two_d = tuple(sorted(name for name, t in types.items() if t in _TWO_D_PATCHES))
+        patches = _patches(lv.path)
+        two_d = tuple(sorted(name for name, (t, _) in patches.items() if t in _TWO_D_PATCHES))
         infos.append(
             LevelInfo(
                 name=lv.name,
@@ -735,22 +793,12 @@ def assess_study(study: Study) -> StudyResult:
                 first_layer_height=lv.first_layer_height,
             )
         )
+        faces.append({name: n for name, (_, n) in patches.items() if n is not None})
     cells = [info.cells for info in infos]
     if any(a <= b for a, b in zip(cells, cells[1:], strict=False)):
         listing = ", ".join(f"{i.name}: {i.cells}" for i in infos)
         raise StudyError(f"levels must be listed finest first with falling cell counts ({listing})")
-
-    if any(info.two_d_patches for info in infos) and study.dim == 3:
-        warnings.append(
-            "dim = 3 but the mesh has empty or wedge patches, which make a case 2-D; check dim"
-        )
-    if study.dim == 2 and not any(info.two_d_patches for info in infos):
-        warnings.append(
-            "dim = 2 with no empty or wedge patches: assumed one cell across a cyclic or "
-            "symmetric direction that was not refined; check that this holds on every level"
-        )
-    if len({info.two_d_patches for info in infos}) > 1:
-        warnings.append("the levels have different empty or wedge patches")
+    warnings, study_notes = _dimension_checks(study, infos, faces)
 
     options = Options(formal_order=study.formal_order)
     names = [lv.name for lv in study.levels]
@@ -808,4 +856,5 @@ def assess_study(study: Study) -> StudyResult:
         qois=tuple(results),
         warnings=tuple(warnings),
         consistency=consistency,
+        notes=tuple(study_notes),
     )

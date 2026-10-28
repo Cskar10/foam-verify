@@ -21,6 +21,9 @@ DUCT = STUDIES / "duct"
 def test_duct_fine_grid_band_contains_the_exact_value() -> None:
     res = assess_study(load_study(DUCT))
     assert [lv.cells for lv in res.levels] == [160**2, 80**2, 40**2, 20**2]
+    # No empty patches, but the cyclic halves have one face per cell: d = 2 is confirmed.
+    assert res.warnings == ()
+    assert len(res.notes) == 1 and "patches inlet and outlet have one face per cell" in res.notes[0]
     (fre,) = res.qois
     gci = fre.gci
     assert gci.verdict is Verdict.MONOTONIC

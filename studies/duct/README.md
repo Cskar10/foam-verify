@@ -29,8 +29,10 @@ balance below.
 ## Case
 
 - Cross-section: the unit square in y-z (D_h = 1), uniform N x N cells. Along the flow (x): one
-  cell of length 0.05 between a cyclic pair, the same on every level. So `dim = 2`, and
-  foam-verify's "dim = 2 with no empty or wedge patches" warning is expected here.
+  cell of length 0.05 between a cyclic pair, the same on every level. So `dim = 2`. There are
+  no `empty` patches, but the two cyclic halves have one face per cell on every level, which
+  confirms that the mesh is one cell across the flow direction: foam-verify reports a note,
+  not a warning.
 - `simpleFoam`, laminar, nu = 0.01, SIMPLEC, `Gauss linear` everywhere. A `meanVelocityForce`
   source holds the bulk velocity at Ubar = 1 (Re = 100).
 - QoI: f Re = 8 tau_w D_h / (nu Ubar) = 800 tau_w, from the area-averaged wall shear stress

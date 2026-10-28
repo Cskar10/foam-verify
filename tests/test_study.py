@@ -18,6 +18,7 @@ from foam_verify.study import (
     assess_study,
     cell_count,
     load_study,
+    patch_faces,
     patch_types,
     profile_crossing,
     profile_extremum,
@@ -119,6 +120,7 @@ def test_real_boundary_patch_types() -> None:
         "fixedWalls": "wall",
         "frontAndBack": "empty",
     }
+    assert patch_faces(REAL) == {"movingWall": 20, "fixedWalls": 60, "frontAndBack": 800}
 
 
 def test_real_surface_field_value_table() -> None:
@@ -203,6 +205,52 @@ def test_dim_cross_checks(tmp_path: Path) -> None:
     res = assess_study(load_study(tmp_path))
     assert any("dim = 3 but" in w for w in res.warnings)
     assert any("different empty or wedge" in w for w in res.warnings)
+
+
+CYCLIC = """FoamFile {{ version 2.0; format ascii; class polyBoundaryMesh; object boundary; }}
+3
+(
+    walls {{ type wall; nFaces 8; startFace 0; }}
+    front {{ type cyclic; neighbourPatch back; nFaces {front}; startFace 8; }}
+    back {{ type cyclic; neighbourPatch front; nFaces {back}; startFace 9; }}
+)
+"""
+
+
+def cyclic_study(root: Path, dim: int, back: Sequence[int]) -> Path:
+    """Two levels with a cyclic pair: front has one face per cell, back the counts given."""
+    for (name, n), faces in zip((("a", 6400), ("b", 1600)), back, strict=True):
+        case = make_case(root, name, n, 1.0, side="cyclic")
+        (case / "constant" / "polyMesh" / "boundary").write_text(CYCLIC.format(front=n, back=faces))
+    text = manifest([("a", "a"), ("b", "b")]).replace("dim = 2", f"dim = {dim}")
+    (root / "study.toml").write_text(text)
+    return root
+
+
+def test_one_face_per_cell_on_a_cyclic_pair_confirms_dim_2(tmp_path: Path) -> None:
+    # The square duct's case: one cell between the two halves of a cyclic, on every level.
+    res = assess_study(load_study(cyclic_study(tmp_path, 2, back=(6400, 1600))))
+    assert res.warnings == ()
+    assert res.notes == (
+        "dim = 2 with no empty or wedge patches: patches back and front have one face per cell "
+        "on every level, so the mesh is one cell across them and that direction is not refined",
+    )
+
+
+def test_one_thin_patch_is_not_enough(tmp_path: Path) -> None:
+    # On level b the back half has two faces per cell row: not one cell across.
+    res = assess_study(load_study(cyclic_study(tmp_path, 2, back=(6400, 800))))
+    assert res.notes == ()
+    assert any("assumed one cell across" in w for w in res.warnings)
+
+
+def test_dim_3_with_a_one_cell_direction_is_flagged(tmp_path: Path) -> None:
+    res = assess_study(load_study(cyclic_study(tmp_path, 3, back=(6400, 1600))))
+    assert res.notes == ()
+    assert res.warnings == (
+        "dim = 3 but patches back and front have one face per cell on every level, so the mesh "
+        "is one cell across them and that direction is not refined; check dim",
+    )
 
 
 def test_window_mean_and_scale(tmp_path: Path) -> None:
