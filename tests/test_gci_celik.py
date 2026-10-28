@@ -10,13 +10,16 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from foam_verify.gci import Method, Verdict, grid_convergence
+from foam_verify.gci import GCIResult, Method, Verdict, grid_convergence
 
-TABLE = json.loads((Path(__file__).parent / "data" / "celik2008_table1.json").read_text())
-COLUMNS = {c["name"]: c for c in TABLE["columns"]}
+TABLE: dict[str, Any] = json.loads(
+    (Path(__file__).parent / "data" / "celik2008_table1.json").read_text()
+)
+COLUMNS: dict[str, dict[str, Any]] = {c["name"]: c for c in TABLE["columns"]}
 
 # (column, field) pairs whose printed value disagrees with Eq. 6; see test_e_ext_erratum.
 ERRATA = {("axial_velocity_p_below_1", "e_ext_pct")}
@@ -25,18 +28,21 @@ ERRATA = {("axial_velocity_p_below_1", "e_ext_pct")}
 def agrees(computed: float, printed: str) -> bool:
     """True if computed rounds to the printed value at the printed number of decimals."""
     d = Decimal(printed)
-    half_ulp = Decimal(1).scaleb(d.as_tuple().exponent) / 2
+    exponent = d.as_tuple().exponent
+    assert isinstance(exponent, int), f"printed value {printed!r} is not a finite number"
+    half_ulp = Decimal(1).scaleb(exponent) / 2
     return abs(Decimal(repr(computed)) - d) <= half_ulp
 
 
-def _result(col: dict):
+def _result(col: dict[str, Any]) -> GCIResult:
     return grid_convergence([float(x) for x in col["phi"]], cells=col["N"], dim=2)
 
 
-def _computed(col: dict) -> dict[str, float]:
+def _computed(col: dict[str, Any]) -> dict[str, float]:
     res = _result(col)
     rich = res.richardson
-    assert rich is not None
+    assert rich is not None and res.r32 is not None
+    assert rich.e_a is not None and rich.e_ext is not None and rich.gci_fine is not None
     return {
         "r21": res.r21,
         "r32": res.r32,
@@ -72,7 +78,7 @@ def test_e_ext_erratum() -> None:
     """
     col = COLUMNS["axial_velocity_p_below_1"]
     rich = _result(col).richardson
-    assert rich is not None
+    assert rich is not None and rich.e_ext is not None
     assert agrees(100 * rich.e_ext, "0.85")
     assert not agrees(100 * rich.e_ext, col["e_ext_pct"])
     phi1 = float(col["phi"][0])
@@ -97,6 +103,7 @@ def test_oscillatory_column_is_not_a_clean_gci() -> None:
     assert res.method is Method.SPREAD_BOUND
     assert not res.richardson_used
     # Spread bound: 3 x (6.0909 - 5.9624) / 2, about seven times the 0.5% Richardson GCI.
+    assert res.uncertainty is not None
     assert res.uncertainty == pytest.approx(3 * (6.0909 - 5.9624) / 2)
     assert res.richardson is not None and res.richardson.gci_fine is not None
     assert res.uncertainty > 5 * res.richardson.gci_fine * abs(res.phi[0])
