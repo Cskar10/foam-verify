@@ -1,0 +1,55 @@
+# pitzDaily: the backward-facing step, simpleFoam, k-epsilon with wall functions. See generate.py
+# and README.md. Pressures are kinematic (m^2/s^2); lengths in step heights, H = 25.4 mm.
+name = "pitzDaily"
+dim = 2            # one cell thick, empty front and back
+formal_order = 2
+refined = "mesh"   # every block refined, near-wall cells included
+
+[[levels]]
+name = "139k"
+path = "n139k"
+
+[[levels]]
+name = "62k"
+path = "n62k"
+
+[[levels]]
+name = "28k"
+path = "n28k"
+
+[[levels]]
+name = "12k"
+path = "n12k"
+
+# The SIMPLE iterations do not settle to a steady state: the pressures keep oscillating by up to
+# a few parts in a thousand. Each pressure QoI is the mean over the last 10% of the run (80
+# samples, 800 iterations, several periods of the oscillation), and the same window is judged
+# by the iterative check.
+
+# Total-pressure loss: inlet minus outlet area-averaged p + |U|^2/2.
+[[qoi]]
+name = "dp0"
+file = "postProcessing/pressureDrop/*/multiFieldValue.dat"
+column = "Group1"
+reduction = "window_mean"
+
+# Static pressure difference, inlet minus outlet: negative, because the outlet (33.2 mm) is wider
+# than the inlet (25.4 mm) and the pressure recovers.
+[[qoi]]
+name = "dp"
+file = "postProcessing/pressureDrop/*/multiFieldValue.dat"
+column = "Group0"
+reduction = "window_mean"
+
+# Reattachment length: the last change of sign of the lower-wall shear stress along x, in step
+# heights (the step is at x = 0). Written 11 times over the last 2000 iterations; all 11 are the
+# iterative-convergence window.
+[[qoi]]
+name = "xR/H"
+file = "postProcessing/lowerWallShear/*/wallShearStress_lowerWall.raw"
+profile = "last_crossing"
+axis = "x"
+component = "x"
+scale = 39.37007874015748
+window = 1.0
+min_samples = 11

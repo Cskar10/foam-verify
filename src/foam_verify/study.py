@@ -31,18 +31,23 @@ study.toml, levels finest first:
     min_samples = 50           # ...but at least this many
     scale = 1.0                # multiplies the reduced value (unit or non-dimensional factor)
 
-A QoI can instead be the extremum of a sampled profile: a probes function object with one
-point per column. The value is the extremum of its last row; the extremum of every row is the
-history the iterative check reads. The discrete extremum and its two neighbours are fitted
-with a parabola, so the value moves smoothly with the field rather than jumping from probe to
-probe. Give profile and axis instead of column:
+A QoI can instead come from a sampled profile: a probes function object with one point per
+column, or the raw files of a surfaces function object (surfaceFormat raw), one per time
+folder. The value comes from the last row or the latest file; every row or file in turn is
+the history the iterative check reads. Give profile and axis instead of column:
 
     [[qoi]]
     name = "u_min"
     file = "postProcessing/centreline/*/U"
-    profile = "min"            # min | max
-    axis = "y"                 # probe coordinate along the profile: x | y | z
+    profile = "min"            # min | max | first_crossing | last_crossing
+    axis = "y"                 # coordinate along the profile: x | y | z
     component = "x"
+
+min and max fit a parabola through the discrete extremum and its two neighbours, so the value
+moves smoothly with the field rather than jumping from point to point. first_crossing and
+last_crossing are the coordinate where the values change sign, interpolated between the two
+points that bracket it: the reattachment point behind a step is the last change of sign of the
+wall shear stress, say.
 """
 
 from __future__ import annotations
@@ -67,7 +72,9 @@ from .iterative import Options as IterativeOptions
 
 MANIFEST = "study.toml"
 REDUCTIONS = ("last", "window_mean")
-PROFILES = ("min", "max")
+EXTREMA = ("min", "max")
+CROSSINGS = ("first_crossing", "last_crossing")
+PROFILES = EXTREMA + CROSSINGS
 _COMPONENTS = {"x": 0, "y": 1, "z": 2, "0": 0, "1": 1, "2": 2}
 _TWO_D_PATCHES = ("empty", "wedge")
 _TOKEN = re.compile(r"\([^()]*\)|\S+")
@@ -232,7 +239,7 @@ def _parse_qoi(item: object, i: int) -> QoI:
             raise StudyError(f"{where}: column is required: a header name or a 0-based index")
     else:
         if profile not in PROFILES:
-            raise StudyError(f"{where}: profile must be min or max")
+            raise StudyError(f"{where}: profile must be one of {', '.join(PROFILES)}")
         if column is not None:
             raise StudyError(f"{where}: a profile qoi uses every probe column; drop column")
         if raw.get("reduction", "last") != "last":
@@ -482,7 +489,7 @@ def reduce_series(series: Series, qoi: QoI) -> tuple[float, int, str | None]:
 
 @dataclass(frozen=True)
 class Profile:
-    """Probe values along a line at one time: coordinates along the axis, sorted."""
+    """Values along a line or a surface at one time: coordinates along the axis, sorted."""
 
     coords: tuple[float, ...]
     values: tuple[float, ...]
@@ -507,7 +514,53 @@ def _profile_row(path: Path, coords: dict[int, float], n: int, row: str, qoi: Qo
     )
 
 
+def _read_raw(path: Path, qoi: QoI) -> Profile:
+    """A raw surface file (surfaceFormat raw): x y z and the field's components, per face.
+
+    Its folder name is its time. Faces may share a coordinate along the axis (a wall across
+    it, say): they are kept, in the order written.
+    """
+    axis = qoi.axis if qoi.axis is not None else 0
+    time = _start_time(path)
+    if not math.isfinite(time):
+        raise StudyError(
+            f"{path}: a raw surface file's folder is its time, not {path.parent.name!r}"
+        )
+    width: int | None = None
+    points: list[tuple[float, float]] = []
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        parts = line.split()
+        if not parts or parts[0].startswith("#"):
+            continue
+        if width is None:
+            width = len(parts) - 3
+            if width < 1:
+                raise StudyError(f"{path}:{n}: expected x y z and the field's values")
+            if (width > 1) != (qoi.component is not None):
+                need = "set component" if width > 1 else "component is set but it is a scalar"
+                raise StudyError(f"{path}: the field has {width} component(s); {need}")
+            if qoi.component is not None and qoi.component >= width:
+                raise StudyError(f"{path}: component {qoi.component} out of range")
+        if len(parts) != width + 3:
+            raise StudyError(f"{path}:{n}: {len(parts)} columns, expected {width + 3}")
+        try:
+            points.append((float(parts[axis]), float(parts[3 + (qoi.component or 0)])))
+        except ValueError as exc:
+            raise StudyError(f"{path}:{n}: not a number") from exc
+    if not points:
+        raise StudyError(f"{path}: no data rows")
+    points.sort(key=lambda p: p[0])
+    return Profile(
+        coords=tuple(c for c, _ in points),
+        values=tuple(v for _, v in points),
+        time=time,
+        file=str(path),
+    )
+
+
 def _read_profiles(path: Path, qoi: QoI, *, last_only: bool = False) -> list[Profile]:
+    if path.suffix == ".raw":
+        return [_read_raw(path, qoi)]
     axis = qoi.axis if qoi.axis is not None else 0
     coords: dict[int, float] = {}
     rows: list[tuple[int, str]] = []
@@ -541,7 +594,7 @@ def _profile_files(case: Path, qoi: QoI) -> list[Path]:
 
 
 def read_profile(case: Path, qoi: QoI) -> Profile:
-    """The last row of the latest file matching qoi.file, one value per probe."""
+    """The last row of the latest file matching qoi.file: of a probes file, or a raw surface."""
     case = case.resolve()
     latest = _profile_files(case, qoi)[-1]
     (profile,) = _read_profiles(latest, qoi, last_only=True)
@@ -569,7 +622,7 @@ def profile_extremum(profile: Profile, kind: str) -> tuple[float, float, str | N
     At the end of the profile there is no neighbour on one side, so the probe value itself is
     returned with a note.
     """
-    if kind not in PROFILES:
+    if kind not in EXTREMA:
         raise ValueError(f"kind must be min or max, got {kind!r}")
     x, y = profile.coords, profile.values
     pick = min if kind == "min" else max
@@ -588,6 +641,26 @@ def profile_extremum(profile: Profile, kind: str) -> tuple[float, float, str | N
     return y0 + d01 * (s - x0) + a * (s - x0) * (s - x1), s, None
 
 
+def profile_crossing(profile: Profile, kind: str) -> float | None:
+    """Where the values change sign along the axis, first or last; None if they never do.
+
+    The crossing is interpolated linearly between the two points that bracket it. Values of
+    exactly zero are passed over, so a sign change through a zero is found between its
+    neighbours.
+    """
+    if kind not in CROSSINGS:
+        raise ValueError(f"kind must be first_crossing or last_crossing, got {kind!r}")
+    points = [(c, v) for c, v in zip(profile.coords, profile.values, strict=True) if v]
+    found = [
+        x0 + (x1 - x0) * y0 / (y0 - y1)
+        for (x0, y0), (x1, y1) in zip(points, points[1:], strict=False)
+        if (y0 < 0) != (y1 < 0)
+    ]
+    if not found:
+        return None
+    return found[0] if kind == "first_crossing" else found[-1]
+
+
 def _qoi_value(
     case: Path, qoi: QoI, axis_names: str = "xyz"
 ) -> tuple[float, int, list[str], Series]:
@@ -600,15 +673,37 @@ def _qoi_value(
     kind = qoi.profile
     profiles = read_profiles(case, qoi)
     profile = profiles[-1]
-    value, where, note = profile_extremum(profile, kind)
     axis = axis_names[qoi.axis if qoi.axis is not None else 0]
+    files = tuple(dict.fromkeys(p.file for p in profiles))
+    if kind in CROSSINGS:
+        positions: list[float] = []
+        for p in profiles:
+            where = profile_crossing(p, kind)
+            if where is None:
+                raise StudyError(
+                    f"qoi {qoi.name}: {p.file} (t = {p.time:g}): the values never change sign"
+                )
+            positions.append(where)
+        notes = [f"{kind.replace('_', ' ')} at {axis} = {positions[-1]:.6g} (t = {profile.time:g})"]
+        history = Series(
+            x=tuple(p.time for p in profiles),
+            y=tuple(qoi.scale * v for v in positions),
+            files=files,
+        )
+        return qoi.scale * positions[-1], len(profile.values), notes, history
+    if len(set(profile.coords)) != len(profile.coords):
+        raise StudyError(
+            f"qoi {qoi.name}: {profile.file}: points share a coordinate along {axis}, so the "
+            f"profile {kind} cannot be fitted"
+        )
+    value, where, note = profile_extremum(profile, kind)
     notes = [f"{kind} at {axis} = {where:.6g} (t = {profile.time:g})"]
     if note:
         notes.append(note)
     history = Series(
         x=tuple(p.time for p in profiles),
         y=tuple(qoi.scale * profile_extremum(p, kind)[0] for p in profiles),
-        files=tuple(dict.fromkeys(p.file for p in profiles)),
+        files=files,
     )
     return qoi.scale * value, len(profile.values), notes, history
 

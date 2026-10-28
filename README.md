@@ -5,10 +5,10 @@ convergence index (GCI), iterative convergence of the quantities you report, set
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
-convergence check and the settings consistency check exist, and two studies are committed under
-`studies/` (a square duct with an exact answer, and the lid-driven cavity). A third study
-(`pitzDaily`) and the `report` command come next; this README will lead with the results once
-they are committed.
+convergence check and the settings consistency check exist, and three studies are committed under
+[`studies/`](studies/README.md): a square duct with an exact answer, the lid-driven cavity, and
+`pitzDaily`, where refining the mesh moves the walls through the wall-function switch. The
+`report` command comes next; this README will lead with its results once they are committed.
 
 ## GCI from numbers
 

@@ -12,12 +12,14 @@ import pytest
 from foam_verify.gci import Scope, Verdict
 from foam_verify.iterative import Verdict as IterativeVerdict
 from foam_verify.study import (
+    Profile,
     QoI,
     StudyError,
     assess_study,
     cell_count,
     load_study,
     patch_types,
+    profile_crossing,
     profile_extremum,
     read_profile,
     read_profiles,
@@ -454,6 +456,130 @@ def test_study_with_a_profile_qoi(study_dir: Path) -> None:
     assert any("max at x = 0.42" in note for note in peak.notes)
     assert peak.gci.richardson is not None
     assert peak.gci.richardson.p == pytest.approx(2.0, abs=1e-9)
+
+
+# --- raw surface files and crossings ------------------------------------------------------
+
+
+def write_raw(path: Path, points: Sequence[tuple[float, float]], vector: bool = True) -> None:
+    """A raw surface file as surfaces writes it: x y z and the field, here (v, 0, 0) or v."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    head = "x y z  tau_x tau_y tau_z" if vector else "x y z  p"
+    rows = [f"{x!r} -0.0254 0 {v!r} 0 0" if vector else f"{x!r} -0.0254 0 {v!r}" for x, v in points]
+    path.write_text(f"# tau  FACE_DATA {len(points)}\n# {head}\n" + "\n".join(rows) + "\n")
+
+
+RAW = "postProcessing/shear/*/tau_lowerWall.raw"
+
+
+def test_crossings_first_last_and_none() -> None:
+    profile = Profile((0.0, 1.0, 2.0, 3.0, 4.0), (1.0, -1.0, -3.0, 1.0, 2.0), 0.0, "f")
+    assert profile_crossing(profile, "first_crossing") == pytest.approx(0.5)
+    assert profile_crossing(profile, "last_crossing") == pytest.approx(2.75)
+    assert profile_crossing(Profile((0.0, 1.0), (1.0, 2.0), 0.0, "f"), "last_crossing") is None
+    # A value of exactly zero is passed over: the change of sign is found between its neighbours.
+    through_zero = Profile((0.0, 1.0, 2.0), (1.0, 0.0, -1.0), 0.0, "f")
+    assert profile_crossing(through_zero, "first_crossing") == pytest.approx(1.0)
+    with pytest.raises(ValueError, match="first_crossing or last_crossing"):
+        profile_crossing(profile, "min")
+
+
+def test_raw_surface_files_give_one_profile_per_time(tmp_path: Path) -> None:
+    # The crossing moves from x = 0.30 towards 0.25 as the run settles; points written unsorted.
+    xs = [0.4, 0.1, 0.0, 0.2, 0.3, 0.5]
+    for time, xr in ((100, 0.30), (200, 0.26), (300, 0.25)):
+        write_raw(
+            tmp_path / f"postProcessing/shear/{time}/tau_lowerWall.raw", [(x, x - xr) for x in xs]
+        )
+    qoi = QoI("xr", RAW, None, component=0, profile="last_crossing", axis=0)
+    profiles = read_profiles(tmp_path, qoi)
+    assert [p.time for p in profiles] == [100, 200, 300]
+    assert profiles[0].coords == (0.0, 0.1, 0.2, 0.3, 0.4, 0.5)
+    assert profiles[-1].file == "postProcessing/shear/300/tau_lowerWall.raw"
+    assert [profile_crossing(p, "last_crossing") for p in profiles] == pytest.approx(
+        [0.30, 0.26, 0.25]
+    )
+    assert read_profile(tmp_path, qoi) == profiles[-1]
+
+
+@pytest.mark.parametrize(
+    ("component", "vector", "folder", "message"),
+    [
+        (None, True, "100", "set component"),
+        (0, False, "100", "it is a scalar"),
+        (3, True, "100", "out of range"),
+        (0, True, "latest", "folder is its time"),
+    ],
+)
+def test_raw_surface_file_errors(
+    tmp_path: Path, component: int | None, vector: bool, folder: str, message: str
+) -> None:
+    write_raw(
+        tmp_path / f"postProcessing/shear/{folder}/tau_lowerWall.raw",
+        [(0.0, 1.0), (1.0, -1.0)],
+        vector,
+    )
+    qoi = QoI("xr", RAW, None, component=component, profile="last_crossing", axis=0)
+    with pytest.raises(StudyError, match=message):
+        read_profiles(tmp_path, qoi)
+
+
+def test_study_with_a_crossing_qoi(study_dir: Path) -> None:
+    # The crossing settles to 0.3 + phi(h) on each level: p = 2 comes back, and the history of
+    # the crossing over the sampled times feeds the iterative check.
+    xs = [k / 20 for k in range(41)]
+    for name, h in (("fine", 0.1), ("medium", 0.2), ("coarse", 0.4)):
+        for time in range(100, 1200, 100):
+            xr = 0.3 + phi(h) + 0.5 ** (time / 100)
+            write_raw(
+                study_dir / name / f"postProcessing/shear/{time}/tau_lowerWall.raw",
+                [(x, x - xr) for x in xs],
+            )
+    path = study_dir / "study.toml"
+    path.write_text(
+        path.read_text()
+        + f'\n[[qoi]]\nname = "xr"\nfile = "{RAW}"\nprofile = "last_crossing"\naxis = "x"\n'
+        'component = "x"\nwindow = 1.0\nmin_samples = 11\n'
+    )
+    xr = assess_study(load_study(study_dir)).qois[1]
+    assert xr.values == pytest.approx([0.3 + phi(h) + 0.5**11 for h in (0.1, 0.2, 0.4)])
+    assert xr.samples == (41, 41, 41)
+    assert any("last crossing at x = " in note for note in xr.notes)
+    assert xr.gci.richardson is not None
+    assert xr.gci.richardson.p == pytest.approx(2.0, abs=1e-9)
+    assert [r.samples for r in xr.iterative] == [11, 11, 11]
+
+
+def test_a_crossing_that_is_missing_is_an_error(study_dir: Path) -> None:
+    for name in ("fine", "medium", "coarse"):
+        write_raw(
+            study_dir / name / "postProcessing/shear/100/tau_lowerWall.raw",
+            [(0.0, 1.0), (1.0, 2.0)],
+        )
+    path = study_dir / "study.toml"
+    path.write_text(
+        path.read_text()
+        + f'\n[[qoi]]\nname = "xr"\nfile = "{RAW}"\nprofile = "last_crossing"\naxis = "x"\n'
+        'component = "x"\n'
+    )
+    with pytest.raises(StudyError, match="never change sign"):
+        assess_study(load_study(study_dir))
+
+
+def test_an_extremum_needs_distinct_coordinates(study_dir: Path) -> None:
+    # A wall across the axis puts several faces at one coordinate: no parabola through them.
+    for name in ("fine", "medium", "coarse"):
+        write_raw(
+            study_dir / name / "postProcessing/shear/100/tau_lowerWall.raw",
+            [(0.0, 1.0), (0.0, 2.0), (1.0, 0.5), (2.0, 3.0)],
+        )
+    path = study_dir / "study.toml"
+    path.write_text(
+        path.read_text()
+        + f'\n[[qoi]]\nname = "m"\nfile = "{RAW}"\nprofile = "min"\naxis = "x"\ncomponent = "x"\n'
+    )
+    with pytest.raises(StudyError, match="share a coordinate"):
+        assess_study(load_study(study_dir))
 
 
 @pytest.mark.parametrize(

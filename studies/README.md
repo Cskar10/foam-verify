@@ -3,6 +3,14 @@
 Generator scripts and committed outputs for the verification studies. Scripts here are run by
 hand inside the pinned container; foam-verify itself never runs a solver.
 
+- [`duct/`](duct/README.md): fully developed laminar flow in a square duct, where f Re is known
+  exactly. The honesty test: the fine-grid GCI band contains the exact value.
+- [`cavity/`](cavity/README.md): the lid-driven cavity at Re = 100, the recognised benchmark.
+  Every QoI converges monotonically and passes cleanly.
+- [`pitzDaily/`](pitzDaily/README.md): the backward-facing step with k-epsilon and wall
+  functions. Refining the mesh moves the walls through the wall-function switch, and no QoI
+  converges with the mesh.
+
 ## Container
 
 Every study uses one OpenFOAM build, pinned by digest:

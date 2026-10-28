@@ -144,3 +144,53 @@ def test_a_changed_scheme_on_one_cavity_level_is_caught(tmp_path: Path) -> None:
         "system/fvSchemes: divSchemes/div(phi,U): 'Gauss linear' on 160x160, 80x80, 40x40; "
         "'Gauss upwind' on 20x20",
     )
+
+
+# --- pitzDaily ------------------------------------------------------------------------------
+
+PITZ = STUDIES / "pitzDaily"
+PITZ_LEVELS = ("n139k", "n62k", "n28k", "n12k")
+
+
+def test_pitzdaily_levels_differ_only_in_the_mesh() -> None:
+    res = assess_study(load_study(PITZ))
+    assert [lv.cells for lv in res.levels] == [139025, 62257, 27703, 12225]
+    assert res.warnings == ()
+    check = res.consistency
+    assert check is not None and check.clean_pass, check
+    assert check.differences == ()
+
+
+def test_pitzdaily_walls_cross_the_wall_function_switch() -> None:
+    # The lower wall's mean k-based y+ at the last iteration (yPlus function object): above the
+    # stepwise switch of nutkWallFunction, 11.53, on the tutorial mesh and below it from 28k on.
+    means: list[float] = []
+    for level in PITZ_LEVELS:
+        rows = (PITZ / level / "postProcessing/yPlus/0/yPlus.dat").read_text().splitlines()
+        lower = [row.split() for row in rows if not row.startswith("#") and "lowerWall" in row]
+        means.append(float(lower[-1][4]))
+    assert means == sorted(means)
+    assert means[-1] > 11.53 > means[-2]
+
+
+def test_pitzdaily_quantities_do_not_converge_with_the_mesh() -> None:
+    qois = {q.name: q for q in assess_study(load_study(PITZ)).qois}
+    for qoi in qois.values():
+        _, coarser = qoi.gci.triplets
+        assert coarser.verdict is Verdict.DIVERGENT, qoi.name
+    assert qois["xR/H"].gci.verdict is Verdict.DIVERGENT
+    assert qois["xR/H"].gci.uncertainty is None
+    dp = qois["dp"].gci
+    assert dp.verdict is Verdict.MONOTONIC and not dp.clean_pass
+    assert any("asymptotic-range ratio" in w for w in dp.warnings)
+    # The loss is monotonic on the finest triplet, at a low order; see the README.
+    dp0 = qois["dp0"].gci
+    assert dp0.verdict is Verdict.MONOTONIC and dp0.richardson is not None
+    assert dp0.richardson.p == pytest.approx(0.846, abs=0.001)
+
+
+def test_pitzdaily_reattachment_from_the_lower_wall_shear_stress() -> None:
+    xr = {q.name: q for q in assess_study(load_study(PITZ)).qois}["xR/H"]
+    assert xr.values == pytest.approx((6.8379, 6.9091, 6.9803, 7.0237), abs=1e-4)
+    assert [r.samples for r in xr.iterative] == [11] * 4
+    assert all(r.verdict is IterativeVerdict.CONVERGED for r in xr.iterative)
