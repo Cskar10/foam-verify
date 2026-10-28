@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from foam_verify.gci import (
@@ -166,7 +168,7 @@ def test_observed_order_rejects_zero_difference() -> None:
         ({"cells": (1600, 400, 100), "dim": 4}, "dim"),
     ],
 )
-def test_bad_input_raises(kwargs: dict, message: str) -> None:
+def test_bad_input_raises(kwargs: dict[str, Any], message: str) -> None:
     with pytest.raises(ValueError, match=message):
         grid_convergence([1.0, 1.1, 1.3], **kwargs)
 

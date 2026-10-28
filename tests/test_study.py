@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import shutil
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import pytest
@@ -279,27 +279,27 @@ def test_window_and_min_samples_set_the_iterative_window(study_dir: Path) -> Non
 # --- manifest validation ----------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    ("edit", "message"),
-    [
-        (lambda t: t.replace('refined = "mesh"\n', ""), "refined is required"),
-        (lambda t: t.replace('refined = "mesh"', 'refined = "all"'), "refined must be"),
-        (lambda t: t.replace("dim = 2", "dim = 4"), "dim"),
-        (lambda t: t + "\ncolour = 1\n", "unknown key"),
-        (lambda t: t.replace('path = "fine"', 'path = "../elsewhere"'), "outside"),
-        (lambda t: t.replace('path = "fine"', 'path = "missing"'), "does not exist"),
-        (lambda t: t.replace("dim = 2", "dim = 2\nlayer_cells = 10"), "only to refined = core"),
-        (
-            lambda t: t.replace('refined = "mesh"', 'refined = "boundary-layer"'),
-            "first_layer_height",
-        ),
-        (
-            lambda t: t.replace('column = "areaAverage(p)"', 'column = "x"\nreduction = "max"'),
-            "reduction",
-        ),
-    ],
-)
-def test_manifest_errors(study_dir: Path, edit, message: str) -> None:  # type: ignore[no-untyped-def]
+MANIFEST_EDITS: list[tuple[Callable[[str], str], str]] = [
+    (lambda t: t.replace('refined = "mesh"\n', ""), "refined is required"),
+    (lambda t: t.replace('refined = "mesh"', 'refined = "all"'), "refined must be"),
+    (lambda t: t.replace("dim = 2", "dim = 4"), "dim"),
+    (lambda t: t + "\ncolour = 1\n", "unknown key"),
+    (lambda t: t.replace('path = "fine"', 'path = "../elsewhere"'), "outside"),
+    (lambda t: t.replace('path = "fine"', 'path = "missing"'), "does not exist"),
+    (lambda t: t.replace("dim = 2", "dim = 2\nlayer_cells = 10"), "only to refined = core"),
+    (
+        lambda t: t.replace('refined = "mesh"', 'refined = "boundary-layer"'),
+        "first_layer_height",
+    ),
+    (
+        lambda t: t.replace('column = "areaAverage(p)"', 'column = "x"\nreduction = "max"'),
+        "reduction",
+    ),
+]
+
+
+@pytest.mark.parametrize(("edit", "message"), MANIFEST_EDITS)
+def test_manifest_errors(study_dir: Path, edit: Callable[[str], str], message: str) -> None:
     path = study_dir / "study.toml"
     path.write_text(edit(path.read_text()))
     with pytest.raises(StudyError, match=message):
@@ -378,7 +378,7 @@ def test_fitted_extremum_error_is_third_order_in_the_spacing() -> None:
     def f(x: float) -> float:  # minimum -0.25 at x = 0.5; cubic term shifts the fit
         return (x - 0.5) ** 2 - 0.25 + 0.4 * (x - 0.5) ** 3
 
-    errors = []
+    errors: list[float] = []
     for n in (32, 64):
         xs = tuple((k + 0.3) / n for k in range(n))
         prof = Profile(xs, tuple(f(x) for x in xs), 0.0, "f")

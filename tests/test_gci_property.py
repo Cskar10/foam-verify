@@ -21,7 +21,9 @@ def _sizes(h1: float, r21: float, r32: float) -> tuple[float, float, float]:
 
 @settings(max_examples=300, deadline=None)
 @given(p=orders, c=coefficients, phi0=limits, h1=fine_sizes, r21=ratios, r32=ratios)
-def test_monotonic_power_law(p, c, phi0, h1, r21, r32) -> None:
+def test_monotonic_power_law(
+    p: float, c: float, phi0: float, h1: float, r21: float, r32: float
+) -> None:
     h = _sizes(h1, r21, r32)
     res = grid_convergence([phi0 + c * x**p for x in h], h=h)
     assert res.verdict is Verdict.MONOTONIC
@@ -32,7 +34,9 @@ def test_monotonic_power_law(p, c, phi0, h1, r21, r32) -> None:
 
 @settings(max_examples=300, deadline=None)
 @given(p=orders, c=coefficients, phi0=limits, h1=fine_sizes, r21=ratios, r32=ratios)
-def test_alternating_power_law(p, c, phi0, h1, r21, r32) -> None:
+def test_alternating_power_law(
+    p: float, c: float, phi0: float, h1: float, r21: float, r32: float
+) -> None:
     h = _sizes(h1, r21, r32)
     values = [phi0 + c * (-1) ** k * x**p for k, x in enumerate(h)]
     res = grid_convergence(values, h=h)
@@ -46,7 +50,9 @@ def test_alternating_power_law(p, c, phi0, h1, r21, r32) -> None:
 
 @settings(max_examples=300, deadline=None)
 @given(p=orders, c=coefficients, phi0=limits, h1=fine_sizes, r21=ratios, r32=ratios)
-def test_growing_differences_are_divergent(p, c, phi0, h1, r21, r32) -> None:
+def test_growing_differences_are_divergent(
+    p: float, c: float, phi0: float, h1: float, r21: float, r32: float
+) -> None:
     h = _sizes(h1, r21, r32)
     res = grid_convergence([phi0 + c * x ** (-p) for x in h], h=h)
     assert res.verdict is Verdict.DIVERGENT
