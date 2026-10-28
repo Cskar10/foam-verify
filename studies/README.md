@@ -1,7 +1,8 @@
 # Studies
 
 Generator scripts and committed outputs for the verification studies. Scripts here are run by
-hand inside the pinned container; foam-verify itself never runs a solver.
+hand inside the pinned container; foam-verify itself never runs a solver. Each study folder also
+holds foam-verify's report on it, `report.md` and `report.json`; `make reports` regenerates them.
 
 - [`duct/`](duct/README.md): fully developed laminar flow in a square duct, where f Re is known
   exactly. The honesty test: the fine-grid GCI band contains the exact value.

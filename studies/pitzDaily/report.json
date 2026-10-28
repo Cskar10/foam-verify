@@ -1,0 +1,1116 @@
+{
+  "tool": "foam-verify",
+  "version": "0.0.1",
+  "schema": 1,
+  "study": "pitzDaily",
+  "clean_pass": false,
+  "summary": "0 of 3 quantities of interest are clean passes",
+  "layer_cells": null,
+  "criteria": {
+    "formal_order": 2.0,
+    "fs_three_grid": 1.25,
+    "fs_fallback": 3.0,
+    "min_refinement_ratio": 1.3,
+    "asymptotic_band": [
+      0.9,
+      1.1
+    ],
+    "p_min": 0.5,
+    "p_max_factor": 2.0,
+    "round_off_rel": 1e-10,
+    "p_tol": 1e-12,
+    "p_max_iter": 500,
+    "spread_factor": 3.0
+  },
+  "blocking": [],
+  "qois": [
+    {
+      "name": "dp0",
+      "clean_pass": false,
+      "value": 16.477933950821374,
+      "uncertainty": 1.3126417129284318,
+      "band": [
+        15.165292237892942,
+        17.790575663749806
+      ],
+      "relative_uncertainty": 0.07966057618910413,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.7054: monotonic convergence (0 < R < 0.9922)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 1.494, r32 = 1.499; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 0.8456 (fixed-point iteration, 6 steps), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.026, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "fail",
+          "detail": "grids 2-4: divergence, R = 1.084"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 0.0031 (28k), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "the levels differ only in the mesh (10 files compared)"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [
+        "coarser triplet (grids 2-4): divergence, so the grids are not all in the asymptotic range; leave out a level that is too coarse rather than accept grids 1-3 alone"
+      ],
+      "definition": {
+        "name": "dp0",
+        "file": "postProcessing/pressureDrop/*/multiFieldValue.dat",
+        "column": "Group1",
+        "component": null,
+        "reduction": "window_mean",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": null,
+        "axis": null
+      }
+    },
+    {
+      "name": "dp",
+      "clean_pass": false,
+      "value": -3.6075081294157996,
+      "uncertainty": 1.5075156773592393,
+      "band": [
+        -5.115023806775039,
+        -2.0999924520565605
+      ],
+      "relative_uncertainty": 0.41788282195870385,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.7126: monotonic convergence (0 < R < 0.9922)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 1.494, r32 = 1.499; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 0.8204 (fixed-point iteration, 6 steps), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "fail",
+          "detail": "GCI_32 / (r21^p GCI_21) = 0.8846, outside [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "fail",
+          "detail": "grids 2-4: divergence, R = 1.033"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "fail",
+          "detail": "converged on 139k, 62k, 12k; oscillating on 28k; warnings on 28k (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 0.0028 (28k), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "the levels differ only in the mesh (10 files compared)"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [
+        "asymptotic-range ratio GCI_32/(r21^p GCI_21) = 0.8846 is outside [0.9, 1.1]: the grids may not be in the asymptotic range",
+        "coarser triplet (grids 2-4): divergence, so the grids are not all in the asymptotic range; leave out a level that is too coarse rather than accept grids 1-3 alone",
+        "level 28k: the window holds 0 full cycle(s) of the oscillation; ITTC 7.5-03-02-01 takes the range over the last 2 periods, so u_it may understate the amplitude and drift cannot be told from a slow oscillation: widen the window"
+      ],
+      "definition": {
+        "name": "dp",
+        "file": "postProcessing/pressureDrop/*/multiFieldValue.dat",
+        "column": "Group0",
+        "component": null,
+        "reduction": "window_mean",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": null,
+        "axis": null
+      }
+    },
+    {
+      "name": "xR/H",
+      "clean_pass": false,
+      "value": 6.837915922465422,
+      "uncertainty": null,
+      "band": null,
+      "relative_uncertainty": null,
+      "grid_verdict": "divergence",
+      "method": "none",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "fail",
+          "detail": "grids 1-3: convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 0.9983: R >= ln r21 / ln r32 = 0.9922, monotonic divergence (Eca and Hoekstra 2014); the solution is not grid-converged, so no GCI is given"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 1.494, r32 = 1.499; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "n/a",
+          "detail": "not defined: divergence, R = 0.9983"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "n/a",
+          "detail": "checked only for monotonic convergence"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "fail",
+          "detail": "grids 2-4: divergence, R = 1.645"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "n/a",
+          "detail": "no discretisation uncertainty U to compare with"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "the levels differ only in the mesh (10 files compared)"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [
+        "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 0.9983: R >= ln r21 / ln r32 = 0.9922, monotonic divergence (Eca and Hoekstra 2014)",
+        "the solution is not grid-converged, so no GCI is given"
+      ],
+      "definition": {
+        "name": "xR/H",
+        "file": "postProcessing/lowerWallShear/*/wallShearStress_lowerWall.raw",
+        "column": null,
+        "component": 0,
+        "reduction": "last",
+        "window": 1.0,
+        "min_samples": 11,
+        "scale": 39.37007874015748,
+        "profile": "last_crossing",
+        "axis": 0
+      }
+    }
+  ],
+  "result": {
+    "name": "pitzDaily",
+    "dim": 2,
+    "scope": "mesh",
+    "levels": [
+      {
+        "name": "139k",
+        "path": "n139k",
+        "cells": 139025,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "62k",
+        "path": "n62k",
+        "cells": 62257,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "28k",
+        "path": "n28k",
+        "cells": 27703,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "12k",
+        "path": "n12k",
+        "cells": 12225,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      }
+    ],
+    "qois": [
+      {
+        "name": "dp0",
+        "values": [
+          16.477933950821374,
+          16.053189614224873,
+          15.45108052518125,
+          14.89561481562975
+        ],
+        "samples": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "notes": [],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": false,
+          "method": "gci",
+          "phi": [
+            16.477933950821374,
+            16.053189614224873,
+            15.45108052518125
+          ],
+          "h": [
+            1.0,
+            1.4943501007748117,
+            2.2401806977410477
+          ],
+          "r21": 1.4943501007748117,
+          "r32": 1.4991003089433508,
+          "convergence_ratio": 0.7054275451499251,
+          "richardson": {
+            "p": 0.8455829216185297,
+            "p_solver": "fixed_point",
+            "p_iterations": 6,
+            "safety_factor": 1.25,
+            "phi_ext": 17.528047321164117,
+            "e_a": 0.025776552926122652,
+            "e_ext": 0.05991045956812262,
+            "gci_fine": 0.07966057618910415,
+            "gci_coarse": 0.11484148496199482,
+            "asymptotic_ratio": 1.026458563488226
+          },
+          "richardson_used": true,
+          "uncertainty": 1.3126417129284318,
+          "band": [
+            15.165292237892942,
+            17.790575663749806
+          ],
+          "reasons": [
+            "convergence ratio R = 0.7054: monotonic convergence (0 < R < 0.9922)"
+          ],
+          "warnings": [
+            "coarser triplet (grids 2-4): divergence, so the grids are not all in the asymptotic range; leave out a level that is too coarse rather than accept grids 1-3 alone"
+          ],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                16.477933950821374,
+                16.053189614224873,
+                15.45108052518125
+              ],
+              "h": [
+                1.0,
+                1.4943501007748117,
+                2.2401806977410477
+              ],
+              "r21": 1.4943501007748117,
+              "r32": 1.4991003089433508,
+              "convergence_ratio": 0.7054275451499251,
+              "richardson": {
+                "p": 0.8455829216185297,
+                "p_solver": "fixed_point",
+                "p_iterations": 6,
+                "safety_factor": 1.25,
+                "phi_ext": 17.528047321164117,
+                "e_a": 0.025776552926122652,
+                "e_ext": 0.05991045956812262,
+                "gci_fine": 0.07966057618910415,
+                "gci_coarse": 0.11484148496199482,
+                "asymptotic_ratio": 1.026458563488226
+              },
+              "richardson_used": true,
+              "uncertainty": 1.3126417129284318,
+              "band": [
+                15.165292237892942,
+                17.790575663749806
+              ],
+              "reasons": [
+                "convergence ratio R = 0.7054: monotonic convergence (0 < R < 0.9922)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "divergence",
+              "clean_pass": false,
+              "method": "none",
+              "phi": [
+                16.053189614224873,
+                15.45108052518125,
+                14.89561481562975
+              ],
+              "h": [
+                1.4943501007748117,
+                2.2401806977410477,
+                3.372267507043192
+              ],
+              "r21": 1.4991003089433508,
+              "r32": 1.5053551307016069,
+              "convergence_ratio": 1.08397166321893,
+              "richardson": null,
+              "richardson_used": false,
+              "uncertainty": null,
+              "band": null,
+              "reasons": [
+                "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 1.084: R >= ln r21 / ln r32 = 0.9898, monotonic divergence (Eca and Hoekstra 2014)",
+                "the solution is not grid-converged, so no GCI is given"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": 16.477933950821374,
+            "last": 16.47851175204,
+            "minimum": 16.47685098894,
+            "maximum": 16.4800926925,
+            "scale": 16.477933950821374,
+            "relative_range": 0.00019672997656596032,
+            "drift": -0.0021236559214159556,
+            "relative_drift": -0.00012887877374396795,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0016208517800002653,
+            "cycles": 0,
+            "uncertainty": 0.0016208517800002653,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.000197, relative drift -0.000129; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": 16.053189614224873,
+            "last": 16.05318910789,
+            "minimum": 16.05119545215,
+            "maximum": 16.05501366553,
+            "scale": 16.053189614224873,
+            "relative_range": 0.0002378476472125704,
+            "drift": -0.00033436562469915166,
+            "relative_drift": -2.0828609935739334e-05,
+            "drift_method": "cycle_means",
+            "drift_noise": 0.0006511932573817342,
+            "half_range": 0.0019091066900003284,
+            "cycles": 5,
+            "uncertainty": 0.0019091066900003284,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.000238, relative drift -2.08e-05 (trend of 5 cycle means); both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": 15.45108052518125,
+            "last": 15.45037501793,
+            "minimum": 15.44587397732,
+            "maximum": 15.45389038488,
+            "scale": 15.45108052518125,
+            "relative_range": 0.0005188250457264064,
+            "drift": -0.0008608487527407982,
+            "relative_drift": -5.5714469375642576e-05,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.004008203779999775,
+            "cycles": 0,
+            "uncertainty": 0.004008203779999775,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.000519, relative drift -5.57e-05; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": 14.89561481562975,
+            "last": 14.89560524371,
+            "minimum": 14.89542959631,
+            "maximum": 14.89582082298,
+            "scale": 14.89561481562975,
+            "relative_range": 2.6264553349506093e-05,
+            "drift": -0.0001820470705436368,
+            "relative_drift": -1.2221521085025473e-05,
+            "drift_method": "cycle_means",
+            "drift_noise": null,
+            "half_range": 0.00019561333499940048,
+            "cycles": 2,
+            "uncertainty": 0.00019561333499940048,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 2.63e-05, relative drift -1.22e-05 (trend of 2 cycle means); both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 1.3126417129284318,
+          "worst_ratio": 0.0030535398506098756,
+          "worst_level": "28k",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 0.00305 (level 28k), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "dp",
+        "values": [
+          -3.6075081294157996,
+          -4.078259600530625,
+          -4.738840731954313,
+          -5.3781974045399625
+        ],
+        "samples": [
+          80,
+          80,
+          80,
+          80
+        ],
+        "notes": [],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": false,
+          "method": "gci",
+          "phi": [
+            -3.6075081294157996,
+            -4.078259600530625,
+            -4.738840731954313
+          ],
+          "h": [
+            1.0,
+            1.4943501007748117,
+            2.2401806977410477
+          ],
+          "r21": 1.4943501007748117,
+          "r32": 1.4991003089433508,
+          "convergence_ratio": 0.7126323304152814,
+          "richardson": {
+            "p": 0.8203965973255152,
+            "p_solver": "fixed_point",
+            "p_iterations": 6,
+            "safety_factor": 1.25,
+            "phi_ext": -2.401495587528408,
+            "e_a": 0.1304921442245119,
+            "e_ext": 0.5021922789075812,
+            "gci_fine": 0.41788282195870385,
+            "gci_coarse": 0.5139336926908884,
+            "asymptotic_ratio": 0.88457049888301
+          },
+          "richardson_used": true,
+          "uncertainty": 1.5075156773592393,
+          "band": [
+            -5.115023806775039,
+            -2.0999924520565605
+          ],
+          "reasons": [
+            "convergence ratio R = 0.7126: monotonic convergence (0 < R < 0.9922)"
+          ],
+          "warnings": [
+            "asymptotic-range ratio GCI_32/(r21^p GCI_21) = 0.8846 is outside [0.9, 1.1]: the grids may not be in the asymptotic range",
+            "coarser triplet (grids 2-4): divergence, so the grids are not all in the asymptotic range; leave out a level that is too coarse rather than accept grids 1-3 alone"
+          ],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": false,
+              "method": "gci",
+              "phi": [
+                -3.6075081294157996,
+                -4.078259600530625,
+                -4.738840731954313
+              ],
+              "h": [
+                1.0,
+                1.4943501007748117,
+                2.2401806977410477
+              ],
+              "r21": 1.4943501007748117,
+              "r32": 1.4991003089433508,
+              "convergence_ratio": 0.7126323304152814,
+              "richardson": {
+                "p": 0.8203965973255152,
+                "p_solver": "fixed_point",
+                "p_iterations": 6,
+                "safety_factor": 1.25,
+                "phi_ext": -2.401495587528408,
+                "e_a": 0.1304921442245119,
+                "e_ext": 0.5021922789075812,
+                "gci_fine": 0.41788282195870385,
+                "gci_coarse": 0.5139336926908884,
+                "asymptotic_ratio": 0.88457049888301
+              },
+              "richardson_used": true,
+              "uncertainty": 1.5075156773592393,
+              "band": [
+                -5.115023806775039,
+                -2.0999924520565605
+              ],
+              "reasons": [
+                "convergence ratio R = 0.7126: monotonic convergence (0 < R < 0.9922)"
+              ],
+              "warnings": [
+                "asymptotic-range ratio GCI_32/(r21^p GCI_21) = 0.8846 is outside [0.9, 1.1]: the grids may not be in the asymptotic range"
+              ],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "divergence",
+              "clean_pass": false,
+              "method": "none",
+              "phi": [
+                -4.078259600530625,
+                -4.738840731954313,
+                -5.3781974045399625
+              ],
+              "h": [
+                1.4943501007748117,
+                2.2401806977410477,
+                3.372267507043192
+              ],
+              "r21": 1.4991003089433508,
+              "r32": 1.5053551307016069,
+              "convergence_ratio": 1.033196586112417,
+              "richardson": null,
+              "richardson_used": false,
+              "uncertainty": null,
+              "band": null,
+              "reasons": [
+                "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 1.033: R >= ln r21 / ln r32 = 0.9898, monotonic divergence (Eca and Hoekstra 2014)",
+                "the solution is not grid-converged, so no GCI is given"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": -3.6075081294157996,
+            "last": -3.606626378583,
+            "minimum": -3.608604352585,
+            "maximum": -3.605265427424,
+            "scale": 3.6075081294157996,
+            "relative_range": 0.0009255488944776961,
+            "drift": -0.001828412714827686,
+            "relative_drift": -0.0005068353692452467,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0016694625805000474,
+            "cycles": 0,
+            "uncertainty": 0.0016694625805000474,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.000926, relative drift -0.000507; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": -4.078259600530625,
+            "last": -4.078280354047,
+            "minimum": -4.080289073172,
+            "maximum": -4.076426081973,
+            "scale": 4.078259600530625,
+            "relative_range": 0.0009472156207264011,
+            "drift": -0.0004191194588911928,
+            "relative_drift": -0.00010276919567274749,
+            "drift_method": "cycle_means",
+            "drift_noise": 0.0006705818207997644,
+            "half_range": 0.0019314955995000105,
+            "cycles": 5,
+            "uncertainty": 0.0019314955995000105,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.000947, relative drift -0.000103 (trend of 5 cycle means); both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "oscillating",
+            "clean_pass": false,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": -4.738840731954313,
+            "last": -4.739479610694,
+            "minimum": -4.744438055126,
+            "maximum": -4.736024376188,
+            "scale": 4.738840731954313,
+            "relative_range": 0.001775471980154568,
+            "drift": -0.0006017943117175669,
+            "relative_drift": -0.00012699188382923033,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.004206839469000023,
+            "cycles": 0,
+            "uncertainty": 0.004206839469000023,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 0.00178, relative drift -0.000127; the range exceeds tol = 0.001 but the drift does not"
+            ],
+            "warnings": [
+              "the window holds 0 full cycle(s) of the oscillation; ITTC 7.5-03-02-01 takes the range over the last 2 periods, so u_it may understate the amplitude and drift cannot be told from a slow oscillation: widen the window"
+            ],
+            "notes": [
+              "u_it is half the range (ITTC 7.5-03-01-01, 2008, section 4.1); if the flow itself is unsteady, the oscillation is physical rather than iterative"
+            ]
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 800,
+            "window": 80,
+            "window_x": [
+              7210.0,
+              8000.0
+            ],
+            "mean": -5.3781974045399625,
+            "last": -5.378212975597,
+            "minimum": -5.378387982251,
+            "maximum": -5.3779838431,
+            "scale": 5.3781974045399625,
+            "relative_range": 7.514397866068135e-05,
+            "drift": 1.8957423945329978e-05,
+            "relative_drift": 3.5248657718155195e-06,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0002020695754998414,
+            "cycles": 0,
+            "uncertainty": 0.0002020695754998414,
+            "reasons": [
+              "over the last 80 samples (x = 7210 to 8000): relative range 7.51e-05, relative drift 3.52e-06; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": false,
+          "u_num": 1.5075156773592393,
+          "worst_ratio": 0.0027905775921145117,
+          "worst_level": "28k",
+          "warnings": [
+            "level 28k: the window holds 0 full cycle(s) of the oscillation; ITTC 7.5-03-02-01 takes the range over the last 2 periods, so u_it may understate the amplitude and drift cannot be told from a slow oscillation: widen the window"
+          ],
+          "notes": [
+            "level 28k: oscillating, but u_it = 0.00421 is 0.00279 of U, below 1/10",
+            "largest u_it / U on the headline levels: 0.00279 (level 28k), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "xR/H",
+        "values": [
+          6.837915922465422,
+          6.909065124532447,
+          6.980334224400449,
+          7.023652594812918
+        ],
+        "samples": [
+          844,
+          563,
+          376,
+          250
+        ],
+        "notes": [
+          "level 139k: last crossing at x = 0.173683 (t = 8000)",
+          "level 62k: last crossing at x = 0.17549 (t = 8000)",
+          "level 28k: last crossing at x = 0.1773 (t = 8000)",
+          "level 12k: last crossing at x = 0.178401 (t = 8000)"
+        ],
+        "gci": {
+          "verdict": "divergence",
+          "clean_pass": false,
+          "method": "none",
+          "phi": [
+            6.837915922465422,
+            6.909065124532447,
+            6.980334224400449
+          ],
+          "h": [
+            1.0,
+            1.4943501007748117,
+            2.2401806977410477
+          ],
+          "r21": 1.4943501007748117,
+          "r32": 1.4991003089433508,
+          "convergence_ratio": 0.9983176748240083,
+          "richardson": null,
+          "richardson_used": false,
+          "uncertainty": null,
+          "band": null,
+          "reasons": [
+            "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 0.9983: R >= ln r21 / ln r32 = 0.9922, monotonic divergence (Eca and Hoekstra 2014)",
+            "the solution is not grid-converged, so no GCI is given"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3.",
+            "coarser triplet (grids 2-4): divergence"
+          ],
+          "triplets": [
+            {
+              "verdict": "divergence",
+              "clean_pass": false,
+              "method": "none",
+              "phi": [
+                6.837915922465422,
+                6.909065124532447,
+                6.980334224400449
+              ],
+              "h": [
+                1.0,
+                1.4943501007748117,
+                2.2401806977410477
+              ],
+              "r21": 1.4943501007748117,
+              "r32": 1.4991003089433508,
+              "convergence_ratio": 0.9983176748240083,
+              "richardson": null,
+              "richardson_used": false,
+              "uncertainty": null,
+              "band": null,
+              "reasons": [
+                "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 0.9983: R >= ln r21 / ln r32 = 0.9922, monotonic divergence (Eca and Hoekstra 2014)",
+                "the solution is not grid-converged, so no GCI is given"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "divergence",
+              "clean_pass": false,
+              "method": "none",
+              "phi": [
+                6.909065124532447,
+                6.980334224400449,
+                7.023652594812918
+              ],
+              "h": [
+                1.4943501007748117,
+                2.2401806977410477,
+                3.372267507043192
+              ],
+              "r21": 1.4991003089433508,
+              "r32": 1.5053551307016069,
+              "convergence_ratio": 1.6452396336564055,
+              "richardson": null,
+              "richardson_used": false,
+              "uncertainty": null,
+              "band": null,
+              "reasons": [
+                "convergence ratio R = (phi2 - phi1)/(phi3 - phi2) = 1.645: R >= ln r21 / ln r32 = 0.9898, monotonic divergence (Eca and Hoekstra 2014)",
+                "the solution is not grid-converged, so no GCI is given"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 11,
+            "window": 11,
+            "window_x": [
+              6000.0,
+              8000.0
+            ],
+            "mean": 6.835763148635173,
+            "last": 6.837915922465422,
+            "minimum": 6.833670009007328,
+            "maximum": 6.837915922465422,
+            "scale": 6.835763148635173,
+            "relative_range": 0.0006211323250633467,
+            "drift": 0.0012158694935896395,
+            "relative_drift": 0.00017786887391386575,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.002122956729047054,
+            "cycles": 0,
+            "uncertainty": 0.002122956729047054,
+            "reasons": [
+              "over the last 11 samples (x = 6000 to 8000): relative range 0.000621, relative drift 0.000178; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 11,
+            "window": 11,
+            "window_x": [
+              6000.0,
+              8000.0
+            ],
+            "mean": 6.909253701721923,
+            "last": 6.909065124532447,
+            "minimum": 6.909042600565091,
+            "maximum": 6.909620029248192,
+            "scale": 6.909253701721923,
+            "relative_range": 8.357323497275746e-05,
+            "drift": -4.622466572994971e-05,
+            "relative_drift": -6.690254508736538e-06,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.00028871434155020026,
+            "cycles": 0,
+            "uncertainty": 0.00028871434155020026,
+            "reasons": [
+              "over the last 11 samples (x = 6000 to 8000): relative range 8.36e-05, relative drift -6.69e-06; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 11,
+            "window": 11,
+            "window_x": [
+              6000.0,
+              8000.0
+            ],
+            "mean": 6.982237921196022,
+            "last": 6.980334224400449,
+            "minimum": 6.979102320795679,
+            "maximum": 6.98553970226963,
+            "scale": 6.982237921196022,
+            "relative_range": 0.0009219653564667457,
+            "drift": 7.533379780966243e-05,
+            "relative_drift": 1.0789348438123421e-05,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.00321869073697556,
+            "cycles": 0,
+            "uncertainty": 0.00321869073697556,
+            "reasons": [
+              "over the last 11 samples (x = 6000 to 8000): relative range 0.000922, relative drift 1.08e-05; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 11,
+            "window": 11,
+            "window_x": [
+              6000.0,
+              8000.0
+            ],
+            "mean": 7.023653990654413,
+            "last": 7.023652594812918,
+            "minimum": 7.023564649471784,
+            "maximum": 7.023794429018219,
+            "scale": 7.023653990654413,
+            "relative_range": 3.2715100536030335e-05,
+            "drift": -0.00011931318741119735,
+            "relative_drift": -1.6987338438077102e-05,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.00011488977321727489,
+            "cycles": 0,
+            "uncertainty": 0.00011488977321727489,
+            "reasons": [
+              "over the last 11 samples (x = 6000 to 8000): relative range 3.27e-05, relative drift -1.7e-05; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": false,
+          "u_num": null,
+          "worst_ratio": null,
+          "worst_level": null,
+          "warnings": [],
+          "notes": [
+            "no discretisation uncertainty to compare u_it with"
+          ],
+          "ratio": 10.0
+        }
+      }
+    ],
+    "warnings": [],
+    "consistency": {
+      "clean_pass": true,
+      "levels": [
+        "139k",
+        "62k",
+        "28k",
+        "12k"
+      ],
+      "files": [
+        "system/fvSchemes",
+        "system/fvSolution",
+        "constant/transportProperties",
+        "constant/turbulenceProperties",
+        "0/U",
+        "0/epsilon",
+        "0/k",
+        "0/nut",
+        "0/p",
+        "system/controlDict"
+      ],
+      "differences": [],
+      "warnings": [],
+      "notes": []
+    },
+    "notes": []
+  }
+}

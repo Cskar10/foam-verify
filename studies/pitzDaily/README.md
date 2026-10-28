@@ -29,6 +29,8 @@ foam-verify on the four levels:
 
 The settings consistency check passes (the levels differ only in `blockMeshDict`), and the
 iterative check finds every QoI converged or oscillating far below the grid differences (below).
+foam-verify's full report on this study is [report.md](report.md) (JSON:
+[report.json](report.json)); it lists every check, and every warning that stops a clean pass.
 
 ## Why: refining moves the walls onto a different wall function
 
@@ -71,6 +73,9 @@ the run (80 samples, 800 iterations), and the reattachment length is sampled 11 
 
 - Over those windows every QoI is `converged` on every level, except the static pressure
   difference on 28k, which is `oscillating` (relative range 1.8e-3, no full cycle in the window).
+  With no full cycle in the window, u_it may understate the amplitude, and the warning that says
+  so is one more reason, after the asymptotic range and the coarser triplet, that the static
+  pressure difference is not a clean pass.
 - The iterative uncertainties are at most 0.3% of the GCI uncertainty where there is one, so
   iterative error does not explain the trends. On 139k the 1000-iteration means of the loss are
   16.475 to 16.479 from iteration 4000 on.

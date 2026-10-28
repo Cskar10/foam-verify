@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
 from foam_verify import cli
+
+STUDIES = Path(__file__).resolve().parent.parent / "studies"
 
 CELIK = [
     "--values", "6.063", "5.972", "5.863", "--cells", "18000", "8000", "4500", "--dim", "2",
@@ -105,6 +108,53 @@ def test_gci_two_grid(capsys: pytest.CaptureFixture[str]) -> None:
     ],
 )
 def test_gci_bad_input_exits_2(argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        cli.main(argv)
+    assert exc.value.code == 2
+    assert "error:" in capsys.readouterr().err
+
+
+def test_report_prints_markdown(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli.main(["report", str(STUDIES / "duct")]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("# Verification report: square-duct\n")
+    assert "**Clean pass.** 1 of 1 quantity of interest is a clean pass." in out
+
+
+def test_report_json_from_the_manifest_path(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli.main(["report", str(STUDIES / "duct" / "study.toml"), "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["clean_pass"] is True
+    assert [q["name"] for q in data["qois"]] == ["fRe"]
+
+
+def test_report_output_writes_both_forms_and_exits_1_when_not_clean(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "new" / "folder"
+    assert cli.main(["report", str(STUDIES / "pitzDaily"), "--output", str(out)]) == 1
+    printed = capsys.readouterr().out
+    assert printed.startswith("pitzDaily: not a clean pass; 0 of 3 quantities of interest")
+    assert (out / "report.md").read_text().startswith("# Verification report: pitzDaily\n")
+    assert json.loads((out / "report.json").read_text())["clean_pass"] is False
+    assert b"\r\n" not in (out / "report.md").read_bytes()
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["report", "no-such-study"],
+        ["report", "no-such-study", "--json", "--output", "out"],
+        ["report"],
+    ],
+)
+def test_report_bad_input_exits_2(
+    argv: list[str],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
     with pytest.raises(SystemExit) as exc:
         cli.main(argv)
     assert exc.value.code == 2

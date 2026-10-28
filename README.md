@@ -5,10 +5,47 @@ convergence index (GCI), iterative convergence of the quantities you report, set
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
-convergence check and the settings consistency check exist, and three studies are committed under
-[`studies/`](studies/README.md): a square duct with an exact answer, the lid-driven cavity, and
-`pitzDaily`, where refining the mesh moves the walls through the wall-function switch. The
-`report` command comes next; this README will lead with its results once they are committed.
+convergence and settings consistency checks, and the `report` command exist. Comparison with
+reference data comes next.
+
+## Results
+
+Three grid studies, run in a pinned OpenFOAM v2512 container and committed with their outputs
+under [`studies/`](studies/README.md), each with foam-verify's report beside it:
+
+| Study | Quantities of interest | Verdict | Report |
+|---|---|---|---|
+| Square duct, fully developed laminar flow | f Re, known exactly | clean pass: f Re = 56.8997 +/- 0.0108 | [report](studies/duct/report.md) |
+| Lid-driven cavity, Re = 100 | six velocities on the centrelines | clean pass, all six | [report](studies/cavity/report.md) |
+| `pitzDaily`, k-epsilon with wall functions | pressure loss, reattachment length | refused: none of the three converges with the mesh | [report](studies/pitzDaily/report.md) |
+
+**Does the duct's uncertainty band contain the exact answer? Yes.** For fully developed laminar
+flow in a square duct, the Darcy friction factor is f Re = 56.9083 (the series solution, Shah and
+London 1978). On the three finest of four grids, 160 x 160 to 20 x 20, foam-verify finds
+monotonic convergence at an observed order of 1.995 and gives 56.8997 +/- 0.0108, a band from
+56.8890 to 56.9105. The actual error, 0.0086, is 80% of the stated uncertainty, and the
+Richardson extrapolation, 56.90834, is within 3.3e-5 of the exact value.
+
+**`pitzDaily` shows the other half of the job: refusing.** Refining the mesh moves the walls
+through the switch of the wall function at y+ = 11.53, so the levels do not solve the same
+equations. The total-pressure loss converges monotonically on the three finest grids, and on its
+own that triplet would pass at +/- 8%; the coarser triplet diverges, and foam-verify refuses the
+clean pass. Details in [the study's README](studies/pitzDaily/README.md).
+
+## Verification report
+
+```console
+$ uv run foam-verify report studies/duct                    # Markdown
+$ uv run foam-verify report studies/duct --json             # JSON
+$ uv run foam-verify report studies/duct --output out/      # out/report.md and out/report.json
+```
+
+Each quantity of interest gets a verdict and the checks behind it: grid convergence, refinement
+ratio, observed order, asymptotic range, coarser triplets, iterative convergence and error,
+settings consistency, refined directions and refinement scope, each `pass`, `fail`, `n/a` or
+`assumed`, with the numbers. Every warning that stops a clean pass is quoted. The exit code is 0
+only when every QoI is a clean pass. The layout and the rules are in
+[docs/report.md](docs/report.md).
 
 ## GCI from numbers
 
@@ -54,8 +91,9 @@ that shrinks with the mesh, which are listed as notes. What is compared, and why
 ## Development
 
 ```console
-$ make setup   # uv sync
-$ make ci      # ruff + pytest
+$ make setup     # uv sync
+$ make ci        # ruff + pytest
+$ make reports   # regenerate the reports under studies/
 ```
 
 ## Author

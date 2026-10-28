@@ -1,4 +1,4 @@
-"""Command line interface: foam-verify gci.
+"""Command line interface: foam-verify gci and foam-verify report.
 
 Exit codes: 0 for a clean pass, 1 when the verdict is anything else, 2 for bad input.
 """
@@ -9,9 +9,11 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from . import __version__
 from .gci import GCIResult, Options, Scope, grid_convergence
+from .report import render_json, render_markdown, verification_report
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -50,6 +52,23 @@ def _parser() -> argparse.ArgumentParser:
     )
     gci.add_argument("--formal-order", type=float, default=2.0, metavar="P")
     gci.add_argument("--json", action="store_true", help="print the full result as JSON")
+
+    report = sub.add_parser(
+        "report",
+        help="verification report on a grid study (a folder with study.toml)",
+        description="Verification report on a grid study: a verdict on each quantity of "
+        "interest, the checks behind it and the numbers. Printed as Markdown unless --json or "
+        "--output is given.",
+    )
+    report.add_argument("study", metavar="STUDY", help="the study folder, or its study.toml")
+    out = report.add_mutually_exclusive_group()
+    out.add_argument("--json", action="store_true", help="print the report as JSON")
+    out.add_argument(
+        "-o",
+        "--output",
+        metavar="DIR",
+        help="write report.md and report.json into DIR instead of printing",
+    )
     return parser
 
 
@@ -121,11 +140,36 @@ def _cmd_gci(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     return 0 if res.clean_pass else 1
 
 
+def _cmd_report(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    try:
+        report = verification_report(args.study)
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
+    if args.output is None:
+        print(render_json(report) if args.json else render_markdown(report), end="")
+    else:
+        folder = Path(args.output)
+        written = (folder / "report.md", folder / "report.json")
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            # \n line endings on every platform, so a committed report is the same everywhere.
+            written[0].write_text(render_markdown(report), encoding="utf-8", newline="\n")
+            written[1].write_text(render_json(report), encoding="utf-8", newline="\n")
+        except OSError as exc:
+            parser.error(f"cannot write the report: {exc}")
+        verdict = "clean pass" if report.clean_pass else "not a clean pass"
+        print(f"{report.study}: {verdict}; {report.summary}")
+        print(f"wrote {written[0]} and {written[1]}")
+    return 0 if report.clean_pass else 1
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
     if args.command == "gci":
         return _cmd_gci(args, parser)
+    if args.command == "report":
+        return _cmd_report(args, parser)
     parser.error(f"unknown command {args.command}")
     return 2
 

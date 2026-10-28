@@ -1,0 +1,2236 @@
+{
+  "tool": "foam-verify",
+  "version": "0.0.1",
+  "schema": 1,
+  "study": "lid-driven-cavity-re100",
+  "clean_pass": true,
+  "summary": "6 of 6 quantities of interest are clean passes",
+  "layer_cells": null,
+  "criteria": {
+    "formal_order": 2.0,
+    "fs_three_grid": 1.25,
+    "fs_fallback": 3.0,
+    "min_refinement_ratio": 1.3,
+    "asymptotic_band": [
+      0.9,
+      1.1
+    ],
+    "p_min": 0.5,
+    "p_max_factor": 2.0,
+    "round_off_rel": 1e-10,
+    "p_tol": 1e-12,
+    "p_max_iter": 500,
+    "spread_factor": 3.0
+  },
+  "blocking": [],
+  "qois": [
+    {
+      "name": "u(y=0.5)",
+      "clean_pass": true,
+      "value": -0.208891821513,
+      "uncertainty": 0.00032787104580841477,
+      "band": [
+        -0.20921969255880843,
+        -0.2085639504671916
+      ],
+      "relative_uncertainty": 0.0015695733965726863,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.2558: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 1.967 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.867"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 1.5e-09 (40x40), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "u(y=0.5)",
+        "file": "postProcessing/ghiaPoints/*/U",
+        "column": "0",
+        "component": 0,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": null,
+        "axis": null
+      }
+    },
+    {
+      "name": "u(y=0.4531)",
+      "clean_pass": true,
+      "value": -0.213682485519,
+      "uncertainty": 0.0003789297284814572,
+      "band": [
+        -0.21406141524748146,
+        -0.21330355579051852
+      ],
+      "relative_uncertainty": 0.0017733307788942016,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.2603: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 1.942 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.827"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 1.3e-09 (40x40), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "u(y=0.4531)",
+        "file": "postProcessing/ghiaPoints/*/U",
+        "column": "1",
+        "component": 0,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": null,
+        "axis": null
+      }
+    },
+    {
+      "name": "u(y=0.8516)",
+      "clean_pass": true,
+      "value": 0.236393042113,
+      "uncertainty": 9.652672646328073e-05,
+      "band": [
+        0.2362965153865367,
+        0.2364895688394633
+      ],
+      "relative_uncertainty": 0.0004083315041782798,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.2039: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.001, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.737"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 0 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "u(y=0.8516)",
+        "file": "postProcessing/ghiaPoints/*/U",
+        "column": "2",
+        "component": 0,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": null,
+        "axis": null
+      }
+    },
+    {
+      "name": "u_min",
+      "clean_pass": true,
+      "value": -0.21376046214827643,
+      "uncertainty": 0.00036586606096394446,
+      "band": [
+        -0.21412632820924038,
+        -0.21339459608731248
+      ],
+      "relative_uncertainty": 0.0017115703123347429,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.254: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 1.977 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.776"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 1.3e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "u_min",
+        "file": "postProcessing/verticalCentreline/*/U",
+        "column": null,
+        "component": 0,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": "min",
+        "axis": 1
+      }
+    },
+    {
+      "name": "v_max",
+      "clean_pass": true,
+      "value": 0.17936485525044468,
+      "uncertainty": 0.00022354724707021015,
+      "band": [
+        0.17914130800337447,
+        0.1795884024975149
+      ],
+      "relative_uncertainty": 0.0012463269170433315,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.2249: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.764"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 2.1e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "v_max",
+        "file": "postProcessing/horizontalCentreline/*/U",
+        "column": null,
+        "component": 1,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": "max",
+        "axis": 0
+      }
+    },
+    {
+      "name": "v_min",
+      "clean_pass": true,
+      "value": -0.25358500906011505,
+      "uncertainty": 0.00017364429489162916,
+      "band": [
+        -0.2537586533550067,
+        -0.2534113647652234
+      ],
+      "relative_uncertainty": 0.0006847577289178987,
+      "grid_verdict": "monotonic_convergence",
+      "method": "gci",
+      "checks": [
+        {
+          "name": "Grid convergence",
+          "status": "pass",
+          "detail": "grids 1-3: convergence ratio R = 0.174: monotonic convergence (0 < R < 1)"
+        },
+        {
+          "name": "Refinement ratio",
+          "status": "pass",
+          "detail": "r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2)"
+        },
+        {
+          "name": "Observed order",
+          "status": "pass",
+          "detail": "p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+        },
+        {
+          "name": "Asymptotic range",
+          "status": "pass",
+          "detail": "GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1]"
+        },
+        {
+          "name": "Coarser triplets",
+          "status": "pass",
+          "detail": "grids 2-4: monotonic, p = 1.687"
+        },
+        {
+          "name": "Iterative convergence",
+          "status": "pass",
+          "detail": "converged on every level (tol 0.001)"
+        },
+        {
+          "name": "Iterative error",
+          "status": "pass",
+          "detail": "largest u_it / U = 0 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+        },
+        {
+          "name": "Settings consistency",
+          "status": "pass",
+          "detail": "no difference blocks (6 files compared); noted: system/controlDict deltaT"
+        },
+        {
+          "name": "Refined directions",
+          "status": "pass",
+          "detail": "dim = 2, with empty or wedge patches on every level: frontAndBack"
+        },
+        {
+          "name": "Refinement scope",
+          "status": "assumed",
+          "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        }
+      ],
+      "blocking": [],
+      "definition": {
+        "name": "v_min",
+        "file": "postProcessing/horizontalCentreline/*/U",
+        "column": null,
+        "component": 1,
+        "reduction": "last",
+        "window": 0.1,
+        "min_samples": 50,
+        "scale": 1.0,
+        "profile": "min",
+        "axis": 0
+      }
+    }
+  ],
+  "result": {
+    "name": "lid-driven-cavity-re100",
+    "dim": 2,
+    "scope": "mesh",
+    "levels": [
+      {
+        "name": "160x160",
+        "path": "n160",
+        "cells": 25600,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "80x80",
+        "path": "n80",
+        "cells": 6400,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "40x40",
+        "path": "n40",
+        "cells": 1600,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      },
+      {
+        "name": "20x20",
+        "path": "n20",
+        "cells": 400,
+        "two_d_patches": [
+          "frontAndBack"
+        ],
+        "first_layer_height": null
+      }
+    ],
+    "qois": [
+      {
+        "name": "u(y=0.5)",
+        "values": [
+          -0.208891821513,
+          -0.208128822525,
+          -0.20514632496,
+          -0.194265123893
+        ],
+        "samples": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "notes": [],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            -0.208891821513,
+            -0.208128822525,
+            -0.20514632496
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.25582551917355784,
+          "richardson": {
+            "p": 1.9667679113995575,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": -0.20915411834964673,
+            "e_a": 0.0036526034503103714,
+            "e_ext": 0.0012540840157315618,
+            "gci_fine": 0.001569573396572686,
+            "gci_coarse": 0.006157819783247329,
+            "asymptotic_ratio": 1.0036659938721768
+          },
+          "richardson_used": true,
+          "uncertainty": 0.00032787104580841477,
+          "band": [
+            -0.20921969255880843,
+            -0.2085639504671916
+          ],
+          "reasons": [
+            "convergence ratio R = 0.2558: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.208891821513,
+                -0.208128822525,
+                -0.20514632496
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.25582551917355784,
+              "richardson": {
+                "p": 1.9667679113995575,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.20915411834964673,
+                "e_a": 0.0036526034503103714,
+                "e_ext": 0.0012540840157315618,
+                "gci_fine": 0.001569573396572686,
+                "gci_coarse": 0.006157819783247329,
+                "asymptotic_ratio": 1.0036659938721768
+              },
+              "richardson_used": true,
+              "uncertainty": 0.00032787104580841477,
+              "band": [
+                -0.20921969255880843,
+                -0.2085639504671916
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2558: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.208128822525,
+                -0.20514632496,
+                -0.194265123893
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.2740963563337875,
+              "richardson": {
+                "p": 1.8672449448853485,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.20925499363940872,
+                "e_a": 0.014330055437861174,
+                "e_ext": 0.005381812375523752,
+                "gci_fine": 0.006763666252144182,
+                "gci_coarse": 0.0250349883199822,
+                "asymptotic_ratio": 1.0145383913924928
+              },
+              "richardson_used": true,
+              "uncertainty": 0.0014077138930108483,
+              "band": [
+                -0.20953653641801084,
+                -0.20672110863198917
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2741: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.208891821513,
+            "last": -0.208891821513,
+            "minimum": -0.208891821513,
+            "maximum": -0.208891821513,
+            "scale": 0.208891821513,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.208128822525,
+            "last": -0.208128822525,
+            "minimum": -0.208128822525,
+            "maximum": -0.208128822525,
+            "scale": 0.208128822525,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.20514632496005997,
+            "last": -0.20514632496,
+            "minimum": -0.205146324961,
+            "maximum": -0.20514632496,
+            "scale": 0.20514632496005997,
+            "relative_range": 4.874596871526632e-12,
+            "drift": 2.3294248882751506e-13,
+            "relative_drift": 1.1354943300732624e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 5.000028169277471e-13,
+            "cycles": 0,
+            "uncertainty": 5.000028169277471e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 4.87e-12, relative drift 1.14e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.19426512389358,
+            "last": -0.194265123893,
+            "minimum": -0.194265123894,
+            "maximum": -0.194265123893,
+            "scale": 0.19426512389358,
+            "relative_range": 5.1476333672909056e-12,
+            "drift": -3.353837567591515e-13,
+            "relative_drift": -1.726422890723697e-12,
+            "drift_method": "cycle_means",
+            "drift_noise": 5.771686576819476e-13,
+            "half_range": 5.000028169277471e-13,
+            "cycles": 8,
+            "uncertainty": 5.000028169277471e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 5.15e-12, relative drift -1.73e-12 (trend of 8 cycle means); both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 0.00032787104580841477,
+          "worst_ratio": 1.524998389824011e-09,
+          "worst_level": "40x40",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 1.52e-09 (level 40x40), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "u(y=0.4531)",
+        "values": [
+          -0.213682485519,
+          -0.212820955925,
+          -0.209510973539,
+          -0.197770544886
+        ],
+        "samples": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "notes": [],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            -0.213682485519,
+            -0.212820955925,
+            -0.209510973539
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.2602822291876656,
+          "richardson": {
+            "p": 1.9418512800259449,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": -0.21398562930178516,
+            "e_a": 0.004031821288054903,
+            "e_ext": 0.0014166548649753032,
+            "gci_fine": 0.0017733307788942014,
+            "gci_coarse": 0.006840687819739394,
+            "asymptotic_ratio": 1.0040481426758727
+          },
+          "richardson_used": true,
+          "uncertainty": 0.0003789297284814572,
+          "band": [
+            -0.21406141524748146,
+            -0.21330355579051852
+          ],
+          "reasons": [
+            "convergence ratio R = 0.2603: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.213682485519,
+                -0.212820955925,
+                -0.209510973539
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.2602822291876656,
+              "richardson": {
+                "p": 1.9418512800259449,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.21398562930178516,
+                "e_a": 0.004031821288054903,
+                "e_ext": 0.0014166548649753032,
+                "gci_fine": 0.0017733307788942014,
+                "gci_coarse": 0.006840687819739394,
+                "asymptotic_ratio": 1.0040481426758727
+              },
+              "richardson_used": true,
+              "uncertainty": 0.0003789297284814572,
+              "band": [
+                -0.21406141524748146,
+                -0.21330355579051852
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2603: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.212820955925,
+                -0.209510973539,
+                -0.197770544886
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.28193028413440463,
+              "richardson": {
+                "p": 1.8265896385332272,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.2141205292866755,
+                "e_a": 0.015552896901593028,
+                "e_ext": 0.006069354330502136,
+                "gci_fine": 0.0076330204186607735,
+                "gci_coarse": 0.027501875378006656,
+                "asymptotic_ratio": 1.015798611070765
+              },
+              "richardson_used": true,
+              "uncertainty": 0.0016244667020944297,
+              "band": [
+                -0.21444542262709443,
+                -0.21119648922290557
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2819: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.213682485519,
+            "last": -0.213682485519,
+            "minimum": -0.213682485519,
+            "maximum": -0.213682485519,
+            "scale": 0.213682485519,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.212820955925,
+            "last": -0.212820955925,
+            "minimum": -0.212820955925,
+            "maximum": -0.212820955925,
+            "scale": 0.212820955925,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.20951097353956002,
+            "last": -0.209510973539,
+            "minimum": -0.20951097354,
+            "maximum": -0.209510973539,
+            "scale": 0.20951097353956002,
+            "relative_range": 4.773046571074581e-12,
+            "drift": 7.529454184323721e-13,
+            "relative_drift": 3.5938233005738016e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 5.000028169277471e-13,
+            "cycles": 0,
+            "uncertainty": 5.000028169277471e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 4.77e-12, relative drift 3.59e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.1977705448862,
+            "last": -0.197770544886,
+            "minimum": -0.197770544887,
+            "maximum": -0.197770544886,
+            "scale": 0.1977705448862,
+            "relative_range": 5.056393177411286e-12,
+            "drift": 2.7294271418173507e-13,
+            "relative_drift": 1.3800979025404931e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 5.000028169277471e-13,
+            "cycles": 0,
+            "uncertainty": 5.000028169277471e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 5.06e-12, relative drift 1.38e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 0.0003789297284814572,
+          "worst_ratio": 1.3195133011376134e-09,
+          "worst_level": "40x40",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 1.32e-09 (level 40x40), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "u(y=0.8516)",
+        "values": [
+          0.236393042113,
+          0.23609146364,
+          0.234612108054,
+          0.22968081847
+        ],
+        "samples": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "notes": [],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            0.236393042113,
+            0.23609146364,
+            0.234612108054
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.20385800131760876,
+          "richardson": {
+            "p": 2.2943635119402526,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": 0.2364702634941706,
+            "e_a": 0.001275750209499979,
+            "e_ext": 0.0003265585280346039,
+            "gci_fine": 0.0004083315041782798,
+            "gci_coarse": 0.002005577882456966,
+            "asymptotic_ratio": 1.0012773798270818
+          },
+          "richardson_used": true,
+          "uncertainty": 9.652672646328073e-05,
+          "band": [
+            0.2362965153865367,
+            0.2364895688394633
+          ],
+          "reasons": [
+            "convergence ratio R = 0.2039: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                0.236393042113,
+                0.23609146364,
+                0.234612108054
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.20385800131760876,
+              "richardson": {
+                "p": 2.2943635119402526,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": 0.2364702634941706,
+                "e_a": 0.001275750209499979,
+                "e_ext": 0.0003265585280346039,
+                "gci_fine": 0.0004083315041782798,
+                "gci_coarse": 0.002005577882456966,
+                "asymptotic_ratio": 1.0012773798270818
+              },
+              "richardson_used": true,
+              "uncertainty": 9.652672646328073e-05,
+              "band": [
+                0.2362965153865367,
+                0.2364895688394633
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2039: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                0.23609146364,
+                0.234612108054,
+                0.22968081847
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.29999365496601105,
+              "richardson": {
+                "p": 1.7369961076524563,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": 0.23672545402078288,
+                "e_a": 0.006266027425098928,
+                "e_ext": 0.002678167345397586,
+                "gci_fine": 0.0033566989833524615,
+                "gci_coarse": 0.011259787401383977,
+                "asymptotic_ratio": 1.006305538099762
+              },
+              "richardson_used": true,
+              "uncertainty": 0.0007924879759785826,
+              "band": [
+                0.23529897566402141,
+                0.23688395161597858
+              ],
+              "reasons": [
+                "convergence ratio R = 0.3: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.236393042113,
+            "last": 0.236393042113,
+            "minimum": 0.236393042113,
+            "maximum": 0.236393042113,
+            "scale": 0.236393042113,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.23609146364,
+            "last": 0.23609146364,
+            "minimum": 0.23609146364,
+            "maximum": 0.23609146364,
+            "scale": 0.23609146364,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.234612108054,
+            "last": 0.234612108054,
+            "minimum": 0.234612108054,
+            "maximum": 0.234612108054,
+            "scale": 0.234612108054,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 200,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.22968081847014,
+            "last": 0.22968081847,
+            "minimum": 0.22968081847,
+            "maximum": 0.229680818471,
+            "scale": 0.22968081847014,
+            "relative_range": 4.353892678179834e-12,
+            "drift": -1.623538558494802e-13,
+            "relative_drift": -7.068672818691965e-13,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 5.000028169277471e-13,
+            "cycles": 0,
+            "uncertainty": 5.000028169277471e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 4.35e-12, relative drift -7.07e-13; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 9.652672646328073e-05,
+          "worst_ratio": 0.0,
+          "worst_level": "160x160",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "u_min",
+        "values": [
+          -0.21376046214827643,
+          -0.21290098696018198,
+          -0.2095177138656769,
+          -0.19792868401612643
+        ],
+        "samples": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "notes": [
+          "level 160x160: min at y = 0.0457961 (t = 10)",
+          "level 80x80: min at y = 0.0459923 (t = 10)",
+          "level 40x40: min at y = 0.0451648 (t = 10)",
+          "level 20x20: min at y = 0.0450426 (t = 10)"
+        ],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            -0.21376046214827643,
+            -0.21290098696018198,
+            -0.2095177138656769
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.2540365983137366,
+          "richardson": {
+            "p": 1.976891738038882,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": -0.21405315499704758,
+            "e_a": 0.00402073975447468,
+            "e_ext": 0.0013673839508470914,
+            "gci_fine": 0.0017115703123347429,
+            "gci_coarse": 0.006764694079841772,
+            "asymptotic_ratio": 1.0040369713657324
+          },
+          "richardson_used": true,
+          "uncertainty": 0.00036586606096394446,
+          "band": [
+            -0.21412632820924038,
+            -0.21339459608731248
+          ],
+          "reasons": [
+            "convergence ratio R = 0.254: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.21376046214827643,
+                -0.21290098696018198,
+                -0.2095177138656769
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.2540365983137366,
+              "richardson": {
+                "p": 1.976891738038882,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.21405315499704758,
+                "e_a": 0.00402073975447468,
+                "e_ext": 0.0013673839508470914,
+                "gci_fine": 0.0017115703123347429,
+                "gci_coarse": 0.006764694079841772,
+                "asymptotic_ratio": 1.0040369713657324
+              },
+              "richardson_used": true,
+              "uncertainty": 0.00036586606096394446,
+              "band": [
+                -0.21412632820924038,
+                -0.21339459608731248
+              ],
+              "reasons": [
+                "convergence ratio R = 0.254: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.21290098696018198,
+                -0.2095177138656769,
+                -0.19792868401612643
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.29193755978083813,
+              "richardson": {
+                "p": 1.7762682594373256,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.21429592677788545,
+                "e_a": 0.01589129831106806,
+                "e_ext": 0.0065094089219404835,
+                "gci_fine": 0.008190073691182168,
+                "gci_coarse": 0.02850721320914092,
+                "asymptotic_ratio": 1.0161479095589698
+              },
+              "richardson_used": true,
+              "uncertainty": 0.0017436747721293042,
+              "band": [
+                -0.21464466173231128,
+                -0.21115731218805267
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2919: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.2137604621481821,
+            "last": -0.21376046214827643,
+            "minimum": -0.21376046214827643,
+            "maximum": -0.21376046214733316,
+            "scale": 0.2137604621481821,
+            "relative_range": 4.412758223937862e-12,
+            "drift": -4.99379949157314e-13,
+            "relative_drift": -2.336166118555339e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 4.716366186485743e-13,
+            "cycles": 0,
+            "uncertainty": 4.716366186485743e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 4.41e-12, relative drift -2.34e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.21290098696018198,
+            "last": -0.21290098696018198,
+            "minimum": -0.21290098696018198,
+            "maximum": -0.21290098696018198,
+            "scale": 0.21290098696018198,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.20951771386612397,
+            "last": -0.2095177138656769,
+            "minimum": -0.209517713866534,
+            "maximum": -0.2095177138656769,
+            "scale": 0.20951771386612397,
+            "relative_range": 4.090786211796292e-12,
+            "drift": 5.645606857823997e-13,
+            "relative_drift": 2.694572575105217e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 4.285460875053104e-13,
+            "cycles": 0,
+            "uncertainty": 4.285460875053104e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 4.09e-12, relative drift 2.69e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.19792868401616048,
+            "last": -0.19792868401612643,
+            "minimum": -0.1979286840163287,
+            "maximum": -0.19792868401612643,
+            "scale": 0.19792868401616048,
+            "relative_range": 1.0219975749961918e-12,
+            "drift": 3.1840151430461653e-14,
+            "relative_drift": 1.608667868870485e-13,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 1.0114131754335176e-13,
+            "cycles": 0,
+            "uncertainty": 1.0114131754335176e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 1.02e-12, relative drift 1.61e-13; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 0.00036586606096394446,
+          "worst_ratio": 1.28909639064623e-09,
+          "worst_level": "160x160",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 1.29e-09 (level 160x160), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "v_max",
+        "values": [
+          0.17936485525044468,
+          0.17874860291140993,
+          0.17600882327365533,
+          0.16670468553386922
+        ],
+        "samples": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "notes": [
+          "level 160x160: max at x = 0.023744 (t = 10)",
+          "level 80x80: max at x = 0.0237692 (t = 10)",
+          "level 40x40: max at x = 0.0248082 (t = 10)",
+          "level 20x20: max at x = 0.0249271 (t = 10)"
+        ],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            0.17936485525044468,
+            0.17874860291140993,
+            0.17600882327365533
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.2249277024117931,
+          "richardson": {
+            "p": 2.1524667384809657,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": 0.17954369304810086,
+            "e_a": 0.0034357474220593084,
+            "e_ext": 0.0009960683921560341,
+            "gci_fine": 0.0012463269170433318,
+            "gci_coarse": 0.005560114343138259,
+            "asymptotic_ratio": 1.0034475924790314
+          },
+          "richardson_used": true,
+          "uncertainty": 0.00022354724707021015,
+          "band": [
+            0.17914130800337447,
+            0.1795884024975149
+          ],
+          "reasons": [
+            "convergence ratio R = 0.2249: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                0.17936485525044468,
+                0.17874860291140993,
+                0.17600882327365533
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.2249277024117931,
+              "richardson": {
+                "p": 2.1524667384809657,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": 0.17954369304810086,
+                "e_a": 0.0034357474220593084,
+                "e_ext": 0.0009960683921560341,
+                "gci_fine": 0.0012463269170433318,
+                "gci_coarse": 0.005560114343138259,
+                "asymptotic_ratio": 1.0034475924790314
+              },
+              "richardson_used": true,
+              "uncertainty": 0.00022354724707021015,
+              "band": [
+                0.17914130800337447,
+                0.1795884024975149
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2249: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                0.17874860291140993,
+                0.17600882327365533,
+                0.16670468553386922
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.2944689464386176,
+              "richardson": {
+                "p": 1.7638125938747036,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": 0.17989211037196906,
+                "e_a": 0.015327558331252896,
+                "e_ext": 0.0063566293051688875,
+                "gci_fine": 0.007996618168855368,
+                "gci_coarse": 0.027578781464523854,
+                "asymptotic_ratio": 1.0155661493940837
+              },
+              "richardson_used": true,
+              "uncertainty": 0.001429384325698894,
+              "band": [
+                0.17731921858571104,
+                0.18017798723710882
+              ],
+              "reasons": [
+                "convergence ratio R = 0.2945: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.17936485525010137,
+            "last": 0.17936485525044468,
+            "minimum": 0.17936485524949103,
+            "maximum": 0.17936485525044468,
+            "scale": 0.17936485525010137,
+            "relative_range": 5.3168376895665844e-12,
+            "drift": 1.2700425025383644e-12,
+            "relative_drift": 7.08077678186985e-12,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 4.768269112886969e-13,
+            "cycles": 2,
+            "uncertainty": 4.768269112886969e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 5.32e-12, relative drift 7.08e-12; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.17874860291140993,
+            "last": 0.17874860291140993,
+            "minimum": 0.17874860291140993,
+            "maximum": 0.17874860291140993,
+            "scale": 0.17874860291140993,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.17600882327366765,
+            "last": 0.17600882327365533,
+            "minimum": 0.17600882327365533,
+            "maximum": 0.1760088232740215,
+            "scale": 0.17600882327366765,
+            "relative_range": 2.0804599581217453e-12,
+            "drift": 1.0117331808935545e-14,
+            "relative_drift": 5.748195812436398e-14,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 1.8308965454849613e-13,
+            "cycles": 0,
+            "uncertainty": 1.8308965454849613e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 2.08e-12, relative drift 5.75e-14; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": 0.16670468553447182,
+            "last": 0.16670468553386922,
+            "minimum": 0.16670468553375842,
+            "maximum": 0.16670468553483433,
+            "scale": 0.16670468553447182,
+            "relative_range": 6.4540305493798315e-12,
+            "drift": -7.370354363792909e-13,
+            "relative_drift": -4.4212040832342644e-12,
+            "drift_method": "cycle_means",
+            "drift_noise": 2.1554820335660709e-13,
+            "half_range": 5.379585665821196e-13,
+            "cycles": 6,
+            "uncertainty": 5.379585665821196e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 6.45e-12, relative drift -4.42e-12 (trend of 6 cycle means); both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 0.00022354724707021015,
+          "worst_ratio": 2.133002832904216e-09,
+          "worst_level": "160x160",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 2.13e-09 (level 160x160), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      },
+      {
+        "name": "v_min",
+        "values": [
+          -0.25358500906011505,
+          -0.25292567863491766,
+          -0.24913698676235543,
+          -0.2369371892871835
+        ],
+        "samples": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "notes": [
+          "level 160x160: min at x = 0.0811304 (t = 10)",
+          "level 80x80: min at x = 0.0812033 (t = 10)",
+          "level 40x40: min at x = 0.0822341 (t = 10)",
+          "level 20x20: min at x = 0.0802133 (t = 10)"
+        ],
+        "gci": {
+          "verdict": "monotonic_convergence",
+          "clean_pass": true,
+          "method": "gci",
+          "phi": [
+            -0.25358500906011505,
+            -0.25292567863491766,
+            -0.24913698676235543
+          ],
+          "h": [
+            1.0,
+            2.0,
+            4.0
+          ],
+          "r21": 2.0,
+          "r32": 2.0,
+          "convergence_ratio": 0.17402587683951637,
+          "richardson": {
+            "p": 2.522626250811461,
+            "p_solver": "closed_form",
+            "p_iterations": 0,
+            "safety_factor": 1.25,
+            "phi_ext": -0.2537239244960283,
+            "e_a": 0.0026000370749088304,
+            "e_ext": 0.0005475062558219324,
+            "gci_fine": 0.0006847577289178987,
+            "gci_coarse": 0.003945061378400569,
+            "asymptotic_ratio": 1.002606814890271
+          },
+          "richardson_used": true,
+          "uncertainty": 0.00017364429489162916,
+          "band": [
+            -0.2537586533550067,
+            -0.2534113647652234
+          ],
+          "reasons": [
+            "convergence ratio R = 0.174: monotonic convergence (0 < R < 1)"
+          ],
+          "warnings": [],
+          "notes": [
+            "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
+          ],
+          "triplets": [
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.25358500906011505,
+                -0.25292567863491766,
+                -0.24913698676235543
+              ],
+              "h": [
+                1.0,
+                2.0,
+                4.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.17402587683951637,
+              "richardson": {
+                "p": 2.522626250811461,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.2537239244960283,
+                "e_a": 0.0026000370749088304,
+                "e_ext": 0.0005475062558219324,
+                "gci_fine": 0.0006847577289178987,
+                "gci_coarse": 0.003945061378400569,
+                "asymptotic_ratio": 1.002606814890271
+              },
+              "richardson_used": true,
+              "uncertainty": 0.00017364429489162916,
+              "band": [
+                -0.2537586533550067,
+                -0.2534113647652234
+              ],
+              "reasons": [
+                "convergence ratio R = 0.174: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            },
+            {
+              "verdict": "monotonic_convergence",
+              "clean_pass": true,
+              "method": "gci",
+              "phi": [
+                -0.25292567863491766,
+                -0.24913698676235543,
+                -0.2369371892871835
+              ],
+              "h": [
+                2.0,
+                4.0,
+                8.0
+              ],
+              "r21": 2.0,
+              "r32": 2.0,
+              "convergence_ratio": 0.3105536694582572,
+              "richardson": {
+                "p": 1.687085480321374,
+                "p_solver": "closed_form",
+                "p_iterations": 0,
+                "safety_factor": 1.25,
+                "phi_ext": -0.2546322540583395,
+                "e_a": 0.014979467063251282,
+                "e_ext": 0.0067021180397313015,
+                "gci_fine": 0.008434174381939321,
+                "gci_coarse": 0.027571514808968304,
+                "asymptotic_ratio": 1.015207263770016
+              },
+              "richardson_used": true,
+              "uncertainty": 0.00213321927927724,
+              "band": [
+                -0.2550588979141949,
+                -0.25079245935564043
+              ],
+              "reasons": [
+                "convergence ratio R = 0.3106: monotonic convergence (0 < R < 1)"
+              ],
+              "warnings": [],
+              "notes": [],
+              "triplets": [],
+              "scope": "mesh"
+            }
+          ],
+          "scope": "mesh"
+        },
+        "iterative": [
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.25358500906011505,
+            "last": -0.25358500906011505,
+            "minimum": -0.25358500906011505,
+            "maximum": -0.25358500906011505,
+            "scale": 0.25358500906011505,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.25292567863491766,
+            "last": -0.25292567863491766,
+            "minimum": -0.25292567863491766,
+            "maximum": -0.25292567863491766,
+            "scale": 0.25292567863491766,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.24913698676235543,
+            "last": -0.24913698676235543,
+            "minimum": -0.24913698676235543,
+            "maximum": -0.24913698676235543,
+            "scale": 0.24913698676235543,
+            "relative_range": 0.0,
+            "drift": 0.0,
+            "relative_drift": 0.0,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 0.0,
+            "cycles": 0,
+            "uncertainty": 0.0,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 0, relative drift 0; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          },
+          {
+            "verdict": "converged",
+            "clean_pass": true,
+            "samples": 51,
+            "window": 50,
+            "window_x": [
+              7.55,
+              10.0
+            ],
+            "mean": -0.23693718928719773,
+            "last": -0.2369371892871835,
+            "minimum": -0.23693718928741633,
+            "maximum": -0.2369371892871835,
+            "scale": 0.23693718928719773,
+            "relative_range": 9.827141300189803e-13,
+            "drift": 3.426402952216529e-14,
+            "relative_drift": 1.4461228997121666e-13,
+            "drift_method": "least_squares",
+            "drift_noise": null,
+            "half_range": 1.1642076191975548e-13,
+            "cycles": 0,
+            "uncertainty": 1.1642076191975548e-13,
+            "reasons": [
+              "over the last 50 samples (x = 7.55 to 10): relative range 9.83e-13, relative drift 1.45e-13; both at or below tol = 0.001"
+            ],
+            "warnings": [],
+            "notes": []
+          }
+        ],
+        "contamination": {
+          "clean_pass": true,
+          "u_num": 0.00017364429489162916,
+          "worst_ratio": 0.0,
+          "worst_level": "160x160",
+          "warnings": [],
+          "notes": [
+            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/10"
+          ],
+          "ratio": 10.0
+        }
+      }
+    ],
+    "warnings": [],
+    "consistency": {
+      "clean_pass": true,
+      "levels": [
+        "160x160",
+        "80x80",
+        "40x40",
+        "20x20"
+      ],
+      "files": [
+        "system/fvSchemes",
+        "system/fvSolution",
+        "constant/transportProperties",
+        "0/U",
+        "0/p",
+        "system/controlDict"
+      ],
+      "differences": [
+        {
+          "file": "system/controlDict",
+          "key": "deltaT",
+          "values": [
+            "0.0003125",
+            "0.000625",
+            "0.00125",
+            "0.0025"
+          ],
+          "blocking": false
+        }
+      ],
+      "warnings": [],
+      "notes": [
+        "system/controlDict: deltaT: '0.0003125' on 160x160; '0.000625' on 80x80; '0.00125' on 40x40; '0.0025' on 20x20"
+      ]
+    },
+    "notes": []
+  }
+}

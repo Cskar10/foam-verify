@@ -34,6 +34,8 @@ foam-verify on the three finest grids: every QoI converges monotonically and is 
   coarse grids is consistent with the two lid corners, where the velocity is discontinuous.
 - `tests/test_studies.py` reads this folder back and checks the verdicts, the orders and the
   asymptotic ratios.
+- foam-verify's full report on this study is [report.md](report.md) (JSON:
+  [report.json](report.json)).
 
 ## Case
 

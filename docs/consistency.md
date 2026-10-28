@@ -16,7 +16,8 @@ system/fvSchemes: divSchemes/div(phi,U): 'Gauss linear' on 160x160, 80x80, 40x40
 
 `assess_study()` runs it on every study, with the study folder as the only folder it may read. A
 difference that blocks makes `consistency.clean_pass` false. A study is clean only when the
-consistency check and every QoI's GCI and contamination check pass.
+consistency check and every QoI's GCI and contamination check pass, and the study's refined
+directions agree with its mesh ([report.md](report.md)).
 
 ## What is compared
 

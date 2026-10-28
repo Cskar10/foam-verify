@@ -101,6 +101,8 @@ class ContaminationCheck:
     worst_level: str | None
     warnings: tuple[str, ...]
     notes: tuple[str, ...]
+    # The margin required: u_it at most U / ratio on every headline level.
+    ratio: float = 10.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -456,4 +458,5 @@ def check_contamination(
         worst_level=None if worst is None else worst[1],
         warnings=tuple(warnings),
         notes=tuple(notes),
+        ratio=ratio,
     )

@@ -169,6 +169,16 @@ class StudyResult:
         return asdict(self)
 
 
+def gci_options(study: Study) -> Options:
+    """The GCI options a study is judged by: the defaults, at the study's formal order."""
+    return Options(formal_order=study.formal_order)
+
+
+def iterative_options(qoi: QoI) -> IterativeOptions:
+    """The iterative-convergence options for one QoI: its window, the default tolerance."""
+    return IterativeOptions(window=qoi.window, min_samples=qoi.min_samples)
+
+
 # --- manifest ---------------------------------------------------------------------------
 
 
@@ -724,9 +734,8 @@ def _qoi_value(
 
 
 def _iterative(history: Series, qoi: QoI, level: str) -> IterativeResult:
-    options = IterativeOptions(window=qoi.window, min_samples=qoi.min_samples)
     try:
-        return iterative_convergence(history.y, history.x, options=options)
+        return iterative_convergence(history.y, history.x, options=iterative_options(qoi))
     except ValueError as exc:
         raise StudyError(f"qoi {qoi.name}, level {level}: {exc}") from exc
 
@@ -800,7 +809,7 @@ def assess_study(study: Study) -> StudyResult:
         raise StudyError(f"levels must be listed finest first with falling cell counts ({listing})")
     warnings, study_notes = _dimension_checks(study, infos, faces)
 
-    options = Options(formal_order=study.formal_order)
+    options = gci_options(study)
     names = [lv.name for lv in study.levels]
     results: list[QoIResult] = []
     for qoi in study.qois:

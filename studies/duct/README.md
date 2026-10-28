@@ -24,7 +24,8 @@ p = 1.995 against a formal order of 2, asymptotic-range ratio 1.000, clean pass.
 - The next triplet (80, 40, 20) also brackets the exact value: p = 1.980, error 79% of its band.
 
 `tests/test_studies.py` reads this folder back and checks both the bracket and the force
-balance below.
+balance below. foam-verify's full report on this study is [report.md](report.md) (JSON:
+[report.json](report.json)), written by `foam-verify report studies/duct --output studies/duct`.
 
 ## Case
 
