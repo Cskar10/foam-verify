@@ -99,7 +99,8 @@ are `studies/*/report.md` and `report.json`. `make reports` regenerates them, an
 ## Not covered
 
 - Comparison with reference data. The square duct's exact f Re and the cavity's Ghia et al.
-  values are not in the reports yet; reference comparison (ASME V&V 20) is planned as its own
-  check. The duct's comparison with the exact value is in [its README](../studies/duct/README.md).
+  values are not in the reports yet. `foam-verify compare` makes the comparison from numbers
+  ([compare.md](compare.md)); the duct's comparison with the exact value is also in
+  [its README](../studies/duct/README.md).
 - Settings that study.toml cannot change yet: the GCI thresholds, the iterative tolerance and the
   contamination margin are foam-verify's defaults, recorded in every report.

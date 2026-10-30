@@ -5,8 +5,9 @@ convergence index (GCI), iterative convergence of the quantities you report, set
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
-convergence and settings consistency checks, and the `report` command exist. Comparison with
-reference data comes next.
+convergence and settings consistency checks, the `report` command and the comparison with
+reference data (`compare`, from numbers) exist. Reading reference values from `study.toml` into
+the reports comes next.
 
 ## Results
 
@@ -68,6 +69,21 @@ The verdict is one of `monotonic_convergence`, `oscillatory_convergence`, `diver
 `degenerate`, `two_grid` or `order_unresolved`. Only a monotonic triplet with no warnings is a
 clean pass, and the exit code is 0 only then. The maths, its sources and the conventions that are
 this tool's own are in [docs/gci.md](docs/gci.md).
+
+## Comparison with reference data
+
+```console
+$ uv run foam-verify compare --simulation 56.8997 --uncertainty 0.0108 --reference 56.9083 --kind exact
+```
+
+The comparison error E = S - D is judged against the uncertainty that applies, and the kind of
+reference, which `--kind` states, decides what E can show. Against an `exact` solution of the
+same equations, E is the numerical error itself, so the comparison checks whether the numerical
+uncertainty bounds it: on the duct, |E| is 80% of U_num. Against another numerical solution
+(`code`), E is the difference of two numerical errors. Only an `experiment` validates the model,
+following ASME V&V 20 and the algorithm of Eça, Dowding and Roache (2020). Every uncertainty is
+a 95% expanded uncertainty; with experimental data, the standard uncertainty is given too, with
+its divisor. The rules and their sources are in [docs/compare.md](docs/compare.md).
 
 ## Iterative convergence
 

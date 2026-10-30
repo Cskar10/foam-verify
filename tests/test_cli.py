@@ -203,3 +203,52 @@ def test_gci_core_scope_subtracts_layer_cells(capsys: pytest.CaptureFixture[str]
     assert data["scope"] == "core"
     assert data["r21"] == pytest.approx(2.0)
     assert data["r32"] == pytest.approx(2.0)
+
+
+DUCT = ["--simulation", "56.899724578704", "--uncertainty", "0.010770340967144163"]
+
+
+def test_compare_exact_reference_exits_0(capsys: pytest.CaptureFixture[str]) -> None:
+    argv = ["compare", *DUCT, "--reference", "56.90830753911475", "--kind", "exact"]
+    assert cli.main(argv) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("outcome: within_uncertainty (exact reference)\n")
+    assert "|E| = 0.797 U_num" in out
+    assert "code-verification check" in out
+
+
+def test_compare_experiment_json_exits_1_when_not_within(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    argv = ["compare", "--simulation", "12", "--uncertainty", "0.6", "--reference", "7"]
+    argv += ["--kind", "experiment", "--reference-uncertainty", "0.8", "--json"]
+    assert cli.main(argv) == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["case"] == "3a" and data["outcome"] == "outside_uncertainty"
+    assert data["standard"]["divisor"] == 1.15
+
+
+def test_compare_text_for_case_1(capsys: pytest.CaptureFixture[str]) -> None:
+    argv = ["compare", "--simulation", "30", "--uncertainty", "0.6", "--reference", "7"]
+    argv += ["--kind", "experiment", "--reference-uncertainty", "0.8", "--c", "7"]
+    assert cli.main(argv) == 1
+    out = capsys.readouterr().out
+    assert "outcome: model_error (experiment reference)" in out
+    assert "case 1 (C = 7): model error = E = 23" in out
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["compare", *DUCT, "--reference", "1", "--kind", "experiment"],
+        ["compare", *DUCT, "--reference", "1", "--kind", "exact", "--reference-uncertainty", "0.1"],
+        ["compare", *DUCT, "--reference", "1"],
+        ["compare", *DUCT, "--reference", "1", "--kind", "code", "--input-uncertainty", "0.1"],
+        ["compare", *DUCT, "--reference", "1", "--kind", "code", "--method", "none"],
+    ],
+)
+def test_compare_bad_input_exits_2(argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc:
+        cli.main(argv)
+    assert exc.value.code == 2
+    assert "error:" in capsys.readouterr().err

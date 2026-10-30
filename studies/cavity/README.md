@@ -2,7 +2,7 @@
 
 The `icoFoam` cavity at Re = 100 on four uniform grids, 20 x 20 to 160 x 160. There is no exact
 solution; this study shows the GCI behaving on a standard benchmark with corner singularities.
-The comparison with Ghia, Ghia and Shin (1982) is a separate step (`validate`, week 3), and is
+The comparison with Ghia, Ghia and Shin (1982) is a separate step (`compare`), and is
 labelled code-to-code: Ghia's values are themselves a 129 x 129 numerical solution.
 
 Velocities are in units of the lid speed U = 1 m/s; positions in units of the side L = 0.1 m.
