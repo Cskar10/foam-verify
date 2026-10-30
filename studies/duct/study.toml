@@ -3,6 +3,7 @@ name = "square-duct"
 dim = 2            # the cross-section is refined; the one cyclic cell along the flow is not
 formal_order = 2
 refined = "mesh"
+grid_sequence = "structured"   # every level refines the same block mesh systematically
 
 [[levels]]
 name = "160x160"

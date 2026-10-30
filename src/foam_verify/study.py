@@ -16,6 +16,7 @@ study.toml, levels finest first:
     dim = 2                    # refined directions
     formal_order = 2           # optional, default 2
     refined = "mesh"           # mesh | core | boundary-layer
+    grid_sequence = "structured"  # structured | unstructured: how the levels were generated
     layer_cells = 0            # core only: fixed layer cells, optional
 
     [[levels]]
@@ -63,7 +64,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from .consistency import ConsistencyResult, settings_consistency
-from .gci import GCIResult, Options, Scope, grid_convergence
+from .gci import GCIResult, GridSequence, Options, Scope, grid_convergence
 from .iterative import (
     ContaminationCheck,
     IterativeResult,
@@ -115,6 +116,7 @@ class Study:
     dim: int
     formal_order: float
     scope: Scope
+    grid_sequence: GridSequence
     layer_cells: float | None
     levels: tuple[Level, ...]
     qois: tuple[QoI, ...]
@@ -157,6 +159,7 @@ class StudyResult:
     root: str
     dim: int
     scope: Scope
+    grid_sequence: GridSequence
     levels: tuple[LevelInfo, ...]
     qois: tuple[QoIResult, ...]
     warnings: tuple[str, ...]
@@ -303,7 +306,16 @@ def load_study(path: str | Path) -> Study:
         raise StudyError(f"no {MANIFEST} at {manifest}") from exc
     except tomllib.TOMLDecodeError as exc:
         raise StudyError(f"{manifest}: {exc}") from exc
-    allowed = {"name", "dim", "formal_order", "refined", "layer_cells", "levels", "qoi"}
+    allowed = {
+        "name",
+        "dim",
+        "formal_order",
+        "refined",
+        "grid_sequence",
+        "layer_cells",
+        "levels",
+        "qoi",
+    }
     _check_keys(raw, allowed, MANIFEST)
 
     dim = raw.get("dim")
@@ -316,6 +328,15 @@ def load_study(path: str | Path) -> Study:
         scope = Scope(str(raw["refined"]).replace("-", "_"))
     except ValueError as exc:
         raise StudyError(f"{MANIFEST}: refined must be mesh, core or boundary-layer") from exc
+    if "grid_sequence" not in raw:
+        raise StudyError(
+            f"{MANIFEST}: grid_sequence is required: structured (every level refines one base "
+            "grid systematically) or unstructured"
+        )
+    try:
+        grid_sequence = GridSequence(str(raw["grid_sequence"]))
+    except ValueError as exc:
+        raise StudyError(f"{MANIFEST}: grid_sequence must be structured or unstructured") from exc
     formal_order = _positive(raw.get("formal_order", 2.0), "formal_order", MANIFEST)
     layer_cells = raw.get("layer_cells")
     if layer_cells is not None:
@@ -349,6 +370,7 @@ def load_study(path: str | Path) -> Study:
         dim=dim,
         formal_order=formal_order,
         scope=scope,
+        grid_sequence=grid_sequence,
         layer_cells=None if layer_cells is None else float(layer_cells),
         levels=levels,
         qois=qois,
@@ -826,7 +848,11 @@ def assess_study(study: Study) -> StudyResult:
         if study.scope is Scope.BOUNDARY_LAYER:
             heights = [lv.first_layer_height for lv in study.levels]
             gci = grid_convergence(
-                values, h=[h for h in heights if h is not None], scope=study.scope, options=options
+                values,
+                h=[h for h in heights if h is not None],
+                scope=study.scope,
+                grid_sequence=study.grid_sequence,
+                options=options,
             )
         else:
             gci = grid_convergence(
@@ -834,6 +860,7 @@ def assess_study(study: Study) -> StudyResult:
                 cells=cells,
                 dim=study.dim,
                 scope=study.scope,
+                grid_sequence=study.grid_sequence,
                 layer_cells=study.layer_cells,
                 options=options,
             )
@@ -861,6 +888,7 @@ def assess_study(study: Study) -> StudyResult:
         root=str(study.root),
         dim=study.dim,
         scope=study.scope,
+        grid_sequence=study.grid_sequence,
         levels=tuple(infos),
         qois=tuple(results),
         warnings=tuple(warnings),

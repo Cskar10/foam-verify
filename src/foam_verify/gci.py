@@ -53,6 +53,27 @@ SCOPE_NOTES = {
 }
 
 
+class GridSequence(StrEnum):
+    """How the levels were generated: by systematic refinement of one base grid, or not."""
+
+    STRUCTURED = "structured"  # every level refines the same base grid systematically
+    UNSTRUCTURED = "unstructured"  # e.g. each level meshed afresh at its own cell size
+
+
+SEQUENCE_NOTES = {
+    GridSequence.STRUCTURED: (
+        "grid sequence structured: the levels refine one base grid systematically (the base grid "
+        "may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, "
+        "para. 2-4.1)"
+    ),
+    GridSequence.UNSTRUCTURED: (
+        "grid sequence unstructured: the levels do not refine one grid systematically, so r is "
+        "only approximate and Fs = 3 (ASME V&V 20, para. 2-4.1: Fs = 1.25 has not been evaluated "
+        "for unstructured refinement)"
+    ),
+}
+
+
 class Method(StrEnum):
     """How the uncertainty in the result was obtained."""
 
@@ -130,6 +151,7 @@ class GCIResult:
     notes: tuple[str, ...] = ()
     triplets: tuple[GCIResult, ...] = ()
     scope: Scope = Scope.MESH
+    grid_sequence: GridSequence = GridSequence.STRUCTURED
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -227,6 +249,7 @@ def grid_convergence(
     dim: int | None = None,
     h: Sequence[float] | None = None,
     scope: Scope = Scope.MESH,
+    grid_sequence: GridSequence = GridSequence.STRUCTURED,
     layer_cells: float | None = None,
     options: Options | None = None,
 ) -> GCIResult:
@@ -240,11 +263,16 @@ def grid_convergence(
     cell counts, layer_cells is the fixed number of near-wall layer cells, subtracted from
     every level so that r measures the core refinement. Scope.BOUNDARY_LAYER needs h
     (first-layer heights): cell counts do not measure wall-normal refinement.
+
+    grid_sequence says how the levels were generated (see GridSequence). An unstructured
+    sequence gets Fs = fs_fallback (3) where a structured one gets fs_three_grid (1.25), as
+    ASME V&V 20 (para. 2-4.1) recommends.
     """
     opt = options or Options()
     if not opt.formal_order > 0:
         raise ValueError("formal_order must be positive")
     scope = Scope(scope)
+    grid_sequence = GridSequence(grid_sequence)
     phi = _finite_tuple(values, "values")
     if len(phi) < 2:
         raise ValueError("a grid study needs at least two grids")
@@ -268,10 +296,14 @@ def grid_convergence(
             "scope core with total cell counts: the fixed layer cells are counted as refined, "
             "so r understates the core refinement ratio; give layer_cells (0 if negligible)"
         )
-    return _with_scope(_assess(phi, sizes, opt), scope, extra)
+    if grid_sequence is GridSequence.UNSTRUCTURED:
+        opt = replace(opt, fs_three_grid=opt.fs_fallback)
+    return _with_inputs(_assess(phi, sizes, opt), scope, grid_sequence, extra)
 
 
-def _with_scope(res: GCIResult, scope: Scope, extra: list[str]) -> GCIResult:
+def _with_inputs(
+    res: GCIResult, scope: Scope, grid_sequence: GridSequence, extra: list[str]
+) -> GCIResult:
     # The scope warnings concern the size of an uncertainty estimate, so they are attached only
     # to results that have one: a divergent or degenerate verdict does not depend on them.
     def tag(r: GCIResult) -> GCIResult:
@@ -279,14 +311,14 @@ def _with_scope(res: GCIResult, scope: Scope, extra: list[str]) -> GCIResult:
         return replace(
             r,
             scope=scope,
+            grid_sequence=grid_sequence,
             warnings=(*r.warnings, *add),
             clean_pass=r.clean_pass and not add,
         )
 
     out = tag(res)
-    return replace(
-        out, notes=(SCOPE_NOTES[scope], *out.notes), triplets=tuple(tag(t) for t in res.triplets)
-    )
+    notes = (SCOPE_NOTES[scope], SEQUENCE_NOTES[grid_sequence], *out.notes)
+    return replace(out, notes=notes, triplets=tuple(tag(t) for t in res.triplets))
 
 
 def _assess(phi: tuple[float, ...], sizes: tuple[float, ...], opt: Options) -> GCIResult:

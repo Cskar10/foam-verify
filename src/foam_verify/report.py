@@ -6,7 +6,7 @@ a clean pass only when every check holds:
 
 - its grid study (foam_verify.gci): monotonic convergence on grids 1-3 with no warning, so the
   refinement ratios, the observed order, the asymptotic range, the coarser triplets and the
-  refinement scope all hold;
+  refinement scope all hold, with the safety factor the stated grid sequence calls for;
 - its iterative convergence (foam_verify.iterative): settled on the levels behind the result,
   with u_it at most a tenth of U;
 - the study's settings consistency (foam_verify.consistency): the levels differ only in the
@@ -31,7 +31,16 @@ from typing import Any
 
 from . import __version__
 from .consistency import ConsistencyResult
-from .gci import SCOPE_NOTES, GCIResult, Method, Options, Scope, Verdict
+from .gci import (
+    SCOPE_NOTES,
+    SEQUENCE_NOTES,
+    GCIResult,
+    GridSequence,
+    Method,
+    Options,
+    Scope,
+    Verdict,
+)
 from .iterative import ContaminationCheck, IterativeResult
 from .iterative import Verdict as IterativeVerdict
 from .study import (
@@ -217,6 +226,7 @@ def _checks(
         _consistency_check(res.consistency),
         _dimension_check(res),
         _scope_check(gci, res.scope, layer_cells),
+        _sequence_check(gci),
     ]
 
 
@@ -279,10 +289,13 @@ def _order_check(gci: GCIResult, opt: Options) -> Check:
         )
     lo, hi = opt.p_min, opt.p_max_factor * opt.formal_order
     ok = lo <= rich.p <= hi
+    fs = f"Fs = {rich.safety_factor:g}"
+    if ok and gci.grid_sequence is GridSequence.UNSTRUCTURED:
+        fs += " for an unstructured grid sequence"
     detail = (
         f"p = {_sig(rich.p, 4)} ({_solver_text(rich.p_solver, rich.p_iterations)}), "
         f"{'within' if ok else 'outside'} [{lo:g}, {hi:g}] for a formal order of "
-        f"{opt.formal_order:g}, so Fs = {rich.safety_factor:g}"
+        f"{opt.formal_order:g}; {fs}"
     )
     if gci.verdict is not Verdict.MONOTONIC:
         return Check(name, Status.NOT_APPLICABLE, f"{detail}; for reference only")
@@ -403,6 +416,12 @@ def _scope_check(gci: GCIResult, scope: Scope, layer_cells: float | None) -> Che
     return Check(name, Status.ASSUMED, SCOPE_NOTES[scope])
 
 
+def _sequence_check(gci: GCIResult) -> Check:
+    # Stated in study.toml, not read from the mesh: whether the levels refine one grid
+    # systematically decides Fs, and nothing on disk shows it reliably.
+    return Check("Grid sequence", Status.ASSUMED, SEQUENCE_NOTES[gci.grid_sequence])
+
+
 # --- Markdown ---------------------------------------------------------------------------
 
 
@@ -508,8 +527,8 @@ def render_markdown(report: Report) -> str:
         f"# Verification report: {res.name}",
         "",
         f"foam-verify {report.version}, from `{MANIFEST}`: {len(res.levels)} levels, finest "
-        f"first; refined = {scope}; refined directions d = {res.dim}; formal order "
-        f"{report.criteria.formal_order:g}.",
+        f"first; refined = {scope}; grid sequence {res.grid_sequence.value}; refined directions "
+        f"d = {res.dim}; formal order {report.criteria.formal_order:g}.",
         "",
     ]
     lines += _verdict_section(report)
@@ -685,13 +704,15 @@ def _qoi_section(v: QoIVerdict, q: QoIResult, res: StudyResult) -> list[str]:
             )
         lines += _table(["Grids", "Convergence", "Result", "Relative U"], rows)
 
-    # The scope note and the summary of the contamination check are rows of the checks table.
+    # The scope and sequence notes and the summary of the contamination check are rows of the
+    # checks table.
     contamination = [
         n
         for n in (q.contamination.notes if q.contamination is not None else ())
         if not n.startswith(_CONTAMINATION_SUMMARIES)
     ]
-    notes = [n for n in (*gci.notes, *q.notes, *contamination) if n != SCOPE_NOTES[gci.scope]]
+    shown = (SCOPE_NOTES[gci.scope], SEQUENCE_NOTES[gci.grid_sequence])
+    notes = [n for n in (*gci.notes, *q.notes, *contamination) if n not in shown]
     return lines + _bullets(notes, "Notes")
 
 
@@ -704,8 +725,9 @@ def _method_section(report: Report) -> list[str]:
     ratio = next((q.contamination.ratio for q in report.result.qois if q.contamination), 10.0)
     items = [
         f"Grid convergence after Celik et al. (2008), with the convergence types of Eça and "
-        f"Hoekstra (2014): Fs = {o.fs_three_grid:g} on three or more grids, and "
-        f"{o.fs_fallback:g} on two grids or when p is outside "
+        f"Hoekstra (2014): Fs = {o.fs_three_grid:g} on three or more grids of a structured grid "
+        f"sequence, and {o.fs_fallback:g} for an unstructured sequence (ASME V&V 20, "
+        f"para. 2-4.1), on two grids, or when p is outside "
         f"[{o.p_min:g}, {o.p_max_factor * o.formal_order:g}]; refinement ratios of at least "
         f"{o.min_refinement_ratio:g}; an asymptotic-range ratio within [{lo:g}, {hi:g}]; with "
         "four or more grids, every coarser triplet converges monotonically too. An oscillatory "

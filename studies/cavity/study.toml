@@ -4,6 +4,7 @@ name = "lid-driven-cavity-re100"
 dim = 2
 formal_order = 2
 refined = "mesh"
+grid_sequence = "structured"   # every level refines the same block mesh systematically
 
 [[levels]]
 name = "160x160"

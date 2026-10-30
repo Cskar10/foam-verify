@@ -9,9 +9,10 @@ from foam_verify import cli
 
 STUDIES = Path(__file__).resolve().parent.parent / "studies"
 
+SEQ = ["--grid-sequence", "structured"]
 CELIK = [
     "--values", "6.063", "5.972", "5.863", "--cells", "18000", "8000", "4500", "--dim", "2",
-    "--refined", "mesh",
+    "--refined", "mesh", *SEQ,
 ]  # fmt: skip
 
 
@@ -27,9 +28,22 @@ def test_gci_text_clean_pass(capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert "verdict: monotonic_convergence (clean pass)" in out
     assert "refined: mesh" in out
+    assert "grid sequence: structured" in out
     assert "p = 1.534 (fixed_point" in out
     assert "GCI_fine = 2.175%" in out
     assert "method: gci" in out
+
+
+def test_gci_unstructured_sequence_uses_fs_3(capsys: pytest.CaptureFixture[str]) -> None:
+    # ASME V&V 20, para. 2-4.1: Fs = 3 for unstructured refinement, so the GCI is 3/1.25 times
+    # Celik's 2.175%. The order and the verdict do not change.
+    argv = ["gci", *CELIK[: CELIK.index("--grid-sequence")], "--grid-sequence", "unstructured"]
+    assert cli.main(argv) == 0
+    out = capsys.readouterr().out
+    assert "grid sequence: unstructured" in out
+    assert "p = 1.534 (fixed_point" in out
+    assert "Fs = 3" in out
+    assert "GCI_fine = 5.22%" in out
 
 
 def test_gci_json(capsys: pytest.CaptureFixture[str]) -> None:
@@ -54,6 +68,7 @@ def test_gci_not_clean_exits_1(capsys: pytest.CaptureFixture[str]) -> None:
             "4.286",
             "--refined",
             "mesh",
+            *SEQ,
         ]
     )
     assert code == 1
@@ -64,7 +79,8 @@ def test_gci_not_clean_exits_1(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_gci_two_grid(capsys: pytest.CaptureFixture[str]) -> None:
-    assert cli.main(["gci", "--values", "1.005", "1.02", "--h", "1", "2", "--refined", "mesh"]) == 1
+    argv = ["gci", "--values", "1.005", "1.02", "--h", "1", "2", "--refined", "mesh", *SEQ]
+    assert cli.main(argv) == 1
     out = capsys.readouterr().out
     assert "assumed formal order" in out
 
@@ -72,8 +88,8 @@ def test_gci_two_grid(capsys: pytest.CaptureFixture[str]) -> None:
 @pytest.mark.parametrize(
     "argv",
     [
-        ["gci", "--values", "1", "2", "3", "--cells", "8", "4", "2", "--refined", "mesh"],
-        ["gci", "--values", "1", "2", "3", "--h", "1", "2", "--refined", "mesh"],
+        ["gci", "--values", "1", "2", "3", "--cells", "8", "4", "2", "--refined", "mesh", *SEQ],
+        ["gci", "--values", "1", "2", "3", "--h", "1", "2", "--refined", "mesh", *SEQ],
         [
             "gci",
             "--values",
@@ -86,10 +102,27 @@ def test_gci_two_grid(capsys: pytest.CaptureFixture[str]) -> None:
             "4",
             "--refined",
             "mesh",
+            *SEQ,
             "--formal-order",
             "0",
         ],
-        ["gci", "--values", "1", "2", "3", "--h", "1", "2", "4"],
+        ["gci", "--values", "1", "2", "3", "--h", "1", "2", "4", *SEQ],
+        ["gci", "--values", "1", "2", "3", "--h", "1", "2", "4", "--refined", "mesh"],
+        [
+            "gci",
+            "--values",
+            "1",
+            "2",
+            "3",
+            "--h",
+            "1",
+            "2",
+            "4",
+            "--refined",
+            "mesh",
+            "--grid-sequence",
+            "blocky",
+        ],
         [
             "gci",
             "--values",
@@ -104,6 +137,7 @@ def test_gci_two_grid(capsys: pytest.CaptureFixture[str]) -> None:
             "1",
             "--refined",
             "boundary-layer",
+            *SEQ,
         ],
     ],
 )
@@ -163,7 +197,7 @@ def test_report_bad_input_exits_2(
 
 def test_gci_core_scope_subtracts_layer_cells(capsys: pytest.CaptureFixture[str]) -> None:
     argv = ["gci", "--values", "1.0", "1.04", "1.2", "--cells", "8100", "1100", "225"]
-    argv += ["--dim", "3", "--refined", "core", "--layer-cells", "100", "--json"]
+    argv += ["--dim", "3", "--refined", "core", *SEQ, "--layer-cells", "100", "--json"]
     cli.main(argv)
     data = json.loads(capsys.readouterr().out)
     assert data["scope"] == "core"

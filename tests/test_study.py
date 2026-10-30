@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from foam_verify.gci import Scope, Verdict
+from foam_verify.gci import GridSequence, Scope, Verdict
 from foam_verify.iterative import Verdict as IterativeVerdict
 from foam_verify.study import (
     Profile,
@@ -83,7 +83,7 @@ def make_case(root: Path, name: str, cells: int, value: float, side: str = "empt
 
 
 def manifest(levels: list[tuple[str, str]], extra: str = "", qoi: str = "") -> str:
-    text = 'name = "demo"\ndim = 2\nrefined = "mesh"\n' + extra
+    text = 'name = "demo"\ndim = 2\nrefined = "mesh"\ngrid_sequence = "structured"\n' + extra
     for name, path in levels:
         text += f'\n[[levels]]\nname = "{name}"\npath = "{path}"\n'
     text += qoi or (
@@ -167,6 +167,22 @@ def test_assess_recovers_order_and_limit(study_dir: Path) -> None:
     assert qoi.gci.richardson.p == pytest.approx(2.0, abs=1e-9)
     assert qoi.gci.richardson.phi_ext == pytest.approx(1.0, abs=1e-9)
     assert res.to_dict()["qois"][0]["gci"]["verdict"] == "monotonic_convergence"
+
+
+def test_an_unstructured_grid_sequence_gets_fs_3(study_dir: Path) -> None:
+    # ASME V&V 20, para. 2-4.1: Fs = 1.25 only for structured refinement, 3 otherwise.
+    structured = assess_study(load_study(study_dir)).qois[0].gci
+    path = study_dir / "study.toml"
+    path.write_text(path.read_text().replace('"structured"', '"unstructured"'))
+    study = load_study(study_dir)
+    assert study.grid_sequence is GridSequence.UNSTRUCTURED
+    res = assess_study(study)
+    assert res.grid_sequence is GridSequence.UNSTRUCTURED
+    gci = res.qois[0].gci
+    assert gci.richardson is not None and gci.richardson.safety_factor == 3.0
+    assert structured.uncertainty is not None and gci.uncertainty is not None
+    assert gci.uncertainty == pytest.approx(structured.uncertainty * 3.0 / 1.25)
+    assert gci.clean_pass  # a larger safety factor, not a failed check
 
 
 def test_a_study_without_settings_files_is_not_shown_consistent(study_dir: Path) -> None:
@@ -342,6 +358,11 @@ def test_window_and_min_samples_set_the_iterative_window(study_dir: Path) -> Non
 MANIFEST_EDITS: list[tuple[Callable[[str], str], str]] = [
     (lambda t: t.replace('refined = "mesh"\n', ""), "refined is required"),
     (lambda t: t.replace('refined = "mesh"', 'refined = "all"'), "refined must be"),
+    (lambda t: t.replace('grid_sequence = "structured"\n', ""), "grid_sequence is required"),
+    (
+        lambda t: t.replace('grid_sequence = "structured"', 'grid_sequence = "octree"'),
+        "grid_sequence must be",
+    ),
     (lambda t: t.replace("dim = 2", "dim = 4"), "dim"),
     (lambda t: t + "\ncolour = 1\n", "unknown key"),
     (lambda t: t.replace('path = "fine"', 'path = "../elsewhere"'), "outside"),

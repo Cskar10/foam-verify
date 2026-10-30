@@ -30,12 +30,13 @@ A QoI is a clean pass only when no check fails. The checks, in the order the rep
 | Settings consistency | the levels differ in more than the mesh | [consistency.md](consistency.md) |
 | Refined directions | the refined directions d disagree with the patches of the mesh (below) | below |
 | Refinement scope | `refined = "core"` with total cell counts and no `layer_cells` | [gci.md](gci.md), refinement scope |
+| Grid sequence | never: it is stated in `study.toml` and decides the safety factor, Fs = 3 for an unstructured sequence | ASME V&V 20, para. 2-4.1 ([gci.md](gci.md), grid sequence) |
 
 Each check is `pass`, `fail`, `n/a` or `assumed`. `n/a` means the check does not apply, such as
 the asymptotic range of a divergent triplet, or the iterative error when there is no U to compare
 it with. `assumed` means the method rests on a condition that foam-verify cannot see in the
-files: the refinement scope that `study.toml` states, or the formal order that a two-grid study
-takes for p.
+files: the refinement scope and the grid sequence that `study.toml` states, or the formal order
+that a two-grid study takes for p.
 
 The checks add no rule of their own. Each restates a condition that `foam_verify.gci`,
 `foam_verify.iterative`, `foam_verify.consistency` or the study reader already applies, so the

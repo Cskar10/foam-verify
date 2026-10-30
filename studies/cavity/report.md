@@ -1,6 +1,6 @@
 # Verification report: lid-driven-cavity-re100
 
-foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; refined directions d = 2; formal order 2.
+foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; grid sequence structured; refined directions d = 2; formal order 2.
 
 ## Verdict
 
@@ -44,7 +44,7 @@ From `postProcessing/ghiaPoints/*/U`, column `0`, x component, last value; windo
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2558: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 1.967 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 1.967 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.867 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -52,6 +52,7 @@ From `postProcessing/ghiaPoints/*/U`, column `0`, x component, last value; windo
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -81,7 +82,7 @@ From `postProcessing/ghiaPoints/*/U`, column `1`, x component, last value; windo
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2603: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 1.942 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 1.942 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.827 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -89,6 +90,7 @@ From `postProcessing/ghiaPoints/*/U`, column `1`, x component, last value; windo
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -118,7 +120,7 @@ From `postProcessing/ghiaPoints/*/U`, column `2`, x component, last value; windo
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2039: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.001, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.737 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -126,6 +128,7 @@ From `postProcessing/ghiaPoints/*/U`, column `2`, x component, last value; windo
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -155,7 +158,7 @@ From `postProcessing/verticalCentreline/*/U`, minimum of the x component along y
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.254: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 1.977 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 1.977 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.004, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.776 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -163,6 +166,7 @@ From `postProcessing/verticalCentreline/*/U`, minimum of the x component along y
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -196,7 +200,7 @@ From `postProcessing/horizontalCentreline/*/U`, maximum of the y component along
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2249: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.764 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -204,6 +208,7 @@ From `postProcessing/horizontalCentreline/*/U`, maximum of the y component along
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -237,7 +242,7 @@ From `postProcessing/horizontalCentreline/*/U`, minimum of the y component along
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.174: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25 |
+| Observed order | pass | p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.687 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -245,6 +250,7 @@ From `postProcessing/horizontalCentreline/*/U`, minimum of the y component along
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
+| Grid sequence | assumed | grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1) |
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
@@ -270,7 +276,7 @@ Notes:
 
 ## Method
 
-- Grid convergence after Celik et al. (2008), with the convergence types of Eça and Hoekstra (2014): Fs = 1.25 on three or more grids, and 3 on two grids or when p is outside [0.5, 4]; refinement ratios of at least 1.3; an asymptotic-range ratio within [0.9, 1.1]; with four or more grids, every coarser triplet converges monotonically too. An oscillatory triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).
+- Grid convergence after Celik et al. (2008), with the convergence types of Eça and Hoekstra (2014): Fs = 1.25 on three or more grids of a structured grid sequence, and 3 for an unstructured sequence (ASME V&V 20, para. 2-4.1), on two grids, or when p is outside [0.5, 4]; refinement ratios of at least 1.3; an asymptotic-range ratio within [0.9, 1.1]; with four or more grids, every coarser triplet converges monotonically too. An oscillatory triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).
 - Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/10 (Celik et al. 2008, Appendix A; docs/iterative.md).
 - Settings consistency: the schemes, solver settings, physical properties, boundary conditions and near-wall layer settings of the levels, compared entry by entry (docs/consistency.md).
 - U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI is a clean pass only when no check fails (docs/report.md).

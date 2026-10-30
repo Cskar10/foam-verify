@@ -4,6 +4,7 @@ name = "pitzDaily"
 dim = 2            # one cell thick, empty front and back
 formal_order = 2
 refined = "mesh"   # every block refined, near-wall cells included
+grid_sequence = "structured"   # every block refined by the same factor, gradings kept
 
 [[levels]]
 name = "139k"

@@ -53,12 +53,16 @@ The grid study is given finest grid first, as values with cell counts and the nu
 directions, or with representative cell sizes:
 
 ```console
-$ uv run foam-verify gci --values 6.063 5.972 5.863 --cells 18000 8000 4500 --dim 2 --refined mesh
-$ uv run foam-verify gci --values 6.063 5.972 5.863 --cells 18000 8000 4500 --dim 2 --refined mesh --json
+$ uv run foam-verify gci --values 6.063 5.972 5.863 --cells 18000 8000 4500 --dim 2 \
+    --refined mesh --grid-sequence structured
+$ uv run foam-verify gci --values 6.063 5.972 5.863 --cells 18000 8000 4500 --dim 2 \
+    --refined mesh --grid-sequence structured --json
 ```
 
-`--refined` (`mesh`, `core` or `boundary-layer`) is required: it states which part of the mesh was
-refined, and so what the uncertainty covers.
+Two inputs are required. `--refined` (`mesh`, `core` or `boundary-layer`) states which part of the
+mesh was refined, and so what the uncertainty covers. `--grid-sequence` (`structured` or
+`unstructured`) states whether the levels refine one base grid systematically: an unstructured
+sequence gets the safety factor 3 instead of 1.25, as ASME V&V 20 recommends.
 
 The verdict is one of `monotonic_convergence`, `oscillatory_convergence`, `divergence`,
 `degenerate`, `two_grid` or `order_unresolved`. Only a monotonic triplet with no warnings is a

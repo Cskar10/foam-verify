@@ -15,7 +15,12 @@ finest throughout.
   used: MARIN's author PDF (sha256 `089dd9bb…7b92`), sections 2-3 and Appendix A.
 - Roache, P. J. (1994). Perspective: A Method for Uniform Reporting of Grid Refinement Studies.
   *J. Fluids Eng.* 116, 405-413. Source of Fs = 3 for two grids. Not yet re-read for this code;
-  the value is the one Celik et al. and Eça and Hoekstra both use for unreliable estimates.
+  the value is the one Celik et al. and Eça and Hoekstra both use for unreliable estimates, and
+  ASME V&V 20 (below) gives the same history: Fs = 3 for two-grid studies, Fs = 1.25 "only when
+  using at least three grid solutions and the observed p".
+- ASME V&V 20-2009 (reaffirmed 2021). *Standard for Verification and Validation in Computational
+  Fluid Dynamics and Heat Transfer.* American Society of Mechanical Engineers. Para. 2-4.1
+  (pp. 12-14): the five-step GCI procedure and the choice of Fs. Not redistributed here.
 
 ## Refinement scope (asked first)
 
@@ -37,6 +42,26 @@ grids). Practical studies often refine only part of the mesh, so the CLI require
 
 The scope is reported with every result. This is foam-verify's convention for making the
 assumption explicit; neither paper defines partial-scope studies.
+
+## Grid sequence (asked first)
+
+The safety factor Fs = 1.25 rests on empirical studies of grids refined systematically. ASME V&V
+20 (para. 2-4.1) recommends it "with three-grid studies involving structured grid refinement";
+the base grid may itself be unstructured, as long as the sequence refines it systematically. For
+unstructured refinement, where r is well defined only for geometrically similar grids and the
+observed p scatters, it recommends the more conservative Fs = 3 until the data show otherwise.
+So the CLI requires `--grid-sequence` and `study.toml` requires `grid_sequence`:
+
+- `structured`: every level refines one base grid systematically, with geometrically similar
+  cells, such as a block mesh whose cell counts are all scaled by the same factor. Fs = 1.25 with
+  three or more grids.
+- `unstructured`: anything else, for example each level meshed afresh by a mesh generator at its
+  own cell size. Fs = 3 (`fs_fallback`), with three grids or more.
+
+foam-verify cannot tell the two apart from the files, so the sequence is stated, never checked,
+and the report marks it "assumed". It changes Fs only: the verdicts and the other checks are the
+same for both. In the Python API, `grid_convergence` defaults to `structured`, Celik et al.'s
+setting.
 
 ## Formulas (Celik et al. 2008)
 
@@ -102,7 +127,8 @@ not stated in either paper.
 
 ## Safety factor and the order check
 
-$F_s = 1.25$ for three or more grids. If the observed order is outside
+$F_s = 1.25$ for three or more grids of a structured grid sequence, and $F_s = 3$ for an
+unstructured one (see Grid sequence). If the observed order is outside
 $[0.5, 2p_\text{formal}]$, $F_s = 3$ and a warning blocks the clean pass. The lower limit matches
 Eça and Hoekstra's acceptable range; their upper limit for a second-order method is about 2.1
 (Appendix A), tighter than the default here. Both limits are options.

@@ -35,6 +35,7 @@ CHECKS = [
     "Settings consistency",
     "Refined directions",
     "Refinement scope",
+    "Grid sequence",
 ]
 
 
@@ -96,7 +97,7 @@ def make_study(
 
     Each history defaults to 100 samples of the level's value, so the QoI has settled.
     """
-    text = f'name = "demo"\ndim = 2\nrefined = "mesh"\n{extra}'
+    text = f'name = "demo"\ndim = 2\nrefined = "mesh"\ngrid_sequence = "structured"\n{extra}'
     for i, (value, n) in enumerate(zip(values, cells, strict=True)):
         case = root / f"L{i}"
         (case / "constant" / "polyMesh").mkdir(parents=True)
@@ -131,11 +132,26 @@ def test_a_clean_synthetic_study(tmp_path: Path) -> None:
     (q,) = report.qois
     assert [c.name for c in q.checks] == CHECKS
     assert statuses(report, "q")["Refinement scope"] is Status.ASSUMED
+    assert statuses(report, "q")["Grid sequence"] is Status.ASSUMED
     assert statuses(report, "q")["Coarser triplets"] is Status.NOT_APPLICABLE
     assert q.grid_verdict is Verdict.MONOTONIC
     assert q.value == 1.005 and q.uncertainty is not None
     assert q.relative_uncertainty == pytest.approx(q.uncertainty / 1.005)
     assert q.band == pytest.approx((1.005 - q.uncertainty, 1.005 + q.uncertainty))
+
+
+def test_an_unstructured_grid_sequence_is_stated_with_its_safety_factor(tmp_path: Path) -> None:
+    study = make_study(tmp_path, *CLEAN)
+    path = study / "study.toml"
+    path.write_text(path.read_text().replace('"structured"', '"unstructured"'))
+    report = verification_report(study)
+    assert_honest(report)
+    assert report.clean_pass  # Fs = 3 widens U; it fails no check
+    (q,) = report.qois
+    details = {c.name: c.detail for c in q.checks}
+    assert details["Grid sequence"].startswith("grid sequence unstructured")
+    assert details["Observed order"].endswith("Fs = 3 for an unstructured grid sequence")
+    assert "grid sequence unstructured;" in render_markdown(report)
 
 
 def test_two_grids_assume_the_order(tmp_path: Path) -> None:

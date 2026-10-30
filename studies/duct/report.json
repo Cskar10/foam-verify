@@ -50,7 +50,7 @@
         {
           "name": "Observed order",
           "status": "pass",
-          "detail": "p = 1.995 (closed form, equal ratios), within [0.5, 4] for a formal order of 2, so Fs = 1.25"
+          "detail": "p = 1.995 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25"
         },
         {
           "name": "Asymptotic range",
@@ -86,6 +86,11 @@
           "name": "Refinement scope",
           "status": "assumed",
           "detail": "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)"
+        },
+        {
+          "name": "Grid sequence",
+          "status": "assumed",
+          "detail": "grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1)"
         }
       ],
       "blocking": [],
@@ -107,6 +112,7 @@
     "name": "square-duct",
     "dim": 2,
     "scope": "mesh",
+    "grid_sequence": "structured",
     "levels": [
       {
         "name": "160x160",
@@ -194,6 +200,7 @@
           "warnings": [],
           "notes": [
             "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
+            "grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1)",
             "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
           ],
           "triplets": [
@@ -238,7 +245,8 @@
               "warnings": [],
               "notes": [],
               "triplets": [],
-              "scope": "mesh"
+              "scope": "mesh",
+              "grid_sequence": "structured"
             },
             {
               "verdict": "monotonic_convergence",
@@ -281,10 +289,12 @@
               "warnings": [],
               "notes": [],
               "triplets": [],
-              "scope": "mesh"
+              "scope": "mesh",
+              "grid_sequence": "structured"
             }
           ],
-          "scope": "mesh"
+          "scope": "mesh",
+          "grid_sequence": "structured"
         },
         "iterative": [
           {

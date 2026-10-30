@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from . import __version__
-from .gci import GCIResult, Options, Scope, grid_convergence
+from .gci import GCIResult, GridSequence, Options, Scope, grid_convergence
 from .report import render_json, render_markdown, verification_report
 
 
@@ -42,6 +42,14 @@ def _parser() -> argparse.ArgumentParser:
         help="what was refined between levels: the whole mesh including near-wall layers, the "
         "core volume only (layers identical on every level), or the near-wall layers only "
         "(core fixed; give first-layer heights with --h)",
+    )
+    gci.add_argument(
+        "--grid-sequence",
+        required=True,
+        choices=tuple(s.value for s in GridSequence),
+        help="how the levels were generated: by systematic refinement of one base grid, with "
+        "geometrically similar cells (structured), or not, for example each level meshed afresh "
+        "(unstructured); unstructured refinement gets Fs = 3 (ASME V&V 20, para. 2-4.1)",
     )
     gci.add_argument(
         "--layer-cells",
@@ -82,7 +90,11 @@ def _num(x: float | None) -> str:
 
 def format_result(res: GCIResult) -> str:
     status = "clean pass" if res.clean_pass else "not a clean pass"
-    lines = [f"verdict: {res.verdict.value} ({status})", f"refined: {res.scope.value}"]
+    lines = [
+        f"verdict: {res.verdict.value} ({status})",
+        f"refined: {res.scope.value}",
+        f"grid sequence: {res.grid_sequence.value}",
+    ]
     ratios = f"r21 = {res.r21:.4g}" + (f", r32 = {res.r32:.4g}" if res.r32 is not None else "")
     if res.convergence_ratio is not None:
         ratios += f", R = {res.convergence_ratio:.4g}"
@@ -131,6 +143,7 @@ def _cmd_gci(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             dim=args.dim,
             h=args.h,
             scope=Scope(args.refined.replace("-", "_")),
+            grid_sequence=GridSequence(args.grid_sequence),
             layer_cells=args.layer_cells,
             options=Options(formal_order=args.formal_order),
         )
