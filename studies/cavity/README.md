@@ -18,14 +18,19 @@ Velocities are in units of the lid speed U = 1 m/s; positions in units of the si
 
 foam-verify on the three finest grids: every QoI converges monotonically and is a clean pass.
 
-| QoI | p | Fine-grid result | GCI_fine | Extrapolated | Asymptotic ratio |
+| QoI | p | Fine-grid result | Relative U | Extrapolated | Asymptotic ratio |
 |---|---|---|---|---|---|
 | u at y = 0.5 | 1.967 | -0.20889 +/- 0.00033 | 0.157% | -0.209154 | 1.0037 |
 | u at y = 0.4531 | 1.942 | -0.21368 +/- 0.00038 | 0.177% | -0.213986 | 1.0040 |
-| u at y = 0.8516 | 2.294 | 0.23639 +/- 0.00010 | 0.041% | 0.236470 | 1.0013 |
+| u at y = 0.8516 | 2.294 | 0.23639 +/- 0.00013 | 0.053% | 0.236470 | 1.0013 |
 | u_min | 1.977 | -0.21376 +/- 0.00037 | 0.171% | -0.214053 | 1.0040 |
-| v_max | 2.152 | 0.17936 +/- 0.00022 | 0.125% | 0.179544 | 1.0034 |
-| v_min | 2.523 | -0.25359 +/- 0.00017 | 0.068% | -0.253724 | 1.0026 |
+| v_max | 2.152 | 0.17936 +/- 0.00026 | 0.143% | 0.179544 | 1.0034 |
+| v_min | 2.523 | -0.25359 +/- 0.00027 | 0.108% | -0.253724 | 1.0026 |
+
+Where p is above 2 (u at y = 0.8516, v_max and v_min), the uncertainty uses p = 2, the formal
+order, and is 1.15 to 1.58 times the GCI at the observed p; the extrapolated values and the
+asymptotic ratios use the observed p ([docs/gci.md](../../docs/gci.md), Observed order above the
+formal order).
 
 - The fine-grid minimum of u lies at y = 0.4580, the maximum of v at x = 0.2374 and the minimum
   of v at x = 0.8113.
@@ -66,7 +71,7 @@ less than 1e-10 (relative). The coarser grids settle at the same times or earlie
 foam-verify's iterative check ([docs/iterative.md](../../docs/iterative.md)) reads every QoI
 over the same window, the last 50 samples, t = 7.55 to 10 s: the Ghia points from their 200
 samples, the profile extrema from their 51 rows. Every QoI is converged on every level, and the
-iterative uncertainty is at most 2.1e-9 of the GCI uncertainty, so iterative error does not
+iterative uncertainty is at most 1.9e-9 of the GCI uncertainty, so iterative error does not
 contaminate the grid study.
 
 ## Reproduce

@@ -105,6 +105,34 @@ def test_order_far_above_formal_uses_fs_3() -> None:
     assert any("outside [0.5, 4]" in w for w in res.warnings)
 
 
+def test_order_above_formal_caps_only_the_uncertainty() -> None:
+    # Exact p = 3 data, formal order 2 (ASME V&V 20, Appendix C-4): U uses p = 2, while the
+    # observed p, the extrapolation and the asymptotic-range check keep p = 3.
+    h = (1.0, 2.0, 4.0)
+    values = [1 + 0.01 * x**3 for x in h]
+    res = grid_convergence(values, h=h)
+    rich = res.richardson
+    assert rich is not None
+    assert rich.p == pytest.approx(3.0)
+    assert rich.phi_ext == pytest.approx(1.0)
+    assert res.order_used == 2.0
+    assert res.uncertainty == pytest.approx(1.25 * 0.07 / 3.0)
+    # GCI_32 / (r^p GCI_21) with the observed p is phi1/phi2 = 1.01/1.08, inside [0.9, 1.1].
+    assert rich.asymptotic_ratio == pytest.approx(1.01 / 1.08)
+    assert res.clean_pass
+    assert any("so the uncertainty uses p = 2" in n for n in res.notes)
+    observed = grid_convergence(values, h=h, options=Options(cap_order=False))
+    assert observed.order_used == pytest.approx(3.0)
+    assert observed.uncertainty == pytest.approx(1.25 * 0.07 / 7.0)
+
+
+def test_order_at_formal_within_round_off_is_not_capped() -> None:
+    h = (1.0, 2.0, 4.0)
+    res = grid_convergence([1 + 0.5 * x**2 for x in h], h=h)
+    assert res.order_used == pytest.approx(2.0)
+    assert not any("uses p = 2" in n for n in res.notes)
+
+
 def test_order_below_half_uses_fs_3() -> None:
     h = (1.0, 2.0, 4.0)
     res = grid_convergence([1 + 0.1 * x**0.3 for x in h], h=h)

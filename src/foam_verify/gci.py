@@ -102,6 +102,9 @@ class Options:
     p_max_iter: int = 500
     # Oscillatory triplets: U = spread_factor * (max - min) / (n_grids - 1). See docs/gci.md.
     spread_factor: float = 3.0
+    # U uses min(p, formal_order): ASME V&V 20 (Appendix C-4) limits the p used in the GCI to the
+    # theoretical order. The Richardson numbers and the checks keep the observed p.
+    cap_order: bool = True
 
 
 class ObservedOrderError(ArithmeticError):
@@ -152,6 +155,9 @@ class GCIResult:
     triplets: tuple[GCIResult, ...] = ()
     scope: Scope = Scope.MESH
     grid_sequence: GridSequence = GridSequence.STRUCTURED
+    # The order behind the uncertainty: the observed p, the formal order when p is above it (see
+    # Options.cap_order) or assumed (two grids); None when U is not a GCI.
+    order_used: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -491,6 +497,7 @@ def _two_grid(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCI
         band=_band(phi[0], u),
         reasons=("two-grid estimate at an assumed order of accuracy",),
         warnings=tuple(warnings),
+        order_used=p,
     )
 
 
@@ -579,7 +586,17 @@ def _triplet(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCIR
                 f"asymptotic-range ratio GCI_32/(r21^p GCI_21) = {a:.4g} is outside "
                 f"[{lo:g}, {hi:g}]: the grids may not be in the asymptotic range"
             )
-        u = fs * abs(eps21) / (r21**p - 1.0)
+        # Above the formal order, U uses the formal order; p within round-off of it is not "above".
+        capped = opt.cap_order and p > opt.formal_order * (1.0 + 1e-9)
+        p_u = opt.formal_order if capped else p
+        u = fs * abs(eps21) / (r21**p_u - 1.0)
+        notes: list[str] = []
+        if capped:
+            notes.append(
+                f"observed order p = {p:.4g} is above the formal order {opt.formal_order:g}, so "
+                f"the uncertainty uses p = {p_u:g} (ASME V&V 20, Appendix C-4); the Richardson "
+                "numbers and the asymptotic-range check use the observed p"
+            )
         return result(
             Verdict.MONOTONIC,
             [f"convergence ratio R = {R:.4g}: monotonic convergence (0 < R < {limit:.4g})"],
@@ -590,6 +607,8 @@ def _triplet(phi: tuple[float, ...], h: tuple[float, ...], opt: Options) -> GCIR
             richardson_used=True,
             uncertainty=u,
             band=_band(phi1, u),
+            notes=tuple(notes),
+            order_used=p_u,
         )
 
     spread = max(phi) - min(phi)

@@ -59,6 +59,18 @@ def test_cavity_every_qoi_converges_monotonically_near_second_order() -> None:
         assert gci.richardson.asymptotic_ratio == pytest.approx(1.0, abs=0.01), qoi.name
 
 
+def test_cavity_orders_above_two_are_capped_in_the_uncertainty_only() -> None:
+    # ASME V&V 20, Appendix C-4: U uses the formal order. The checks keep the observed p, so the
+    # asymptotic ratios stay near 1 and every QoI still passes (see the test above).
+    qois = {q.name: q.gci for q in assess_study(load_study(CAVITY)).qois}
+    capped = {name for name, gci in qois.items() if gci.order_used == 2.0}
+    assert capped == {"u(y=0.8516)", "v_max", "v_min"}
+    for name in capped:
+        gci = qois[name]
+        assert gci.richardson is not None and gci.richardson.p > 2.0
+        assert gci.uncertainty == pytest.approx(1.25 * abs(gci.phi[0] - gci.phi[1]) / 3.0)
+
+
 def test_cavity_fitted_minimum_is_below_the_nearest_ghia_point() -> None:
     # The parabola through the discrete minimum cannot sit above a sampled value nearby.
     qois = {q.name: q for q in assess_study(load_study(CAVITY)).qois}

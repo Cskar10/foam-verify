@@ -171,7 +171,7 @@ In a study, each `QoIResult` carries `iterative` (one result per level, finest f
   $u_\text{it}/U$ is 3.7e-9.
 - Cavity: the Ghia points every 0.05 s (200 samples) and the profiles every 0.05 s from
   t = 7.5 s (51 rows). Both windows are the last 50 samples, t = 7.55 to 10 s. Every QoI is
-  converged on every level. The largest $u_\text{it}/U$ is 2.1e-9.
+  converged on every level. The largest $u_\text{it}/U$ is 1.9e-9.
 
 `tests/test_studies.py` checks both.
 

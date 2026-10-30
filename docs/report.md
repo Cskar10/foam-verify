@@ -22,7 +22,7 @@ A QoI is a clean pass only when no check fails. The checks, in the order the rep
 |---|---|---|
 | Grid convergence | grids 1-3 do not converge monotonically: oscillatory, divergent, degenerate, two grids only, or no observed order | Celik et al. 2008; Eça and Hoekstra 2014 ([gci.md](gci.md)) |
 | Refinement ratio | r21 or r32 is below 1.3 | Celik et al. 2008, step 2 |
-| Observed order | p is outside [0.5, 2 × the formal order] | [gci.md](gci.md), safety factor and the order check |
+| Observed order | p is outside [0.5, 2 × the formal order]; above the formal order U uses the formal order, which fails nothing | [gci.md](gci.md), safety factor and the order check; ASME V&V 20, App. C-4 |
 | Asymptotic range | GCI_32 / (r21^p GCI_21) is outside [0.9, 1.1], or undefined | standard GCI practice |
 | Coarser triplets | with four or more grids, a coarser triplet does not converge monotonically | [gci.md](gci.md), four or more grids |
 | Iterative convergence | on grids 1-3 the QoI is drifting, has too few samples, has no scale or is not finite, or its check warns | [iterative.md](iterative.md) |

@@ -20,7 +20,8 @@
     "round_off_rel": 1e-10,
     "p_tol": 1e-12,
     "p_max_iter": 500,
-    "spread_factor": 3.0
+    "spread_factor": 3.0,
+    "cap_order": true
   },
   "blocking": [],
   "qois": [
@@ -194,12 +195,12 @@
       "name": "u(y=0.8516)",
       "clean_pass": true,
       "value": 0.236393042113,
-      "uncertainty": 9.652672646328073e-05,
+      "uncertainty": 0.0001256576970833321,
       "band": [
-        0.2362965153865367,
-        0.2364895688394633
+        0.23626738441591666,
+        0.23651869981008333
       ],
-      "relative_uncertainty": 0.0004083315041782798,
+      "relative_uncertainty": 0.0005315625872916579,
       "grid_verdict": "monotonic_convergence",
       "method": "gci",
       "checks": [
@@ -216,7 +217,7 @@
         {
           "name": "Observed order",
           "status": "pass",
-          "detail": "p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25"
+          "detail": "p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4)"
         },
         {
           "name": "Asymptotic range",
@@ -360,12 +361,12 @@
       "name": "v_max",
       "clean_pass": true,
       "value": 0.17936485525044468,
-      "uncertainty": 0.00022354724707021015,
+      "uncertainty": 0.00025677180793114845,
       "band": [
-        0.17914130800337447,
-        0.1795884024975149
+        0.17910808344251353,
+        0.17962162705837584
       ],
-      "relative_uncertainty": 0.0012463269170433315,
+      "relative_uncertainty": 0.001431561425858045,
       "grid_verdict": "monotonic_convergence",
       "method": "gci",
       "checks": [
@@ -382,7 +383,7 @@
         {
           "name": "Observed order",
           "status": "pass",
-          "detail": "p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25"
+          "detail": "p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4)"
         },
         {
           "name": "Asymptotic range",
@@ -402,7 +403,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 2.1e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 1.9e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
         },
         {
           "name": "Settings consistency",
@@ -443,12 +444,12 @@
       "name": "v_min",
       "clean_pass": true,
       "value": -0.25358500906011505,
-      "uncertainty": 0.00017364429489162916,
+      "uncertainty": 0.00027472101049891284,
       "band": [
-        -0.2537586533550067,
-        -0.2534113647652234
+        -0.25385973007061396,
+        -0.25331028804961614
       ],
-      "relative_uncertainty": 0.0006847577289178987,
+      "relative_uncertainty": 0.0010833487812120127,
       "grid_verdict": "monotonic_convergence",
       "method": "gci",
       "checks": [
@@ -465,7 +466,7 @@
         {
           "name": "Observed order",
           "status": "pass",
-          "detail": "p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25"
+          "detail": "p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4)"
         },
         {
           "name": "Asymptotic range",
@@ -669,7 +670,8 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.9667679113995575
             },
             {
               "verdict": "monotonic_convergence",
@@ -713,11 +715,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.8672449448853485
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 1.9667679113995575
         },
         "iterative": [
           {
@@ -947,7 +951,8 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.9418512800259449
             },
             {
               "verdict": "monotonic_convergence",
@@ -991,11 +996,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.8265896385332272
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 1.9418512800259449
         },
         "iterative": [
           {
@@ -1168,10 +1175,10 @@
             "asymptotic_ratio": 1.0012773798270818
           },
           "richardson_used": true,
-          "uncertainty": 9.652672646328073e-05,
+          "uncertainty": 0.0001256576970833321,
           "band": [
-            0.2362965153865367,
-            0.2364895688394633
+            0.23626738441591666,
+            0.23651869981008333
           ],
           "reasons": [
             "convergence ratio R = 0.2039: monotonic convergence (0 < R < 1)"
@@ -1180,6 +1187,7 @@
           "notes": [
             "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
             "grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1)",
+            "observed order p = 2.294 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p",
             "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
           ],
           "triplets": [
@@ -1213,19 +1221,22 @@
                 "asymptotic_ratio": 1.0012773798270818
               },
               "richardson_used": true,
-              "uncertainty": 9.652672646328073e-05,
+              "uncertainty": 0.0001256576970833321,
               "band": [
-                0.2362965153865367,
-                0.2364895688394633
+                0.23626738441591666,
+                0.23651869981008333
               ],
               "reasons": [
                 "convergence ratio R = 0.2039: monotonic convergence (0 < R < 1)"
               ],
               "warnings": [],
-              "notes": [],
+              "notes": [
+                "observed order p = 2.294 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p"
+              ],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 2.0
             },
             {
               "verdict": "monotonic_convergence",
@@ -1269,11 +1280,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.7369961076524563
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 2.0
         },
         "iterative": [
           {
@@ -1391,7 +1404,7 @@
         ],
         "contamination": {
           "clean_pass": true,
-          "u_num": 9.652672646328073e-05,
+          "u_num": 0.0001256576970833321,
           "worst_ratio": 0.0,
           "worst_level": "160x160",
           "warnings": [],
@@ -1508,7 +1521,8 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.976891738038882
             },
             {
               "verdict": "monotonic_convergence",
@@ -1552,11 +1566,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.7762682594373256
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 1.976891738038882
         },
         "iterative": [
           {
@@ -1734,10 +1750,10 @@
             "asymptotic_ratio": 1.0034475924790314
           },
           "richardson_used": true,
-          "uncertainty": 0.00022354724707021015,
+          "uncertainty": 0.00025677180793114845,
           "band": [
-            0.17914130800337447,
-            0.1795884024975149
+            0.17910808344251353,
+            0.17962162705837584
           ],
           "reasons": [
             "convergence ratio R = 0.2249: monotonic convergence (0 < R < 1)"
@@ -1746,6 +1762,7 @@
           "notes": [
             "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
             "grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1)",
+            "observed order p = 2.152 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p",
             "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
           ],
           "triplets": [
@@ -1779,19 +1796,22 @@
                 "asymptotic_ratio": 1.0034475924790314
               },
               "richardson_used": true,
-              "uncertainty": 0.00022354724707021015,
+              "uncertainty": 0.00025677180793114845,
               "band": [
-                0.17914130800337447,
-                0.1795884024975149
+                0.17910808344251353,
+                0.17962162705837584
               ],
               "reasons": [
                 "convergence ratio R = 0.2249: monotonic convergence (0 < R < 1)"
               ],
               "warnings": [],
-              "notes": [],
+              "notes": [
+                "observed order p = 2.152 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p"
+              ],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 2.0
             },
             {
               "verdict": "monotonic_convergence",
@@ -1835,11 +1855,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.7638125938747036
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 2.0
         },
         "iterative": [
           {
@@ -1957,12 +1979,12 @@
         ],
         "contamination": {
           "clean_pass": true,
-          "u_num": 0.00022354724707021015,
-          "worst_ratio": 2.133002832904216e-09,
+          "u_num": 0.00025677180793114845,
+          "worst_ratio": 1.8570064803085963e-09,
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 2.13e-09 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 1.86e-09 (level 160x160), limit 1/10"
           ],
           "ratio": 10.0
         }
@@ -2017,10 +2039,10 @@
             "asymptotic_ratio": 1.002606814890271
           },
           "richardson_used": true,
-          "uncertainty": 0.00017364429489162916,
+          "uncertainty": 0.00027472101049891284,
           "band": [
-            -0.2537586533550067,
-            -0.2534113647652234
+            -0.25385973007061396,
+            -0.25331028804961614
           ],
           "reasons": [
             "convergence ratio R = 0.174: monotonic convergence (0 < R < 1)"
@@ -2029,6 +2051,7 @@
           "notes": [
             "scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells)",
             "grid sequence structured: the levels refine one base grid systematically (the base grid may itself be unstructured), so Fs = 1.25 with three or more grids (ASME V&V 20, para. 2-4.1)",
+            "observed order p = 2.523 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p",
             "4 grids: one result per consecutive triplet; the verdict is from grids 1-3."
           ],
           "triplets": [
@@ -2062,19 +2085,22 @@
                 "asymptotic_ratio": 1.002606814890271
               },
               "richardson_used": true,
-              "uncertainty": 0.00017364429489162916,
+              "uncertainty": 0.00027472101049891284,
               "band": [
-                -0.2537586533550067,
-                -0.2534113647652234
+                -0.25385973007061396,
+                -0.25331028804961614
               ],
               "reasons": [
                 "convergence ratio R = 0.174: monotonic convergence (0 < R < 1)"
               ],
               "warnings": [],
-              "notes": [],
+              "notes": [
+                "observed order p = 2.523 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p"
+              ],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 2.0
             },
             {
               "verdict": "monotonic_convergence",
@@ -2118,11 +2144,13 @@
               "notes": [],
               "triplets": [],
               "scope": "mesh",
-              "grid_sequence": "structured"
+              "grid_sequence": "structured",
+              "order_used": 1.687085480321374
             }
           ],
           "scope": "mesh",
-          "grid_sequence": "structured"
+          "grid_sequence": "structured",
+          "order_used": 2.0
         },
         "iterative": [
           {
@@ -2240,7 +2268,7 @@
         ],
         "contamination": {
           "clean_pass": true,
-          "u_num": 0.00017364429489162916,
+          "u_num": 0.00027472101049891284,
           "worst_ratio": 0.0,
           "worst_level": "160x160",
           "warnings": [],

@@ -10,10 +10,10 @@ foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; gr
 |---|---|---|---|---|
 | `u(y=0.5)` | -0.208892 +/- 0.000328 | 0.16% | monotonic, p = 1.967 | yes |
 | `u(y=0.4531)` | -0.213682 +/- 0.000379 | 0.18% | monotonic, p = 1.942 | yes |
-| `u(y=0.8516)` | 0.2363930 +/- 0.0000965 | 0.041% | monotonic, p = 2.294 | yes |
+| `u(y=0.8516)` | 0.236393 +/- 0.000126 | 0.053% | monotonic, p = 2.294 | yes |
 | `u_min` | -0.213760 +/- 0.000366 | 0.17% | monotonic, p = 1.977 | yes |
-| `v_max` | 0.179365 +/- 0.000224 | 0.12% | monotonic, p = 2.152 | yes |
-| `v_min` | -0.253585 +/- 0.000174 | 0.068% | monotonic, p = 2.523 | yes |
+| `v_max` | 0.179365 +/- 0.000257 | 0.14% | monotonic, p = 2.152 | yes |
+| `v_min` | -0.253585 +/- 0.000275 | 0.11% | monotonic, p = 2.523 | yes |
 
 ## Levels
 
@@ -112,7 +112,7 @@ Notes:
 
 ## `u(y=0.8516)`
 
-**Clean pass.** 0.2363930 +/- 0.0000965 (GCI, 0.041%); band 0.2362965 to 0.2364896.
+**Clean pass.** 0.236393 +/- 0.000126 (GCI, 0.053%); band 0.236267 to 0.236519.
 
 From `postProcessing/ghiaPoints/*/U`, column `2`, x component, last value; window: the last 10% of the samples, at least 50.
 
@@ -120,7 +120,7 @@ From `postProcessing/ghiaPoints/*/U`, column `2`, x component, last value; windo
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2039: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
+| Observed order | pass | p = 2.294 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4) |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.001, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.737 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -135,17 +135,18 @@ From `postProcessing/ghiaPoints/*/U`, column `2`, x component, last value; windo
 | 160x160 | 0.2363930 | converged | 50 of 200, 7.55 to 10 | 0 | 0 | 0 | 0 |
 | 80x80 | 0.2360915 | converged | 50 of 200, 7.55 to 10 | 0 | 0 | 0 | 0 |
 | 40x40 | 0.2346121 | converged | 50 of 200, 7.55 to 10 | 0 | 0 | 0 | 0 |
-| 20x20 | 0.2296808 | converged | 50 of 200, 7.55 to 10 | 4.4e-12 | -7.1e-13 | 5.0e-13 | 5.2e-09 |
+| 20x20 | 0.2296808 | converged | 50 of 200, 7.55 to 10 | 4.4e-12 | -7.1e-13 | 5.0e-13 | 4.0e-09 |
 
-Richardson extrapolation, grids 1-3: phi_ext = 0.2364703, e_a = 0.13%, e_ext = 0.033%, GCI_fine = 0.041%, GCI_32 = 0.20%, Fs = 1.25.
+Richardson extrapolation, grids 1-3 (at the observed order; U uses p = 2): phi_ext = 0.2364703, e_a = 0.13%, e_ext = 0.033%, GCI_fine = 0.041%, GCI_32 = 0.20%, Fs = 1.25.
 
 | Grids | Convergence | Result | Relative U |
 |---|---|---|---|
-| 1-3 | monotonic, p = 2.294 | 0.2363930 +/- 0.0000965 | 0.041% |
+| 1-3 | monotonic, p = 2.294 | 0.236393 +/- 0.000126 | 0.053% |
 | 2-4 | monotonic, p = 1.737 | 0.236091 +/- 0.000792 | 0.34% |
 
 Notes:
 
+- observed order p = 2.294 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p
 - 4 grids: one result per consecutive triplet; the verdict is from grids 1-3.
 
 ## `u_min`
@@ -192,7 +193,7 @@ Notes:
 
 ## `v_max`
 
-**Clean pass.** 0.179365 +/- 0.000224 (GCI, 0.12%); band 0.179141 to 0.179588.
+**Clean pass.** 0.179365 +/- 0.000257 (GCI, 0.14%); band 0.179108 to 0.179622.
 
 From `postProcessing/horizontalCentreline/*/U`, maximum of the y component along x, latest profile; window: the last 10% of the samples, at least 50.
 
@@ -200,11 +201,11 @@ From `postProcessing/horizontalCentreline/*/U`, maximum of the y component along
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.2249: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
+| Observed order | pass | p = 2.152 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4) |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.764 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
-| Iterative error | pass | largest u_it / U = 2.1e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A) |
+| Iterative error | pass | largest u_it / U = 1.9e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A) |
 | Settings consistency | pass | no difference blocks (6 files compared); noted: system/controlDict deltaT |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
@@ -212,20 +213,21 @@ From `postProcessing/horizontalCentreline/*/U`, maximum of the y component along
 
 | Level | Value | Iterative | Window | Relative range | Relative drift | u_it | u_it / U |
 |---|---|---|---|---|---|---|---|
-| 160x160 | 0.1793649 | converged | 50 of 51, 7.55 to 10 | 5.3e-12 | 7.1e-12 | 4.8e-13 | 2.1e-09 |
+| 160x160 | 0.1793649 | converged | 50 of 51, 7.55 to 10 | 5.3e-12 | 7.1e-12 | 4.8e-13 | 1.9e-09 |
 | 80x80 | 0.1787486 | converged | 50 of 51, 7.55 to 10 | 0 | 0 | 0 | 0 |
-| 40x40 | 0.1760088 | converged | 50 of 51, 7.55 to 10 | 2.1e-12 | 5.7e-14 | 1.8e-13 | 8.2e-10 |
-| 20x20 | 0.1667047 | converged | 50 of 51, 7.55 to 10 | 6.5e-12 | -4.4e-12 | 5.4e-13 | 2.4e-09 |
+| 40x40 | 0.1760088 | converged | 50 of 51, 7.55 to 10 | 2.1e-12 | 5.7e-14 | 1.8e-13 | 7.1e-10 |
+| 20x20 | 0.1667047 | converged | 50 of 51, 7.55 to 10 | 6.5e-12 | -4.4e-12 | 5.4e-13 | 2.1e-09 |
 
-Richardson extrapolation, grids 1-3: phi_ext = 0.1795437, e_a = 0.34%, e_ext = 0.10%, GCI_fine = 0.12%, GCI_32 = 0.56%, Fs = 1.25.
+Richardson extrapolation, grids 1-3 (at the observed order; U uses p = 2): phi_ext = 0.1795437, e_a = 0.34%, e_ext = 0.10%, GCI_fine = 0.12%, GCI_32 = 0.56%, Fs = 1.25.
 
 | Grids | Convergence | Result | Relative U |
 |---|---|---|---|
-| 1-3 | monotonic, p = 2.152 | 0.179365 +/- 0.000224 | 0.12% |
+| 1-3 | monotonic, p = 2.152 | 0.179365 +/- 0.000257 | 0.14% |
 | 2-4 | monotonic, p = 1.764 | 0.17875 +/- 0.00143 | 0.80% |
 
 Notes:
 
+- observed order p = 2.152 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p
 - 4 grids: one result per consecutive triplet; the verdict is from grids 1-3.
 - level 160x160: max at x = 0.023744 (t = 10)
 - level 80x80: max at x = 0.0237692 (t = 10)
@@ -234,7 +236,7 @@ Notes:
 
 ## `v_min`
 
-**Clean pass.** -0.253585 +/- 0.000174 (GCI, 0.068%); band -0.253759 to -0.253411.
+**Clean pass.** -0.253585 +/- 0.000275 (GCI, 0.11%); band -0.253860 to -0.253310.
 
 From `postProcessing/horizontalCentreline/*/U`, minimum of the y component along x, latest profile; window: the last 10% of the samples, at least 50.
 
@@ -242,7 +244,7 @@ From `postProcessing/horizontalCentreline/*/U`, minimum of the y component along
 |---|---|---|
 | Grid convergence | pass | grids 1-3: convergence ratio R = 0.174: monotonic convergence (0 < R < 1) |
 | Refinement ratio | pass | r21 = 2.000, r32 = 2.000; at least 1.3 (Celik et al. 2008, step 2) |
-| Observed order | pass | p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25 |
+| Observed order | pass | p = 2.523 (closed form, equal ratios), within [0.5, 4] for a formal order of 2; Fs = 1.25; U uses p = 2, the formal order (ASME V&V 20, Appendix C-4) |
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.003, within [0.9, 1.1] |
 | Coarser triplets | pass | grids 2-4: monotonic, p = 1.687 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
@@ -257,17 +259,18 @@ From `postProcessing/horizontalCentreline/*/U`, minimum of the y component along
 | 160x160 | -0.2535850 | converged | 50 of 51, 7.55 to 10 | 0 | 0 | 0 | 0 |
 | 80x80 | -0.2529257 | converged | 50 of 51, 7.55 to 10 | 0 | 0 | 0 | 0 |
 | 40x40 | -0.2491370 | converged | 50 of 51, 7.55 to 10 | 0 | 0 | 0 | 0 |
-| 20x20 | -0.2369372 | converged | 50 of 51, 7.55 to 10 | 9.8e-13 | 1.4e-13 | 1.2e-13 | 6.7e-10 |
+| 20x20 | -0.2369372 | converged | 50 of 51, 7.55 to 10 | 9.8e-13 | 1.4e-13 | 1.2e-13 | 4.2e-10 |
 
-Richardson extrapolation, grids 1-3: phi_ext = -0.2537239, e_a = 0.26%, e_ext = 0.055%, GCI_fine = 0.068%, GCI_32 = 0.39%, Fs = 1.25.
+Richardson extrapolation, grids 1-3 (at the observed order; U uses p = 2): phi_ext = -0.2537239, e_a = 0.26%, e_ext = 0.055%, GCI_fine = 0.068%, GCI_32 = 0.39%, Fs = 1.25.
 
 | Grids | Convergence | Result | Relative U |
 |---|---|---|---|
-| 1-3 | monotonic, p = 2.523 | -0.253585 +/- 0.000174 | 0.068% |
+| 1-3 | monotonic, p = 2.523 | -0.253585 +/- 0.000275 | 0.11% |
 | 2-4 | monotonic, p = 1.687 | -0.25293 +/- 0.00213 | 0.84% |
 
 Notes:
 
+- observed order p = 2.523 is above the formal order 2, so the uncertainty uses p = 2 (ASME V&V 20, Appendix C-4); the Richardson numbers and the asymptotic-range check use the observed p
 - 4 grids: one result per consecutive triplet; the verdict is from grids 1-3.
 - level 160x160: min at x = 0.0811304 (t = 10)
 - level 80x80: min at x = 0.0812033 (t = 10)
@@ -276,7 +279,7 @@ Notes:
 
 ## Method
 
-- Grid convergence after Celik et al. (2008), with the convergence types of Eça and Hoekstra (2014): Fs = 1.25 on three or more grids of a structured grid sequence, and 3 for an unstructured sequence (ASME V&V 20, para. 2-4.1), on two grids, or when p is outside [0.5, 4]; refinement ratios of at least 1.3; an asymptotic-range ratio within [0.9, 1.1]; with four or more grids, every coarser triplet converges monotonically too. An oscillatory triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).
+- Grid convergence after Celik et al. (2008), with the convergence types of Eça and Hoekstra (2014): Fs = 1.25 on three or more grids of a structured grid sequence, and 3 for an unstructured sequence (ASME V&V 20, para. 2-4.1), on two grids, or when p is outside [0.5, 4]; refinement ratios of at least 1.3; an asymptotic-range ratio within [0.9, 1.1]; with four or more grids, every coarser triplet converges monotonically too. Above the formal order, U uses the formal order (ASME V&V 20, Appendix C-4); the Richardson numbers and the checks keep the observed p. An oscillatory triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).
 - Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/10 (Celik et al. 2008, Appendix A; docs/iterative.md).
 - Settings consistency: the schemes, solver settings, physical properties, boundary conditions and near-wall layer settings of the levels, compared entry by entry (docs/consistency.md).
 - U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI is a clean pass only when no check fails (docs/report.md).

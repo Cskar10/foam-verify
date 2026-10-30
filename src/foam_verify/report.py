@@ -297,9 +297,22 @@ def _order_check(gci: GCIResult, opt: Options) -> Check:
         f"{'within' if ok else 'outside'} [{lo:g}, {hi:g}] for a formal order of "
         f"{opt.formal_order:g}; {fs}"
     )
+    if _capped(gci):
+        detail += f"; U uses p = {gci.order_used:g}, the formal order (ASME V&V 20, Appendix C-4)"
     if gci.verdict is not Verdict.MONOTONIC:
         return Check(name, Status.NOT_APPLICABLE, f"{detail}; for reference only")
     return Check(name, Status.PASS if ok else Status.FAIL, detail)
+
+
+def _capped(gci: GCIResult) -> bool:
+    """Whether U uses a lower order than the observed one (p above the formal order)."""
+    rich = gci.richardson
+    return (
+        rich is not None
+        and rich.p_solver != "assumed"
+        and gci.order_used is not None
+        and gci.order_used < rich.p
+    )
 
 
 def _asymptotic_check(gci: GCIResult, opt: Options) -> Check:
@@ -678,6 +691,8 @@ def _qoi_section(v: QoIVerdict, q: QoIResult, res: StudyResult) -> list[str]:
         label = f"Richardson extrapolation, grids {grids}"
         if not gci.richardson_used:
             label += " (for reference only, not used for U)"
+        elif _capped(gci):
+            label += f" (at the observed order; U uses p = {gci.order_used:g})"
         parts = [
             f"phi_ext = {_val(rich.phi_ext)}",
             f"e_a = {_pct(rich.e_a)}",
@@ -730,7 +745,9 @@ def _method_section(report: Report) -> list[str]:
         f"para. 2-4.1), on two grids, or when p is outside "
         f"[{o.p_min:g}, {o.p_max_factor * o.formal_order:g}]; refinement ratios of at least "
         f"{o.min_refinement_ratio:g}; an asymptotic-range ratio within [{lo:g}, {hi:g}]; with "
-        "four or more grids, every coarser triplet converges monotonically too. An oscillatory "
+        "four or more grids, every coarser triplet converges monotonically too. Above the formal "
+        "order, U uses the formal order (ASME V&V 20, Appendix C-4); the Richardson numbers and "
+        "the checks keep the observed p. An oscillatory "
         "triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).",
         "Iterative convergence of each QoI from its own history over the window given with it: "
         "converged when its relative range and relative drift are within tol, and u_it is half "

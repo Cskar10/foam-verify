@@ -20,7 +20,8 @@ finest throughout.
   using at least three grid solutions and the observed p".
 - ASME V&V 20-2009 (reaffirmed 2021). *Standard for Verification and Validation in Computational
   Fluid Dynamics and Heat Transfer.* American Society of Mechanical Engineers. Para. 2-4.1
-  (pp. 12-14): the five-step GCI procedure and the choice of Fs. Not redistributed here.
+  (pp. 12-14): the five-step GCI procedure and the choice of Fs; Appendix C-4 (pp. 82-83): the
+  least-squares GCI and the limit on p. Not redistributed here.
 
 ## Refinement scope (asked first)
 
@@ -77,7 +78,8 @@ setting.
 | Asymptotic check | $\text{GCI}^{32}/(r_{21}^p\,\text{GCI}^{21})$, warn outside 0.9-1.1 | standard GCI practice |
 
 The absolute uncertainty reported is $U = F_s\lvert\phi_1-\phi_2\rvert/(r_{21}^p-1)$, which equals
-$\text{GCI}^{21}\lvert\phi_1\rvert$ but stays defined when $\phi_1 = 0$.
+$\text{GCI}^{21}\lvert\phi_1\rvert$ but stays defined when $\phi_1 = 0$. When p is above the formal
+order, U uses the formal order instead (see Observed order above the formal order).
 
 ## Convergence type
 
@@ -132,6 +134,23 @@ unstructured one (see Grid sequence). If the observed order is outside
 $[0.5, 2p_\text{formal}]$, $F_s = 3$ and a warning blocks the clean pass. The lower limit matches
 Eça and Hoekstra's acceptable range; their upper limit for a second-order method is about 2.1
 (Appendix A), tighter than the default here. Both limits are options.
+
+## Observed order above the formal order (foam-verify's convention)
+
+An observed order above the formal one makes $r^p - 1$ larger and the GCI smaller: the estimate
+then leans on an error cancellation that the scheme's formal order does not promise. ASME V&V 20
+(Appendix C-4) recommends limiting the maximum p used in the GCI to the theoretical p. It states
+this with the least-squares GCI for noisy p, and Celik et al. (2008) do not cap p. foam-verify
+applies the limit to every triplet as its own conservative convention: U uses
+$\min(p, p_\text{formal})$ (option `cap_order`, on by default), and `order_used` in the result
+records the order behind U.
+
+Only U and its band use the capped order. The Richardson numbers (p, $\phi_\text{ext}$,
+$e_\text{ext}$, $\text{GCI}^{21}$, $\text{GCI}^{32}$) and every check keep the observed p. The
+asymptotic-range ratio asks whether the data follow the observed p; computed with a capped p it
+becomes about $r_{21}^{\,p - p_\text{formal}}$ instead of 1. On the cavity study that would fail three
+QoIs whose ratios are 1.001 to 1.003, with 1.12, 1.23 and 1.44 for p = 2.15, 2.29 and 2.52. With
+the cap in U only their verdicts stand and their bands widen by 15 to 58%.
 
 ## Two grids
 
