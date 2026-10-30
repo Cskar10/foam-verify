@@ -26,7 +26,7 @@ A QoI is a clean pass only when no check fails. The checks, in the order the rep
 | Asymptotic range | GCI_32 / (r21^p GCI_21) is outside [0.9, 1.1], or undefined | standard GCI practice |
 | Coarser triplets | with four or more grids, a coarser triplet does not converge monotonically | [gci.md](gci.md), four or more grids |
 | Iterative convergence | on grids 1-3 the QoI is drifting, has too few samples, has no scale or is not finite, or its check warns | [iterative.md](iterative.md) |
-| Iterative error | u_it on any of grids 1-3 is above U/10 | Celik et al. 2008, Appendix A |
+| Iterative error | u_it on any of grids 1-3 is above U/100 | ASME V&V 20, para. 2-4 (Celik et al. 2008, Appendix A, ask for U/10) |
 | Settings consistency | the levels differ in more than the mesh | [consistency.md](consistency.md) |
 | Refined directions | the refined directions d disagree with the patches of the mesh (below) | below |
 | Refinement scope | `refined = "core"` with total cell counts and no `layer_cells` | [gci.md](gci.md), refinement scope |

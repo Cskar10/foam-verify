@@ -71,7 +71,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 1.5e-09 (40x40), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 1.5e-09 (40x40), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -154,7 +154,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 1.3e-09 (40x40), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 1.3e-09 (40x40), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -237,7 +237,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 0 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 0 (160x160), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -320,7 +320,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 1.3e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 1.3e-09 (160x160), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -403,7 +403,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 1.9e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 1.9e-09 (160x160), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -486,7 +486,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 0 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 0 (160x160), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -844,9 +844,9 @@
           "worst_level": "40x40",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 1.52e-09 (level 40x40), limit 1/10"
+            "largest u_it / U on the headline levels: 1.52e-09 (level 40x40), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -1125,9 +1125,9 @@
           "worst_level": "40x40",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 1.32e-09 (level 40x40), limit 1/10"
+            "largest u_it / U on the headline levels: 1.32e-09 (level 40x40), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -1409,9 +1409,9 @@
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -1695,9 +1695,9 @@
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 1.29e-09 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 1.29e-09 (level 160x160), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -1984,9 +1984,9 @@
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 1.86e-09 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 1.86e-09 (level 160x160), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -2273,9 +2273,9 @@
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 0 (level 160x160), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       }
     ],

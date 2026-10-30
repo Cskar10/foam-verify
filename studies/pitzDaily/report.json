@@ -71,7 +71,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 0.0031 (28k), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 0.0031 (28k), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -156,7 +156,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 0.0028 (28k), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 0.0028 (28k), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -590,9 +590,9 @@
           "worst_level": "28k",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 0.00305 (level 28k), limit 1/10"
+            "largest u_it / U on the headline levels: 0.00305 (level 28k), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -869,10 +869,10 @@
             "level 28k: the window holds 0 full cycle(s) of the oscillation; ITTC 7.5-03-02-01 takes the range over the last 2 periods, so u_it may understate the amplitude and drift cannot be told from a slow oscillation: widen the window"
           ],
           "notes": [
-            "level 28k: oscillating, but u_it = 0.00421 is 0.00279 of U, below 1/10",
-            "largest u_it / U on the headline levels: 0.00279 (level 28k), limit 1/10"
+            "level 28k: oscillating, but u_it = 0.00421 is 0.00279 of U, below 1/100",
+            "largest u_it / U on the headline levels: 0.00279 (level 28k), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       },
       {
@@ -1120,7 +1120,7 @@
           "notes": [
             "no discretisation uncertainty to compare u_it with"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       }
     ],

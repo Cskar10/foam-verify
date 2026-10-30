@@ -50,7 +50,7 @@ From `postProcessing/pressureDrop/*/multiFieldValue.dat`, column `Group1`, mean 
 | Asymptotic range | pass | GCI_32 / (r21^p GCI_21) = 1.026, within [0.9, 1.1] |
 | Coarser triplets | fail | grids 2-4: divergence, R = 1.084 |
 | Iterative convergence | pass | converged on every level (tol 0.001) |
-| Iterative error | pass | largest u_it / U = 0.0031 (28k), within 1/10 (Celik et al. 2008, Appendix A) |
+| Iterative error | pass | largest u_it / U = 0.0031 (28k), within 1/100 (ASME V&V 20, para. 2-4) |
 | Settings consistency | pass | the levels differ only in the mesh (10 files compared) |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
@@ -88,7 +88,7 @@ From `postProcessing/pressureDrop/*/multiFieldValue.dat`, column `Group0`, mean 
 | Asymptotic range | fail | GCI_32 / (r21^p GCI_21) = 0.8846, outside [0.9, 1.1] |
 | Coarser triplets | fail | grids 2-4: divergence, R = 1.033 |
 | Iterative convergence | fail | converged on 139k, 62k, 12k; oscillating on 28k; warnings on 28k (tol 0.001) |
-| Iterative error | pass | largest u_it / U = 0.0028 (28k), within 1/10 (Celik et al. 2008, Appendix A) |
+| Iterative error | pass | largest u_it / U = 0.0028 (28k), within 1/100 (ASME V&V 20, para. 2-4) |
 | Settings consistency | pass | the levels differ only in the mesh (10 files compared) |
 | Refined directions | pass | dim = 2, with empty or wedge patches on every level: frontAndBack |
 | Refinement scope | assumed | scope mesh: assumes every cell, near-wall layers included, was refined by the same ratio (Celik et al. 2008, step 2: systematic refinement, geometrically similar cells) |
@@ -111,7 +111,7 @@ Richardson extrapolation, grids 1-3: phi_ext = -2.401496, e_a = 13%, e_ext = 50%
 Notes:
 
 - 4 grids: one result per consecutive triplet; the verdict is from grids 1-3.
-- level 28k: oscillating, but u_it = 0.00421 is 0.00279 of U, below 1/10
+- level 28k: oscillating, but u_it = 0.00421 is 0.00279 of U, below 1/100
 
 ## `xR/H`
 
@@ -157,6 +157,6 @@ Notes:
 ## Method
 
 - Grid convergence after Celik et al. (2008), with the convergence types of Eça and Hoekstra (2014): Fs = 1.25 on three or more grids of a structured grid sequence, and 3 for an unstructured sequence (ASME V&V 20, para. 2-4.1), on two grids, or when p is outside [0.5, 4]; refinement ratios of at least 1.3; an asymptotic-range ratio within [0.9, 1.1]; with four or more grids, every coarser triplet converges monotonically too. Above the formal order, U uses the formal order (ASME V&V 20, Appendix C-4); the Richardson numbers and the checks keep the observed p. An oscillatory triplet gets a spread bound and never a clean pass (foam-verify docs/gci.md).
-- Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/10 (Celik et al. 2008, Appendix A; docs/iterative.md).
+- Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/100 (ASME V&V 20, para. 2-4; docs/iterative.md).
 - Settings consistency: the schemes, solver settings, physical properties, boundary conditions and near-wall layer settings of the levels, compared entry by entry (docs/consistency.md).
 - U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI is a clean pass only when no check fails (docs/report.md).

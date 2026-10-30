@@ -8,7 +8,7 @@ a clean pass only when every check holds:
   refinement ratios, the observed order, the asymptotic range, the coarser triplets and the
   refinement scope all hold, with the safety factor the stated grid sequence calls for;
 - its iterative convergence (foam_verify.iterative): settled on the levels behind the result,
-  with u_it at most a tenth of U;
+  with u_it at most a hundredth of U;
 - the study's settings consistency (foam_verify.consistency): the levels differ only in the
   mesh;
 - the study's refined directions d, checked against the patches of every level.
@@ -382,7 +382,7 @@ def _contamination_check(check: ContaminationCheck | None) -> Check:
     ok = check.worst_ratio <= 1 / check.ratio
     detail = (
         f"largest u_it / U = {_small(check.worst_ratio)} ({check.worst_level}), "
-        f"{'within' if ok else 'above'} 1/{check.ratio:g} (Celik et al. 2008, Appendix A)"
+        f"{'within' if ok else 'above'} 1/{check.ratio:g} (ASME V&V 20, para. 2-4)"
     )
     return Check(name, Status.PASS if ok else Status.FAIL, detail)
 
@@ -737,7 +737,7 @@ _CONTAMINATION_SUMMARIES = ("largest u_it / U", "no discretisation uncertainty")
 def _method_section(report: Report) -> list[str]:
     o = report.criteria
     lo, hi = o.asymptotic_band
-    ratio = next((q.contamination.ratio for q in report.result.qois if q.contamination), 10.0)
+    ratio = next((q.contamination.ratio for q in report.result.qois if q.contamination), 100.0)
     items = [
         f"Grid convergence after Celik et al. (2008), with the convergence types of Eça and "
         f"Hoekstra (2014): Fs = {o.fs_three_grid:g} on three or more grids of a structured grid "
@@ -752,7 +752,7 @@ def _method_section(report: Report) -> list[str]:
         "Iterative convergence of each QoI from its own history over the window given with it: "
         "converged when its relative range and relative drift are within tol, and u_it is half "
         f"the range. On the grids behind the result, u_it must be at most U/{ratio:g} "
-        "(Celik et al. 2008, Appendix A; docs/iterative.md).",
+        "(ASME V&V 20, para. 2-4; docs/iterative.md).",
         "Settings consistency: the schemes, solver settings, physical properties, boundary "
         "conditions and near-wall layer settings of the levels, compared entry by entry "
         "(docs/consistency.md).",

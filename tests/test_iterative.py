@@ -284,7 +284,18 @@ def test_large_iterative_uncertainty_contaminates() -> None:
     check = check_contamination(results, 1e-3, names=["fine", "medium", "coarse"])
     assert not check.clean_pass
     assert check.worst_level == "medium" and check.worst_ratio == pytest.approx(0.2)
-    assert any("level medium" in w and "Celik et al. 2008, Appendix A" in w for w in check.warnings)
+    assert any("level medium" in w and "ASME V&V 20, para. 2-4" in w for w in check.warnings)
+
+
+def test_default_margin_is_two_orders() -> None:
+    # ASME V&V 20, para. 2-4: 2 to 3 orders "to guarantee a negligible influence". Celik et al.
+    # (2008, Appendix A) ask for one, which ratio=10 gives.
+    results = [converged(5e-5), converged(0.0), converged(0.0)]
+    strict = check_contamination(results, 1e-3)
+    assert strict.ratio == 100.0 and not strict.clean_pass
+    assert strict.worst_ratio == pytest.approx(0.05)
+    assert any("more than 1/100" in w for w in strict.warnings)
+    assert check_contamination(results, 1e-3, ratio=10.0).clean_pass
 
 
 def test_oscillating_level_below_the_ratio_is_noted_not_blocked() -> None:

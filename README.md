@@ -74,8 +74,9 @@ this tool's own are in [docs/gci.md](docs/gci.md).
 Residuals are not the quantity you report. For a study, foam-verify also reads the history of
 each QoI on every level and asks whether the value itself has stopped moving: `converged`,
 `oscillating` or `drifting`, with the iterative uncertainty u_it, half the range over the last
-window of samples. On the levels behind the headline result, u_it must be at most a tenth of the
-GCI uncertainty, or iterative error contaminates the grid study. The method, its sources and this
+window of samples. On the levels behind the headline result, u_it must be at most a hundredth of
+the GCI uncertainty (two orders of magnitude, as ASME V&V 20 asks), or iterative error
+contaminates the grid study. The method, its sources and this
 tool's own conventions are in [docs/iterative.md](docs/iterative.md).
 
 ## Settings consistency

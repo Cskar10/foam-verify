@@ -6,8 +6,8 @@ over the last window of samples: the relative range, the relative drift of a lea
 trend, and the iterative uncertainty u_it, half the range. Half the range is the ITTC bound for
 an oscillating error (7.5-03-01-01, 2008, section 4.1), taken over the last two periods of the
 iteration history in ITTC 7.5-03-02-01 (section 2.3.1). For a grid study, u_it on every level
-should be at least an order of magnitude below the discretisation uncertainty (Celik et al.
-2008, Appendix A), or iterative error contaminates the GCI.
+should be at least two orders of magnitude below the discretisation uncertainty (ASME V&V 20,
+para. 2-4; Celik et al. 2008, Appendix A, ask for one), or iterative error contaminates the GCI.
 
 Every function here is pure arithmetic on numbers the caller supplies; nothing reads files.
 docs/iterative.md records each convention and its source, including the ones that are
@@ -102,7 +102,7 @@ class ContaminationCheck:
     warnings: tuple[str, ...]
     notes: tuple[str, ...]
     # The margin required: u_it at most U / ratio on every headline level.
-    ratio: float = 10.0
+    ratio: float = 100.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -397,7 +397,7 @@ def check_contamination(
     *,
     names: Sequence[str] | None = None,
     used: int | None = None,
-    ratio: float = 10.0,
+    ratio: float = 100.0,
 ) -> ContaminationCheck:
     """Compare u_it on each level of a grid study with its discretisation uncertainty u_num.
 
@@ -406,7 +406,9 @@ def check_contamination(
     a clean pass: the others are reported in notes, as coarser triplets are. Every headline
     level's u_it is compared with the fine-grid u_num, the smallest discretisation uncertainty:
     an iterative error on any level enters the differences the GCI is built from. ratio is
-    the required margin, one order of magnitude by default (Celik et al. 2008, Appendix A).
+    the required margin: two orders of magnitude by default, the lower end of the 2 to 3 that
+    ASME V&V 20 (para. 2-4, after Eça and Hoekstra) asks for "to guarantee a negligible
+    influence". Celik et al. (2008, Appendix A) ask for at least one order (ratio=10).
     """
     if not ratio > 1:
         raise ValueError("ratio must be above 1")
@@ -436,7 +438,7 @@ def check_contamination(
         if q > 1 / ratio:
             warnings.append(
                 f"level {label}: u_it = {u_it:.3g} is {q:.3g} of the discretisation uncertainty "
-                f"U = {u_num:.3g}, more than 1/{ratio:g} (Celik et al. 2008, Appendix A): "
+                f"U = {u_num:.3g}, more than 1/{ratio:g} (ASME V&V 20, para. 2-4): "
                 "iterative error may contaminate the grid study"
             )
         elif res.verdict is Verdict.OSCILLATING:

@@ -71,7 +71,7 @@
         {
           "name": "Iterative error",
           "status": "pass",
-          "detail": "largest u_it / U = 3.7e-09 (160x160), within 1/10 (Celik et al. 2008, Appendix A)"
+          "detail": "largest u_it / U = 3.7e-09 (160x160), within 1/100 (ASME V&V 20, para. 2-4)"
         },
         {
           "name": "Settings consistency",
@@ -421,9 +421,9 @@
           "worst_level": "160x160",
           "warnings": [],
           "notes": [
-            "largest u_it / U on the headline levels: 3.71e-09 (level 160x160), limit 1/10"
+            "largest u_it / U on the headline levels: 3.71e-09 (level 160x160), limit 1/100"
           ],
-          "ratio": 10.0
+          "ratio": 100.0
         }
       }
     ],

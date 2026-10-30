@@ -22,6 +22,8 @@ and the places where foam-verify makes its own choice.
 - Celik et al. (2008), the copy listed in [gci.md](gci.md): page 4 (the residual criterion) and
   Appendix A, page 14 (the margin over the discretisation error).
 - Eça and Hoekstra (2014), the copy listed in [gci.md](gci.md): section 2.1, page 105.
+- ASME V&V 20-2009 (reaffirmed 2021), the edition listed in [gci.md](gci.md): para. 2-4,
+  page 12 (the margin over the discretisation error, and how $u_\text{it}$ enters $u_\text{num}$).
 
 ## Why not residuals
 
@@ -132,10 +134,13 @@ Default tolerance `tol` $= 10^{-3}$ on both relative measures; foam-verify's cho
 ## Grid studies: is the GCI contaminated?
 
 `check_contamination` compares $u_\text{it}$ on each level with the grid study's discretisation
-uncertainty $U$, the fine-grid GCI result. Celik et al. (Appendix A): the iteration convergence
-error "should be at least one order of magnitude smaller than the discretization error estimates
-for each calculation". So the default `ratio` is 10, and a headline level fails when
-$u_\text{it} > U/10$.
+uncertainty $U$, the fine-grid GCI result. ASME V&V 20 (para. 2-4), after Eça and Hoekstra's
+study of iteration error: it "needs to be 2 to 3 orders of magnitude smaller than the
+discretization error to guarantee a negligible influence". So the default `ratio` is 100, the
+lower end of that range, and a headline level fails when $u_\text{it} > U/100$. Celik et al.
+(Appendix A) are less strict: the iteration convergence error "should be at least one order of
+magnitude smaller than the discretization error estimates for each calculation"; pass
+`ratio=10` for their margin, or `1000` for the strict end of V&V 20's.
 
 - Every headline level is compared with the fine-grid $U$, the smallest discretisation
   uncertainty. An iterative error on any level enters the differences the GCI is built from, so
@@ -146,11 +151,16 @@ $u_\text{it} > U/10$.
   triplets are in the GCI.
 - Without a discretisation uncertainty (a divergent or degenerate study) there is nothing to
   compare with, and the check is not a clean pass.
-- Eça and Hoekstra (2014, section 2.1) are stricter: the iterative error "should be two to three
-  orders of magnitude smaller than the discretization error", after their 2009 study. Pass
-  `ratio=100` or `1000` for that margin. In the ITTC example (7.5-03-02-01, section 2.3.1) the
-  iterative uncertainties are about two orders below the grid uncertainty on grids 2-4 and one
-  order below on grid 1, and are treated as negligible.
+- Eça and Hoekstra (2014, section 2.1) give the same margin as V&V 20: the iterative error
+  "should be two to three orders of magnitude smaller than the discretization error", after their
+  2009 study. In the ITTC example (7.5-03-02-01, section 2.3.1) the iterative uncertainties are
+  about two orders below the grid uncertainty on grids 2-4 and one order below on grid 1, and are
+  treated as negligible.
+- V&V 20 treats an iterative error that is not negligible by adding it to the discretisation
+  uncertainty, $u_\text{num} = u_h + u_i$, by simple addition rather than in quadrature because
+  the two are correlated (eq. 2-4-2). foam-verify instead blocks the clean pass: Richardson
+  extrapolation amplifies incomplete iteration errors (para. 2-4), so a contaminated grid study's
+  own numbers are in doubt, not only its band.
 
 In a study, each `QoIResult` carries `iterative` (one result per level, finest first) and
 `contamination`, next to `gci`. They are separate fields: a QoI's grid study is clean only when
