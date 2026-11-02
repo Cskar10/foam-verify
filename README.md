@@ -7,8 +7,8 @@ across grid levels, and comparison with reference data, with the uncertainty sta
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
 convergence and settings consistency checks, the `report` command, the comparison with
 reference data, from numbers (`compare`) or from a study's `study.toml` into its report, and a
-read-only MCP server (`mcp`) exist. Tests of every MCP tool through an MCP client come next,
-then the agent evaluation.
+read-only MCP server (`mcp`) exist, the server tested tool by tool through an MCP client. The
+agent evaluation comes next.
 
 ## Results
 

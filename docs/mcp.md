@@ -73,8 +73,9 @@ The server keeps to its roots on every call, whatever the study or the arguments
   path elsewhere, or a symlinked study that leads outside fails the same way, with the same
   message whether or not anything exists there.
 - **Inside a study** the study reader is stricter still: a case folder or QoI file must lie
-  inside the study, a settings file that links outside it is not read (a warning that blocks a
-  clean pass), and `#include` is followed only inside it.
+  inside the study and a QoI file pattern must be relative, a settings file that links outside
+  it is not read (a warning that blocks a clean pass), and `#include` is followed only inside
+  it.
 - **Size cap.** No file larger than the cap is read; a larger one is refused whole rather than
   cut short. A `.gz` file is capped by its decompressed size.
 - **`list_studies`** looks at most four folders below each root, skips hidden folders, does not
@@ -84,6 +85,27 @@ The server keeps to its roots on every call, whatever the study or the arguments
 
 Outside the server, from the command line or as a library, foam-verify reads as before: the
 sandbox applies only inside the server's tool calls.
+
+## Tests
+
+`tests/test_server.py` calls every tool through the SDK's in-memory client, as an MCP client
+would, and checks each result against the library's: the reports in both forms on all three
+committed studies, the grid, iterative, consistency and comparison results, and the summaries.
+Then it tries to get out:
+
+- every study tool with `..`, an absolute path elsewhere, `~` and the repository root as the
+  study;
+- a symlinked study, and studies that reach outside through a symlinked manifest, case folder,
+  mesh header, settings folder, QoI table or `postProcessing` folder, a level path or QoI file
+  pattern in the manifest, or an absolute pattern; each is refused, and a secret planted outside
+  never appears in a result;
+- a settings file that links outside, and an `#include` of a file outside: neither is read;
+- a file above the size cap, refused whole;
+- every tool on a copy of the cavity with process starts and network connections made to fail:
+  each tool works, and the copy is byte for byte the same afterwards.
+
+`tests/test_access.py` tests the sandbox itself: roots, `..`, symlinked files and folders, the
+cap and compressed files.
 
 ## Limits
 

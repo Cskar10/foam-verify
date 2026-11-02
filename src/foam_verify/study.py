@@ -294,6 +294,8 @@ def _parse_qoi(item: object, i: int) -> QoI:
     for key in ("name", "file"):
         if key not in raw:
             raise StudyError(f"{where}: {key} is required")
+    if Path(str(raw["file"])).is_absolute():
+        raise StudyError(f"{where}: file must be a pattern relative to each case folder")
     profile = raw.get("profile")
     axis = None
     column = raw.get("column")

@@ -113,7 +113,7 @@ def test_a_study_cannot_read_through_a_symlink_out_of_the_sandbox(tmp_path: Path
     # The duct study, with the finest level's owner file swapped for a link to a file outside.
     root, outside = tmp_path / "root", tmp_path / "outside"
     study = root / "duct"
-    shutil.copytree(STUDIES / "duct", study)
+    shutil.copytree(STUDIES / "duct", study, ignore=shutil.ignore_patterns("build"))
     outside.mkdir()
     owner = study / "n160" / "constant" / "polyMesh" / "owner"
     shutil.move(owner, outside / "owner")

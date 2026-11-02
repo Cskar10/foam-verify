@@ -379,6 +379,10 @@ MANIFEST_EDITS: list[tuple[Callable[[str], str], str]] = [
         lambda t: t.replace('column = "areaAverage(p)"', 'column = "x"\nreduction = "max"'),
         "reduction",
     ),
+    (
+        lambda t: t.replace('"postProcessing/avg/*/surfaceFieldValue.dat"', '"/etc/passwd"'),
+        "relative to each case folder",
+    ),
 ]
 
 
