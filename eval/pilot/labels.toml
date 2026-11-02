@@ -1,0 +1,36 @@
+# Labels for the two pilot bundles, in the form of eval/labels.toml, so that the scorer
+# (eval/score.py) can be tried on the pilot's transcripts. The pilot is not part of the evaluation,
+# and unlike eval/labels.toml these were written after the pilot ran (2 Nov 2026). Both come from
+# the committed studies' reports, whose QoIs the pilot bundles copy.
+
+[[bundle]]
+id = "p01"
+key = "cavity-4-umin"
+source = "studies/cavity"
+build = "the committed study, all four levels, asking about u_min"
+new_runs = []
+qoi = "u_min"
+verdict = "trustworthy"
+reasons = []
+value = -0.213760
+uncertainty = 0.000366
+why = """
+Every check holds (studies/cavity/report.md): monotonic at p = 1.977, asymptotic-range ratio
+1.004, the coarser triplet monotonic too (p = 1.776), converged in time on every level.
+"""
+
+[[bundle]]
+id = "p02"
+key = "pitz-4-xr"
+source = "studies/pitzDaily"
+build = "the committed study, all four levels, asking about xR/H"
+new_runs = []
+qoi = "xR/H"
+verdict = "not_trustworthy"
+reasons = ["grid_convergence"]
+why = """
+The reattachment length diverges on the three finest levels (R = 0.998, at or above the
+divergence threshold of 0.992 for these ratios) and on the three coarsest (R = 1.645)
+(studies/pitzDaily/report.md). Refining moves the walls through the wall-function switch at
+y+ = 11.53 (studies/pitzDaily/README.md).
+"""

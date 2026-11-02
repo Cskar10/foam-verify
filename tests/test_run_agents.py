@@ -146,6 +146,9 @@ def test_final_line_is_the_last_one_written() -> None:
     )
     assert ra.final_line(answer) == "**FINAL: converged=yes; value=-0.2138; uncertainty=0.0004**"
     assert ra.final_line("no answer line") is None
+    # After Markdown marks, in any case; a FINAL line that does not name converged is not one.
+    marked = "> `final: converged=no; value=none; uncertainty=none`\nFinal: done.\n"
+    assert ra.final_line(marked) == "> `final: converged=no; value=none; uncertainty=none`"
 
 
 def write_transcript(path: Path, events: list[dict[str, Any]]) -> Path:
@@ -207,8 +210,15 @@ def test_tree_hash_sees_any_change(tmp_path: Path) -> None:
 # --- the batch, with a stand-in for the agent ----------------------------------------------
 
 
+CONNECTED = [{"name": "foam-verify", "status": "connected"}]
+
+
 def record(**changes: Any) -> dict[str, Any]:
     base = {
+        "condition": "A",
+        "cwd": "/study",
+        "exit_code": 0,
+        "mcp_servers": CONNECTED,
         "duration_s": 1.0,
         "num_turns": 2,
         "total_cost_usd": 0.1,
@@ -233,7 +243,7 @@ def fake_batch(
         calls.append((bundle.name, condition))
         transcript.parent.mkdir(parents=True, exist_ok=True)
         transcript.write_text("{}\n")
-        return records[len(calls) - 1]
+        return {**records[len(calls) - 1], "condition": condition}
 
     monkeypatch.setattr(ra, "run_one", run_one)
     monkeypatch.setattr(ra, "git_head", lambda: "abc123")
@@ -267,6 +277,65 @@ def test_a_batch_stops_at_a_failed_run(
 ) -> None:
     done, calls = fake_batch(monkeypatch, tmp_path, [record(), record(**bad), record(), record()])
     assert done == 2 and len(calls) == 2
+
+
+@pytest.mark.parametrize(
+    ("changes", "reason"),
+    [
+        ({}, None),
+        ({"condition": "B"}, None),
+        ({"cwd": None}, "did not start"),
+        ({"condition": "B", "mcp_servers": []}, "foam-verify not connected"),
+        (
+            {"condition": "B", "mcp_servers": [{"name": "foam-verify", "status": "pending"}]},
+            "foam-verify not connected",
+        ),
+        ({"timed_out": True, "is_error": None, "exit_code": -9}, None),
+        ({"hit_limit": True, "is_error": True}, "usage limit"),
+        ({"is_error": None}, "no result"),
+        ({"is_error": True}, "error"),
+        ({"exit_code": 1}, "exit code 1"),
+    ],
+)
+def test_a_run_is_set_aside_only_when_it_did_not_finish(
+    changes: dict[str, Any], reason: str | None
+) -> None:
+    assert ra.set_aside_reason(record(**changes)) == reason
+
+
+def index_of(out: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in (out / "runs.jsonl").read_text().splitlines()]
+
+
+def test_a_failed_run_is_set_aside_and_its_slot_runs_again(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    done, calls = fake_batch(monkeypatch, tmp_path, [record(), record(is_error=True)])
+    assert done == 2 and calls == [("p01", "A"), ("p01", "B")]
+    failed = index_of(tmp_path)[1]
+    assert failed["set_aside"] == "error" and failed["transcript"] == "m/B/p01-r1.failed-1.jsonl"
+    assert (tmp_path / failed["transcript"]).is_file()
+    assert not (tmp_path / "m" / "B" / "p01-r1.jsonl").exists()
+    # Started again, the batch runs that slot again; a second failure keeps the first.
+    done, calls = fake_batch(monkeypatch, tmp_path, [record(is_error=True)])
+    assert calls == [("p01", "B")]
+    assert index_of(tmp_path)[2]["transcript"] == "m/B/p01-r1.failed-2.jsonl"
+    assert (tmp_path / "m" / "B" / "p01-r1.failed-1.jsonl").is_file()
+    done, calls = fake_batch(monkeypatch, tmp_path, [record()] * 3)
+    assert calls == [("p01", "B"), ("p02", "A"), ("p02", "B")]
+    assert "set_aside" not in index_of(tmp_path)[3]
+
+
+def test_a_timed_out_run_counts_and_is_not_run_again(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    timed_out = record(timed_out=True, is_error=None, exit_code=-9, final=None)
+    done, calls = fake_batch(monkeypatch, tmp_path, [timed_out])
+    assert done == 1 and calls == [("p01", "A")]
+    first = index_of(tmp_path)[0]
+    assert "set_aside" not in first and first["transcript"] == "m/A/p01-r1.jsonl"
+    done, calls = fake_batch(monkeypatch, tmp_path, [record()] * 3)
+    assert calls == [("p01", "B"), ("p02", "A"), ("p02", "B")]
 
 
 def test_scored_runs_need_committed_code(

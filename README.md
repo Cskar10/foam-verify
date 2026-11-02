@@ -8,8 +8,9 @@ across grid levels, and comparison with reference data, with the uncertainty sta
 convergence and settings consistency checks, the `report` command, the comparison with
 reference data, from numbers (`compare`) or from a study's `study.toml` into its report, and a
 read-only MCP server (`mcp`) exist, the server tested tool by tool through an MCP client. The
-agent evaluation is ready to run: its labels, its twelve bundles and a sandboxed run harness
-are committed, and a pilot has tried the harness ([eval/](eval/README.md)).
+agent evaluation is ready to run: its labels, its twelve bundles, a sandboxed run harness and
+the scorer are committed, and a pilot has tried the harness and the scorer
+([eval/](eval/README.md)).
 
 ## Results
 

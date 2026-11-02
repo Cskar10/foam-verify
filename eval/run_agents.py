@@ -22,11 +22,14 @@ foam-verify's in condition B. The environment is rebuilt from scratch.
 
 The transcript of every run (Claude Code's stream-json output) is saved, and each run appends a
 line to runs.jsonl beside the transcripts: the settings, the time taken, the usage and the answer's
-FINAL line. This script never reads the labels; scoring is separate. A run that fails, times out
-or hits the subscription's usage limit stops the batch, and so does a login token close to expiry,
-so that no token is ever refreshed inside the sandbox, where the login file is read-only.
-Finished runs are skipped when a batch is started again. Scored runs only start from committed
-code; the pilot may run from a working tree.
+FINAL line. This script never reads the labels; scoring is separate (score.py). A run that fails,
+times out or hits the subscription's usage limit stops the batch, and so does a login token close
+to expiry, so that no token is ever refreshed inside the sandbox, where the login file is
+read-only. A run that did not finish for a reason outside the agent's answer (set_aside_reason) is
+set aside: its transcript is kept under a new name and its record marked, so that the batch runs
+that slot again when it is started again. Every other run is skipped when a batch is started
+again, a timed-out one included. Scored runs only start from committed code; the pilot may run
+from a working tree.
 """
 
 from __future__ import annotations
@@ -86,7 +89,8 @@ SWITCHES = {
 CREDENTIALS = Path.home() / ".claude" / ".credentials.json"
 # A run never starts with less login time left than its timeout and this margin.
 TOKEN_MARGIN_S = 15 * 60
-_FINAL = re.compile(r"^\s*\**\s*FINAL:.*$", re.MULTILINE)
+# A FINAL line, after any Markdown marks: quote, list, heading, emphasis or code.
+_FINAL = re.compile(r"^[ \t>*_`#-]*FINAL\s*:.*$", re.MULTILINE | re.IGNORECASE)
 
 
 def prompt(qoi: str) -> str:
@@ -228,9 +232,47 @@ def tree_hash(folder: Path) -> dict[str, str]:
 
 
 def final_line(text: str) -> str | None:
-    """The last FINAL: line of an answer, as written."""
-    lines = _FINAL.findall(text)
+    """The answer line: the last line that starts with FINAL: (after any Markdown marks) and names
+    converged, as written."""
+    lines = [line for line in _FINAL.findall(text) if "converged" in line.lower()]
     return lines[-1].strip() if lines else None
+
+
+def set_aside_reason(record: dict[str, Any]) -> str | None:
+    """Why a run did not finish for a reason outside the agent's answer, so that it is set aside
+    and run again; None for a run that counts. A run counts when Claude Code finished it, or when
+    it reached the time limit (an answer without a verdict). In condition B, a foam-verify server
+    that was not connected at the start makes the run not a condition-B run."""
+    if record["cwd"] is None:
+        return "did not start"
+    if record["condition"] == "B":
+        servers: list[dict[str, Any]] = record["mcp_servers"] or []
+        if [(s.get("name"), s.get("status")) for s in servers] != [(SERVER, "connected")]:
+            return "foam-verify not connected"
+    if record["timed_out"]:
+        return None
+    if record["hit_limit"]:
+        return "usage limit"
+    if record["is_error"] is None:
+        return "no result"
+    if record["is_error"]:
+        return "error"
+    if record["exit_code"] != 0:
+        return f"exit code {record['exit_code']}"
+    return None
+
+
+def set_aside(transcript: Path) -> Path:
+    """Move a run's transcript (and its stderr) out of its slot, keeping both, so that the slot
+    runs again: b01-r1.jsonl becomes b01-r1.failed-1.jsonl, then -2 and so on."""
+    n = 1
+    while (moved := transcript.with_name(f"{transcript.stem}.failed-{n}.jsonl")).exists():
+        n += 1
+    transcript.rename(moved)
+    errors = transcript.with_suffix(".stderr")
+    if errors.exists():
+        errors.rename(moved.with_suffix(".stderr"))
+    return moved
 
 
 @dataclass(frozen=True)
@@ -374,6 +416,10 @@ def run_batch(
                     "transcript": str(transcript.relative_to(out)),
                     **run_one(bundle, condition, model, transcript),
                 }
+                reason = set_aside_reason(record)
+                if reason is not None:
+                    record["set_aside"] = reason
+                    record["transcript"] = str(set_aside(transcript).relative_to(out))
                 with index.open("a") as fh:
                     fh.write(json.dumps(record) + "\n")
                 done += 1
@@ -382,10 +428,15 @@ def run_batch(
                     f"{record['num_turns']} turns, ${record['total_cost_usd']}, "
                     f"unchanged={record['unchanged']}, {record['final']}"
                 )
+                if reason is not None:
+                    print(
+                        f"set aside ({reason}) as {record['transcript']}: the batch runs this "
+                        "slot again when it is started again"
+                    )
                 if record["hit_limit"]:
                     print("usage limit reached: stopping")
                     return done
-                if record["is_error"] is not False or record["timed_out"]:
+                if reason is not None or record["timed_out"]:
                     print("the run failed or timed out: stopping, to look before going on")
                     return done
     return done
@@ -472,7 +523,7 @@ def tool_calls(transcript: Path) -> list[tuple[str, Any, bool, str]]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--bundles", nargs="+", metavar="ID", help="bundle ids, default all")
     parser.add_argument("--pilot", action="store_true", help="the pilot bundles p01 and p02")
     parser.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=list(CONDITIONS))

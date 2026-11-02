@@ -87,9 +87,11 @@ Every run appends a line to `runs.jsonl` beside the transcripts: the bundle, con
 foam-verify commit, the time taken, the turns, the token usage and its cost at API prices, whether
 the bundle copy was unchanged, and the answer's FINAL line. The script never reads the labels. A
 run that fails, times out or hits the usage limit stops the batch, and so does a login token close
-to expiry, so that no token is refreshed inside a sandbox; started again, a batch skips the runs
-it has. Scored runs only start from committed code, so the commit each one records is the code it
-ran; the pilot ran from the working tree, which its index marks `-dirty`.
+to expiry, so that no token is refreshed inside a sandbox. A run that did not finish for a reason
+outside the agent's answer is set aside (see Scoring); started again, a batch runs the slots set
+aside and skips every other run it has. Scored runs only start from committed code, so the commit
+each one records is the code it ran; the pilot ran from the working tree, which its index marks
+`-dirty`.
 
 **The isolation probe** (2 Nov 2026, Claude Code 2.1.312, Opus 5.5) gave condition B's sandbox a
 list of ways out and planted a canary file beside the login file. Reading the labels' path, the
@@ -100,6 +102,55 @@ server refused a study outside `/study`. The agent had no instructions from any 
 permission rules alone leave `/tmp` readable, where test runs leave copies of the committed
 studies with their reports; hence the sandbox. The probe's transcripts name paths in the home
 folder and are not committed.
+
+## Scoring
+
+[`score.py`](score.py) scores the runs (`python3 eval/score.py`, or `--pilot` for the pilot) and
+writes `scores.jsonl`, one line per run, and `scores.md`, the tables, beside `runs.jsonl`. Its
+rules were committed before any scored run, as the labels were, and are the same for every model
+and condition:
+
+- **Labels.** `labels.toml` as committed at `90d5c4f`: the scorer checks its sha256 and refuses
+  any other file.
+- **Which runs count.** A run counts when Claude Code finished it, or when it reached the
+  30-minute limit, which counts as an answer without a verdict. A run that did not finish for a
+  reason outside the agent's answer is set aside: one that did not start, hit the usage limit or
+  another error, or ended without a result, and in condition B one whose foam-verify server was
+  not connected at the start. The harness keeps its transcript under a new name
+  (`b01-r1.failed-1.jsonl`), marks its line in `runs.jsonl`, and runs the slot again when the
+  batch is started again; `scores.md` lists every run set aside. A run that counts is never run
+  again or left out.
+- **The protocol.** The scorer refuses to score at all if a run that counts broke the protocol:
+  a working folder other than `/study`, another model, tools or servers other than the
+  condition's (Read, Glob and Grep; in B also foam-verify's tools, with its server connected), a
+  bundle copy that changed, uncommitted code, a second run for the same slot, or a line of
+  `runs.jsonl` that disagrees with its transcript.
+- **The verdict** is read from the answer's FINAL line alone: the last line that starts with
+  `FINAL:` (after any Markdown marks, in any case) and names `converged`. The rest of the answer
+  is not read, so an answer whose text and FINAL line disagree is scored by its line.
+  `converged=yes` is the verdict trustworthy and `converged=no` not trustworthy, in any case and
+  whatever follows the word. No FINAL line, or anything else after `converged=` (`maybe`,
+  `yes/no`, the question's own `<yes|no>`), is no verdict.
+- **Right, false trust, rejected.** A verdict is right when it is the label's. False trust is the
+  verdict trustworthy on a bundle labelled not trustworthy; a sound bundle rejected is the
+  verdict not trustworthy on one labelled trustworthy. No verdict is never right, and is counted
+  on its own, as neither false trust nor a rejection.
+- **Value and uncertainty** are the first number after `value=` and `uncertainty=` (`:` also
+  does), or none: `none`, `n/a`, a dash, or text that is not a number, which gets a note in
+  `scores.jsonl`. A number may start with ±, `+/-`, `~` or ≈, and use a Unicode minus and
+  an exponent (`e-4`, `x10^-4`, `×10⁻⁴`). A `%` straight after the uncertainty makes it a
+  percentage of the value, and its sign is dropped.
+- **Bands.** When both are numbers, the answer's band is value ± uncertainty. On the duct
+  bundles (b02, b03, b06, b11) the scorer records whether the band holds the exact f Re
+  (`abs(value - exact) <= uncertainty`), whatever the verdict. On the four sound bundles it
+  records whether the value lies in the label's band (foam-verify's value and U on the committed
+  study), and the ratio of the uncertainty to the label's.
+- **Reasons are not scored by the script.** Whether an answer names a label's reason takes
+  reading, because answers also name the checks that pass: a word search cannot tell "the value
+  is still drifting" from "it isn't caused by unconverged iterations". The transcripts are
+  committed for that reading.
+- **Rates come with their counts**, per model and condition. Three runs of one bundle are not
+  independent, so the table by bundle shows every verdict.
 
 ## Pilot
 
@@ -124,6 +175,11 @@ published value "from memory", a known confound (As built, below). In condition 
 rates the 72 scored runs would take about an hour and about $20 at API prices, more if the
 evaluation bundles need more reading.
 
+The pilot also tries the scorer, against [`pilot/labels.toml`](pilot/labels.toml): labels for
+p01 and p02 in the same form, taken from the committed studies' reports and, unlike the
+evaluation's, written after the pilot ran. All four verdicts are right, and on p01 both values lie
+in the label's band ([`pilot/runs/scores.md`](pilot/runs/scores.md)).
+
 ## Building and checking
 
 ```console
@@ -136,7 +192,12 @@ $ python3 eval/generate.py collect
 cores. `eval/build/`, the full cases, is not committed.
 
 [`tests/test_run_agents.py`](../tests/test_run_agents.py) checks the harness without running an
-agent: the question, the command, the sandbox's contents, and when a batch stops.
+agent: the question, the command, the sandbox's contents, when a batch stops and which runs it
+sets aside.
+
+[`tests/test_score.py`](../tests/test_score.py) holds the scorer to its rules on hand-written
+answer lines and made-up transcripts, one for each way a run can be set aside or refused, and
+checks that the pilot's committed scores are what it writes.
 
 [`tests/test_eval.py`](../tests/test_eval.py) checks every built bundle against its label from
 its files and the committed studies, not from foam-verify: a run stopped early reproduces the
