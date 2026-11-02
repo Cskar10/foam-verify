@@ -26,6 +26,10 @@ p = 1.995 against a formal order of 2, asymptotic-range ratio 1.000, clean pass.
 `tests/test_studies.py` reads this folder back and checks both the bracket and the force
 balance below. foam-verify's full report on this study is [report.md](report.md) (JSON:
 [report.json](report.json)), written by `foam-verify report studies/duct --output studies/duct`.
+`study.toml` lists the exact value as a reference of kind `exact`, so the report also makes the
+comparison, apart from its verdict: E = S - D = -0.00858, |E| = 0.797 U_num, within the
+uncertainty. Against an exact value this is a code-verification check of the GCI
+([docs/compare.md](../../docs/compare.md)).
 
 ## Case
 

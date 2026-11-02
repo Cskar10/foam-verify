@@ -36,5 +36,13 @@ $ podman run --rm -it -v "$PWD":/work:z -w /work --entrypoint /bin/bash $IMG
 
 ## Reference values
 
+Each study's `study.toml` lists its reference values under `[[reference]]`, and its report
+compares them with the finest-grid values, apart from the verdict.
+
 - Square duct, fully developed laminar flow: Darcy f Re = 56.9083 (Fanning 14.22708), computed
-  from the series solution in `foam_verify.exact` (Shah and London 1978).
+  from the series solution in `foam_verify.exact` (Shah and London 1978). Kind `exact`.
+- Lid-driven cavity, Re = 100: u on the vertical centreline at y = 0.5000, 0.4531 and 0.8516 of
+  L is -0.20581, -0.21090 and 0.23151 (Ghia, Ghia and Shin 1982, J. Comput. Phys. 48, 387-411,
+  Table I, p. 398, the Re = 100 column, their 129 x 129 grid points 65, 59 and 110). Copied from
+  the paper and checked against the printed page. Kind `code`: a numerical solution with no
+  stated uncertainty.

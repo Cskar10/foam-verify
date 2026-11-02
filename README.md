@@ -6,8 +6,8 @@ across grid levels, and comparison with reference data, with the uncertainty sta
 
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
 convergence and settings consistency checks, the `report` command and the comparison with
-reference data (`compare`, from numbers) exist. Reading reference values from `study.toml` into
-the reports comes next.
+reference data, from numbers (`compare`) or from a study's `study.toml` into its report, exist.
+A read-only MCP server comes next.
 
 ## Results
 
@@ -27,6 +27,13 @@ monotonic convergence at an observed order of 1.995 and gives 56.8997 +/- 0.0108
 56.8890 to 56.9105. The actual error, 0.0086, is 80% of the stated uncertainty, and the
 Richardson extrapolation, 56.90834, is within 3.3e-5 of the exact value.
 
+**Against Ghia et al. (1982), the cavity differs by more than its uncertainty.** At three of
+Ghia, Ghia and Shin's grid points, the cavity's values differ from theirs by 1.3 to 2.1%, 7 to 39
+times its numerical uncertainty. Ghia's values are a numerical solution with no stated
+uncertainty, so the comparison is code-to-code: it cannot say which solution carries the
+difference, and the report gives it beside the verdict, not in it. Details in
+[the cavity's README](studies/cavity/README.md#against-ghia-et-al-1982).
+
 **`pitzDaily` shows the other half of the job: refusing.** Refining the mesh moves the walls
 through the switch of the wall function at y+ = 11.53, so the levels do not solve the same
 equations. The total-pressure loss converges monotonically on the three finest grids, and on its
@@ -45,8 +52,9 @@ Each quantity of interest gets a verdict and the checks behind it: grid converge
 ratio, observed order, asymptotic range, coarser triplets, iterative convergence and error,
 settings consistency, refined directions and refinement scope, each `pass`, `fail`, `n/a` or
 `assumed`, with the numbers. Every warning that stops a clean pass is quoted. The exit code is 0
-only when every QoI is a clean pass. The layout and the rules are in
-[docs/report.md](docs/report.md).
+only when every QoI is a clean pass. When `study.toml` lists reference values, the report also
+compares each with its QoI, in a section of its own; no comparison changes a verdict or the exit
+code. The layout and the rules are in [docs/report.md](docs/report.md).
 
 ## GCI from numbers
 
@@ -84,6 +92,10 @@ uncertainty bounds it: on the duct, |E| is 80% of U_num. Against another numeric
 following ASME V&V 20 and the algorithm of Eça, Dowding and Roache (2020). Every uncertainty is
 a 95% expanded uncertainty; with experimental data, the standard uncertainty is given too, with
 its divisor. The rules and their sources are in [docs/compare.md](docs/compare.md).
+
+A study can list its reference values in `study.toml`, as `[[reference]]` tables with the QoI,
+the kind, the value and its source, and `foam-verify report` then makes each comparison: the
+duct against its exact f Re, and the cavity's three points against Ghia et al.'s Table I.
 
 ## Iterative convergence
 

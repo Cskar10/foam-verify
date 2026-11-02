@@ -51,6 +51,22 @@ moves smoothly with the field rather than jumping from point to point. first_cro
 last_crossing are the coordinate where the values change sign, interpolated between the two
 points that bracket it: the reattachment point behind a step is the last change of sign of the
 wall shear stress, say.
+
+A study can also give reference values for its QoIs. compare_references() sets each against
+the QoI's finest-grid value and U (foam_verify.compare); the report lists the comparisons
+apart from its verdict:
+
+    [[reference]]
+    qoi = "dp"                 # the name of a [[qoi]]
+    kind = "experiment"        # exact | code | experiment
+    value = 12.4
+    source = "rig test report, run 7"   # where the value comes from
+    uncertainty = 0.6          # U_D at 95%: none for exact, optional for code, required here
+    standard_uncertainty = 0.3     # experiment only, optional: u_D
+    input_uncertainty = 0.0    # experiment only, optional: U_input at 95%
+    c = 10                     # experiment only, optional: Eça, Dowding and Roache's C
+
+A QoI can have several references, or none.
 """
 
 from __future__ import annotations
@@ -63,6 +79,14 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
+from .compare import (
+    DEFAULT_C,
+    Comparison,
+    Reference,
+    ReferenceKind,
+    check_reference,
+    compare_result,
+)
 from .consistency import ConsistencyResult, settings_consistency
 from .gci import GCIResult, GridSequence, Options, Scope, grid_convergence
 from .iterative import (
@@ -110,6 +134,16 @@ class QoI:
 
 
 @dataclass(frozen=True)
+class QoIReference:
+    """A reference value for one QoI, as study.toml gives it, with the options to compare."""
+
+    qoi: str
+    reference: Reference
+    input_uncertainty: float = 0.0
+    c: float = DEFAULT_C
+
+
+@dataclass(frozen=True)
 class Study:
     root: Path
     name: str
@@ -120,6 +154,7 @@ class Study:
     layer_cells: float | None
     levels: tuple[Level, ...]
     qois: tuple[QoI, ...]
+    references: tuple[QoIReference, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -170,6 +205,14 @@ class StudyResult:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class QoIComparison:
+    """One QoI's finest-grid value and U set against one of its references."""
+
+    qoi: str
+    comparison: Comparison
 
 
 def gci_options(study: Study) -> Options:
@@ -295,6 +338,63 @@ def _parse_qoi(item: object, i: int) -> QoI:
     )
 
 
+def _number(value: Any, key: str, where: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value):
+        raise StudyError(f"{where}: {key} must be a finite number, got {value!r}")
+    return float(value)
+
+
+def _optional_number(raw: dict[str, Any], key: str, where: str) -> float | None:
+    return None if key not in raw else _number(raw[key], key, where)
+
+
+def _parse_reference(item: object, i: int, qois: set[str]) -> QoIReference:
+    where = f"reference[{i}]"
+    if not isinstance(item, dict):
+        raise StudyError(f"{where} must be a table")
+    raw = cast(dict[str, Any], item)
+    allowed = {
+        "qoi",
+        "kind",
+        "value",
+        "source",
+        "uncertainty",
+        "standard_uncertainty",
+        "input_uncertainty",
+        "c",
+    }
+    _check_keys(raw, allowed, where)
+    for key in ("qoi", "kind", "value", "source"):
+        if key not in raw:
+            raise StudyError(f"{where}: {key} is required")
+    qoi = raw["qoi"]
+    if not isinstance(qoi, str) or qoi not in qois:
+        raise StudyError(f"{where}: qoi {qoi!r} is not the name of a [[qoi]]")
+    try:
+        kind = ReferenceKind(raw["kind"])
+    except ValueError as exc:
+        raise StudyError(f"{where}: kind must be exact, code or experiment") from exc
+    source = raw["source"]
+    if not isinstance(source, str) or not source.strip():
+        raise StudyError(f"{where}: source must say where the value comes from")
+    if "c" in raw and kind is not ReferenceKind.EXPERIMENT:
+        raise StudyError(f"{where}: c applies to experiments only")
+    reference = Reference(
+        value=_number(raw["value"], "value", where),
+        kind=kind,
+        uncertainty=_optional_number(raw, "uncertainty", where),
+        standard_uncertainty=_optional_number(raw, "standard_uncertainty", where),
+        source=source.strip(),
+    )
+    input_uncertainty = _number(raw.get("input_uncertainty", 0.0), "input_uncertainty", where)
+    c = _number(raw.get("c", DEFAULT_C), "c", where)
+    try:
+        check_reference(reference, input_uncertainty=input_uncertainty, c=c)
+    except ValueError as exc:
+        raise StudyError(f"{where}: {exc}") from exc
+    return QoIReference(qoi, reference, input_uncertainty, c)
+
+
 def load_study(path: str | Path) -> Study:
     """Read study.toml (or the folder holding it) and check that every case folder exists."""
     path = Path(path)
@@ -315,6 +415,7 @@ def load_study(path: str | Path) -> Study:
         "layer_cells",
         "levels",
         "qoi",
+        "reference",
     }
     _check_keys(raw, allowed, MANIFEST)
 
@@ -364,6 +465,14 @@ def load_study(path: str | Path) -> Study:
     if len({q.name for q in qois}) != len(qois):
         raise StudyError(f"{MANIFEST}: qoi names must be unique")
 
+    raw_references = raw.get("reference", [])
+    if not isinstance(raw_references, list):
+        raise StudyError(f"{MANIFEST}: reference must be an array of tables, [[reference]]")
+    names = {q.name for q in qois}
+    references = tuple(
+        _parse_reference(r, i, names) for i, r in enumerate(cast(list[Any], raw_references))
+    )
+
     return Study(
         root=root.resolve(),
         name=str(raw.get("name", root.resolve().name)),
@@ -374,6 +483,7 @@ def load_study(path: str | Path) -> Study:
         layer_cells=None if layer_cells is None else float(layer_cells),
         levels=levels,
         qois=qois,
+        references=references,
     )
 
 
@@ -894,4 +1004,25 @@ def assess_study(study: Study) -> StudyResult:
         warnings=tuple(warnings),
         consistency=consistency,
         notes=tuple(study_notes),
+    )
+
+
+def compare_references(study: Study, result: StudyResult) -> tuple[QoIComparison, ...]:
+    """Each reference in study.toml against its QoI's finest-grid value and U.
+
+    result must be assess_study(study). A comparison is no part of the verification verdict: it
+    says how far the value is from the reference, not whether the value is converged.
+    """
+    by_name = {q.name: q for q in result.qois}
+    return tuple(
+        QoIComparison(
+            ref.qoi,
+            compare_result(
+                by_name[ref.qoi].gci,
+                ref.reference,
+                input_uncertainty=ref.input_uncertainty,
+                c=ref.c,
+            ),
+        )
+        for ref in study.references
     )

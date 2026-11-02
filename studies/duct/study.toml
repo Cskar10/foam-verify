@@ -31,3 +31,13 @@ column = "areaAverage(wallShearStress)"
 component = "x"
 reduction = "last"
 scale = -800.0
+
+# The exact f Re: the series solution for the square duct (Shah and London 1978), as
+# foam_verify.exact.rectangular_duct_fre(1.0) computes it to double precision;
+# tests/test_studies.py checks the two agree. An exact reference makes the comparison a
+# code-verification check: does U bound the actual error?
+[[reference]]
+qoi = "fRe"
+kind = "exact"
+value = 56.90830753911475
+source = "the series solution for the square duct (Shah and London 1978), foam_verify.exact.rectangular_duct_fre(1.0)"

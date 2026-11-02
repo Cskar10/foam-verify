@@ -281,6 +281,7 @@
       }
     }
   ],
+  "comparisons": [],
   "result": {
     "name": "pitzDaily",
     "dim": 2,

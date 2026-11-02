@@ -15,6 +15,28 @@ foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; gr
 | `v_max` | 0.179365 +/- 0.000257 | 0.14% | monotonic, p = 2.152 | yes |
 | `v_min` | -0.253585 +/- 0.000275 | 0.11% | monotonic, p = 2.523 | yes |
 
+## Reference comparison
+
+Apart from the verdict: the comparison error E = S - D sets the finest-grid value S against a reference value D, every uncertainty at 95%. The verdict says whether S is converged; this says how far it is from D (foam-verify docs/compare.md).
+
+| QoI | Kind | D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
+|---|---|---|---|---|---|---|
+| `u(y=0.5)` | code | -0.20581 | -0.00308 | -1.5% | 9.4 U_num | outside uncertainty |
+| `u(y=0.4531)` | code | -0.2109 | -0.00278 | -1.3% | 7.34 U_num | outside uncertainty |
+| `u(y=0.8516)` | code | 0.23151 | 0.00488 | 2.1% | 38.9 U_num | outside uncertainty |
+
+- `u(y=0.5)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.5000 (grid point 65 of 129): E = S - D = -0.00308 is beyond the simulation's numerical uncertainty (|E| = 9.4 U_num); the reference states no uncertainty, and would need one of at least 0.00306 for the two to agree
+- `u(y=0.4531)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.4531 (grid point 59 of 129): E = S - D = -0.00278 is beyond the simulation's numerical uncertainty (|E| = 7.34 U_num); the reference states no uncertainty, and would need one of at least 0.00276 for the two to agree
+- `u(y=0.8516)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129): E = S - D = 0.00488 is beyond the simulation's numerical uncertainty (|E| = 38.9 U_num); the reference states no uncertainty, and would need one of at least 0.00488 for the two to agree
+
+Warnings:
+
+- `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`: the reference states no uncertainty, so U_val is incomplete
+
+Notes:
+
+- `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`: a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model
+
 ## Levels
 
 | Level | Folder | Cells | r to the next coarser |
@@ -283,3 +305,4 @@ Notes:
 - Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/100 (ASME V&V 20, para. 2-4; docs/iterative.md).
 - Settings consistency: the schemes, solver settings, physical properties, boundary conditions and near-wall layer settings of the levels, compared entry by entry (docs/consistency.md).
 - U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI is a clean pass only when no check fails (docs/report.md).
+- Reference comparison, apart from the verdict: |E| against U_num for an exact reference (a code-verification check); against U_val = sqrt(U_num^2 + U_input^2 + U_D^2) for a code or experimental reference, or U_num alone, with a warning, when a code reference states no uncertainty; for an experiment, the case of Eça, Dowding and Roache (2020) with their constant C (ASME V&V 20; docs/compare.md).

@@ -120,9 +120,44 @@ $u_\text{val} = \sqrt{u_\text{num}^2 + u_D^2}$ is given too.
 A divergent or degenerate grid study has no $U_\text{num}$. The comparison still gives $E$, with
 the outcome `no_uncertainty`: $E$ alone cannot be judged.
 
+## In a study
+
+A study lists its reference values in `study.toml`, one `[[reference]]` table each, and
+`foam-verify report` compares each with its QoI's finest-grid value and U:
+
+```toml
+[[reference]]
+qoi = "u(y=0.5)"           # the name of a [[qoi]]
+kind = "code"              # exact | code | experiment
+value = -0.20581
+source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100"
+```
+
+`qoi`, `kind`, `value` and `source` are required: a reference that does not say where it comes
+from cannot be checked. The optional keys follow the rules above. `uncertainty` is $U_D$ at 95%,
+optional for a code reference and required for an experiment; `standard_uncertainty` ($u_D$),
+`input_uncertainty` ($U_\text{input}$ at 95%) and `c` apply to experiments only. A QoI can have
+several references, or none. A reference that breaks a rule stops the study from loading, with
+the reason.
+
+The report lists the comparisons in a section of their own, after the verdict, and in its JSON
+as `comparisons` ([report.md](report.md)). They are no part of the verdict, and never change the
+exit code: the verdict says whether a value is converged, the comparison how far it is from a
+reference. Folding one into the other would make a code-to-code disagreement look like a
+convergence failure, and a lucky agreement look like verification. Keeping them apart is
+foam-verify's convention.
+
+The committed studies give one comparison of each kind they can:
+
+- The square duct against its exact f Re, kind `exact`: $\lvert E\rvert = 0.797\,U_\text{num}$,
+  within the uncertainty.
+- The cavity's three points against Ghia et al.'s Table I, kind `code`: $\lvert E\rvert$ = 7 to
+  39 $U_\text{num}$, outside the uncertainty. Ghia et al. state no uncertainty, so the comparison
+  cannot say which solution carries the difference; the
+  [cavity README](../studies/cavity/README.md#against-ghia-et-al-1982) discusses it.
+
 ## Not covered
 
-- Reading reference values from `study.toml` and adding the comparison to the reports.
 - Correlated errors between the simulation and the experiment (V&V 20, section 5, cases 2-4).
 - Propagating input uncertainty through the simulation (V&V 20, section 3): $U_\text{input}$ is
   given, not computed.

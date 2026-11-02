@@ -2,8 +2,9 @@
 
 The `icoFoam` cavity at Re = 100 on four uniform grids, 20 x 20 to 160 x 160. There is no exact
 solution; this study shows the GCI behaving on a standard benchmark with corner singularities.
-The comparison with Ghia, Ghia and Shin (1982) is a separate step (`compare`), and is
-labelled code-to-code: Ghia's values are themselves a 129 x 129 numerical solution.
+foam-verify's report also compares three of the QoIs with Ghia, Ghia and Shin (1982), apart
+from the verdict. That comparison is code-to-code: Ghia's values are themselves a 129 x 129
+numerical solution ([below](#against-ghia-et-al-1982)).
 
 Velocities are in units of the lid speed U = 1 m/s; positions in units of the side L = 0.1 m.
 
@@ -41,6 +42,43 @@ formal order).
   asymptotic ratios.
 - foam-verify's full report on this study is [report.md](report.md) (JSON:
   [report.json](report.json)).
+
+## Against Ghia et al. (1982)
+
+The three points are grid points of Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411,
+whose Table I (p. 398) gives u there for Re = 100. `study.toml` lists the three values as
+references of kind `code`, and foam-verify's report compares each with the finest-grid value
+([docs/compare.md](../../docs/compare.md)). The comparison is no part of the verdict above.
+
+| QoI | 160 x 160, this study | Ghia et al., 129 x 129 | E = S - D | E / \|D\| | \|E\| / U_num | U_D needed |
+|---|---|---|---|---|---|---|
+| u at y = 0.5 | -0.20889 +/- 0.00033 | -0.20581 | -0.00308 | -1.5% | 9.4 | 0.0031 |
+| u at y = 0.4531 | -0.21368 +/- 0.00038 | -0.21090 | -0.00278 | -1.3% | 7.3 | 0.0028 |
+| u at y = 0.8516 | 0.23639 +/- 0.00013 | 0.23151 | 0.00488 | 2.1% | 38.9 | 0.0049 |
+
+All three differ from Ghia's values by 1.3 to 2.1%, 7 to 39 times the numerical uncertainty, so
+each comparison is `outside_uncertainty`. That alone does not say which solution is off. Ghia's
+values are a numerical solution too, so E is the difference of two numerical errors, and Ghia et
+al. state no uncertainty for them, so each E is judged against U_num alone, with a warning. The
+last column is the smallest 95% uncertainty that Ghia's values would need for the two to agree:
+1.3 to 2.1% of the value.
+
+Two observations suggest that the larger numerical error is in the reference, though a
+code-to-code comparison without the reference's uncertainty cannot show it:
+
+- This study's own error estimate is much smaller. The Richardson-extrapolated values differ
+  from the fine-grid ones by 0.03 to 0.14%, and from Ghia's by 1.4 to 2.1%.
+- Ghia's values lie among this study's coarser levels: between 80 x 80 and 40 x 40 at y = 0.5
+  and 0.4531, and between 40 x 40 and 20 x 20 at y = 0.8516.
+
+Ghia et al. used second-order central differences, with first-order upwind differences for
+convection and their second-order term added as a deferred correction (p. 393), on a uniform
+129 x 129 grid. A reference that states its uncertainty would settle the question.
+`tests/test_studies.py` checks the numbers above and that each reference sits at its probe:
+Ghia's point n is at y = (n - 1)/128 of L, so y = 64/128, 58/128 and 109/128.
+
+Ghia's tables give values at their grid points only, so the extrema (u_min, v_max and v_min),
+fitted between probes here, have no reference.
 
 ## Case
 

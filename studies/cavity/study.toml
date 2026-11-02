@@ -62,3 +62,26 @@ file = "postProcessing/horizontalCentreline/*/U"
 profile = "min"
 axis = "x"
 component = "y"
+
+# Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398): u along the
+# vertical line through the geometric centre, the Re = 100 column, at their 129 x 129 grid
+# points 65, 59 and 110. Copied from the paper. Their values are a numerical solution with no
+# stated uncertainty, so each comparison is code-to-code. Their tables give values at grid
+# points only, so the extrema above, fitted between probes, have no reference here.
+[[reference]]
+qoi = "u(y=0.5)"
+kind = "code"
+value = -0.20581
+source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.5000 (grid point 65 of 129)"
+
+[[reference]]
+qoi = "u(y=0.4531)"
+kind = "code"
+value = -0.21090
+source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.4531 (grid point 59 of 129)"
+
+[[reference]]
+qoi = "u(y=0.8516)"
+kind = "code"
+value = 0.23151
+source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129)"

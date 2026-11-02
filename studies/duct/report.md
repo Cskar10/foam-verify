@@ -10,6 +10,20 @@ foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; gr
 |---|---|---|---|---|
 | `fRe` | 56.8997 +/- 0.0108 | 0.019% | monotonic, p = 1.995 | yes |
 
+## Reference comparison
+
+Apart from the verdict: the comparison error E = S - D sets the finest-grid value S against a reference value D, every uncertainty at 95%. The verdict says whether S is converged; this says how far it is from D (foam-verify docs/compare.md).
+
+| QoI | Kind | D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
+|---|---|---|---|---|---|---|
+| `fRe` | exact | 56.90831 | -0.00858 | -0.015% | 0.797 U_num | within uncertainty |
+
+- `fRe` against the series solution for the square duct (Shah and London 1978), foam_verify.exact.rectangular_duct_fre(1.0): the reference is exact, so E = S - D = -0.00858 is the numerical error itself; |E| = 0.797 U_num, so the numerical uncertainty bounds it
+
+Notes:
+
+- `fRe`: an exact reference makes this a code-verification check (V&V 20, para. 1-6)
+
 ## Levels
 
 | Level | Folder | Cells | r to the next coarser |
@@ -71,3 +85,4 @@ Notes:
 - Iterative convergence of each QoI from its own history over the window given with it: converged when its relative range and relative drift are within tol, and u_it is half the range. On the grids behind the result, u_it must be at most U/100 (ASME V&V 20, para. 2-4; docs/iterative.md).
 - Settings consistency: the schemes, solver settings, physical properties, boundary conditions and near-wall layer settings of the levels, compared entry by entry (docs/consistency.md).
 - U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI is a clean pass only when no check fails (docs/report.md).
+- Reference comparison, apart from the verdict: |E| against U_num for an exact reference (a code-verification check); against U_val = sqrt(U_num^2 + U_input^2 + U_D^2) for a code or experimental reference, or U_num alone, with a warning, when a code reference states no uncertainty; for an experiment, the case of Eça, Dowding and Roache (2020) with their constant C (ASME V&V 20; docs/compare.md).

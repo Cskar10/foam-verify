@@ -8,11 +8,12 @@ from pathlib import Path
 
 import pytest
 
+from foam_verify.compare import Outcome, ReferenceKind
 from foam_verify.consistency import settings_consistency
 from foam_verify.exact import rectangular_duct_fre
 from foam_verify.gci import Verdict
 from foam_verify.iterative import Verdict as IterativeVerdict
-from foam_verify.study import assess_study, load_study
+from foam_verify.study import assess_study, compare_references, load_study
 
 STUDIES = Path(__file__).resolve().parent.parent / "studies"
 DUCT = STUDIES / "duct"
@@ -40,6 +41,12 @@ def test_duct_wall_stress_matches_the_pressure_gradient_source() -> None:
         match = re.search(r"gradient\s+([-+0-9.eE]+);", props)
         assert match is not None
         assert value == pytest.approx(200 * float(match.group(1)), rel=1e-9)
+
+
+def test_duct_reference_is_the_series_solution() -> None:
+    (ref,) = load_study(DUCT).references
+    assert (ref.qoi, ref.reference.kind) == ("fRe", ReferenceKind.EXACT)
+    assert ref.reference.value == pytest.approx(rectangular_duct_fre(1.0), rel=1e-14)
 
 
 CAVITY = STUDIES / "cavity"
@@ -90,6 +97,54 @@ def test_every_qoi_has_settled_on_every_level(study: Path) -> None:
         check = qoi.contamination
         assert check is not None and check.clean_pass, qoi.name
         assert check.worst_ratio is not None and check.worst_ratio < 1e-6, qoi.name
+
+
+def test_cavity_references_sit_at_the_probed_points() -> None:
+    # Each of Ghia et al.'s values is at one of their 129 grid points, (point - 1) / 128 of L,
+    # printed to four decimals; the probe its QoI reads must sit at the same height.
+    study = load_study(CAVITY)
+    header = (CAVITY / "n160" / "postProcessing" / "ghiaPoints" / "0" / "U").read_text()
+    probes = [
+        (float(x) / 0.1, float(y) / 0.1)
+        for x, y in re.findall(r"# Probe \d+ \((\S+) (\S+) \S+\)", header)
+    ]
+    columns = {q.name: q.column for q in study.qois}
+    names = [ref.qoi for ref in study.references]
+    assert names == ["u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)"]  # no extremum has one
+    for ref in study.references:
+        assert ref.reference.kind is ReferenceKind.CODE and ref.reference.uncertainty is None
+        match = re.search(r"y = (\d\.\d{4}) \(grid point (\d+) of 129\)", ref.reference.source)
+        assert match is not None, ref.qoi
+        x, y = probes[int(str(columns[ref.qoi]))]
+        assert x == pytest.approx(0.5) and y == pytest.approx((int(match.group(2)) - 1) / 128)
+        assert f"{y:.4f}" == match.group(1) and ref.qoi == f"u(y={float(match.group(1)):g})"
+
+
+def test_cavity_differs_from_ghia_by_more_than_its_uncertainty() -> None:
+    study = load_study(CAVITY)
+    result = assess_study(study)
+    comparisons = {qc.qoi: qc.comparison for qc in compare_references(study, result)}
+    values = {q.name: q.values for q in result.qois}
+    expected = {  # E / |D| and |E| / U_num
+        "u(y=0.5)": (-0.0150, 9.40),
+        "u(y=0.4531)": (-0.0132, 7.34),
+        "u(y=0.8516)": (0.0211, 38.9),
+    }
+    for name, (relative, ratio) in expected.items():
+        c = comparisons[name]
+        assert c.outcome is Outcome.OUTSIDE and c.warnings, name
+        assert c.relative_error == pytest.approx(relative, abs=5e-4), name
+        assert c.ratio == pytest.approx(ratio, rel=2e-3), name
+        assert c.needed is not None and c.needed == pytest.approx(abs(c.error), rel=0.02), name
+    # Ghia's values lie among the coarser levels here, levels finest first: between 80 x 80
+    # and 40 x 40 at y = 0.5 and 0.4531, between 40 x 40 and 20 x 20 at y = 0.8516.
+    for name, (finer, coarser) in {
+        "u(y=0.5)": (1, 2),
+        "u(y=0.4531)": (1, 2),
+        "u(y=0.8516)": (2, 3),
+    }.items():
+        a, b = values[name][finer], values[name][coarser]
+        assert min(a, b) < comparisons[name].reference < max(a, b), name
 
 
 def test_cavity_points_and_profiles_share_one_window() -> None:

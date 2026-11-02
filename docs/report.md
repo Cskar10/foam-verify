@@ -50,6 +50,10 @@ and warning that stops a clean pass, word for word: those of each QoI's grid stu
 check, and the study-wide ones (settings differences and dimension warnings), which stop every
 QoI.
 
+A comparison with reference data is not a check. When `study.toml` lists reference values, the
+report compares each with its QoI in a section of its own, and no comparison changes a verdict
+or the exit code ([compare.md](compare.md), In a study).
+
 ## Refined directions
 
 The refinement ratio comes from the cell counts, $r = (N_1/N_2)^{1/d}$, so a wrong $d$ gives a
@@ -73,13 +77,18 @@ The Markdown, top to bottom:
 
 1. **Verdict:** the summary, one row per QoI (the finest-grid value +/- U, U relative to the
    value, the convergence of grids 1-3, clean pass or not) and what stops a clean pass.
-2. **Levels:** cell counts and the refinement ratio to the next coarser level (with core cells
+2. **Reference comparison,** when `study.toml` lists references: one row per reference with its
+   kind, D, E = S - D, E / |D|, |E| as a multiple of the uncertainty it is judged against (U_num
+   or U_val, named) and the outcome, then each comparison's reasons and source, and the
+   warnings and notes, each once with the QoIs it applies to.
+3. **Levels:** cell counts and the refinement ratio to the next coarser level (with core cells
    or first-layer heights when the scope uses them), and the dimension notes and warnings.
-3. **Settings consistency:** the files compared on every level and each difference, level by
+4. **Settings consistency:** the files compared on every level and each difference, level by
    level.
-4. **One section per QoI:** where its value is read from, the checks, the value and iterative
+5. **One section per QoI:** where its value is read from, the checks, the value and iterative
    convergence on each level, the Richardson numbers, and with four or more grids each triplet.
-5. **Method:** the thresholds behind the checks.
+6. **Method:** the thresholds behind the checks, and the comparison rules when there are
+   references.
 
 Numbers are rounded only in the Markdown: U to three significant digits, and the value to the
 decimal place where U ends. Values on each level have seven significant digits.
@@ -88,8 +97,11 @@ The JSON (`schema` 1) holds `tool`, `version`, `schema`, `study`, `clean_pass`, 
 `layer_cells`, `criteria` (the GCI thresholds, the formal order among them) and `blocking` (the
 study-wide items), then `qois`, one entry per QoI with `value`, `uncertainty`, `band`,
 `relative_uncertainty`, `grid_verdict`, `method`, `checks`, `blocking` and its `definition` from
-`study.toml`. Last comes `result`: everything `assess_study()` found, every triplet and every
-level's iterative result, at full precision.
+`study.toml`. Then `comparisons`, one entry per reference in the manifest's order (empty when
+there are none), each with the `qoi` and the `comparison` that `foam_verify.compare` gives:
+`kind`, `outcome`, `simulation`, `reference`, `error`, the uncertainties, `ratio`, `needed`, the
+experiment fields, `reasons`, `warnings`, `notes` and `source`. Last comes `result`: everything
+`assess_study()` found, every triplet and every level's iterative result, at full precision.
 
 A report holds no absolute path and no time stamp, and its files end lines with `\n` on every
 platform, so a study gives the same report on any machine. The reports on the committed studies
@@ -98,9 +110,5 @@ are `studies/*/report.md` and `report.json`. `make reports` regenerates them, an
 
 ## Not covered
 
-- Comparison with reference data. The square duct's exact f Re and the cavity's Ghia et al.
-  values are not in the reports yet. `foam-verify compare` makes the comparison from numbers
-  ([compare.md](compare.md)); the duct's comparison with the exact value is also in
-  [its README](../studies/duct/README.md).
 - Settings that study.toml cannot change yet: the GCI thresholds, the iterative tolerance and the
   contamination margin are foam-verify's defaults, recorded in every report.

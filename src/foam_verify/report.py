@@ -14,9 +14,12 @@ a clean pass only when every check holds:
 - the study's refined directions d, checked against the patches of every level.
 
 Each check is reported as pass, fail, n/a or assumed, with the numbers behind it, and every
-warning that stops a clean pass is quoted word for word. render_json() and render_markdown()
-give the two forms. Neither holds an absolute path or a time stamp, so a study gives the same
-report on any machine. docs/report.md describes the layout.
+warning that stops a clean pass is quoted word for word. When study.toml gives reference values,
+the report also compares each with its QoI's finest-grid value (foam_verify.compare), apart
+from the verdict: how far a value is from a reference is a different question from whether it
+is converged, and no comparison changes a verdict. render_json() and render_markdown() give
+the two forms. Neither holds an absolute path or a time stamp, so a study gives the same report
+on any machine. docs/report.md describes the layout.
 """
 
 from __future__ import annotations
@@ -30,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .compare import Comparison, ReferenceKind
 from .consistency import ConsistencyResult
 from .gci import (
     SCOPE_NOTES,
@@ -46,10 +50,12 @@ from .iterative import Verdict as IterativeVerdict
 from .study import (
     MANIFEST,
     QoI,
+    QoIComparison,
     QoIResult,
     Study,
     StudyResult,
     assess_study,
+    compare_references,
     gci_options,
     iterative_options,
     load_study,
@@ -108,6 +114,8 @@ class Report:
     # What stops every QoI from passing: settings differences and dimension warnings.
     blocking: tuple[str, ...]
     qois: tuple[QoIVerdict, ...]
+    # Each reference in study.toml against its QoI, in the manifest's order; outside the verdict.
+    comparisons: tuple[QoIComparison, ...]
     # Everything assess_study() found, finest level first.
     result: StudyResult
 
@@ -138,6 +146,7 @@ def build_report(study: Study, result: StudyResult | None = None) -> Report:
         criteria=opt,
         blocking=tuple(shared),
         qois=verdicts,
+        comparisons=compare_references(study, res),
         result=res,
     )
 
@@ -545,6 +554,7 @@ def render_markdown(report: Report) -> str:
         "",
     ]
     lines += _verdict_section(report)
+    lines += _comparison_section(report)
     lines += _levels_section(report)
     lines += _consistency_section(res)
     for verdict, qoi in zip(report.qois, res.qois, strict=True):
@@ -575,6 +585,62 @@ def _verdict_section(report: Report) -> list[str]:
     ]
     shared = [f"every QoI: {item}" for item in report.blocking]
     return lines + _bullets([*own, *shared], "What stops a clean pass")
+
+
+def _against(c: Comparison) -> str:
+    """|E| as a multiple of the uncertainty the outcome is judged against, which is named."""
+    if c.numerical is None:
+        return "n/a"
+    name = "U_num" if c.kind is ReferenceKind.EXACT or c.reference_uncertainty is None else "U_val"
+    return f"{name} = 0" if c.ratio is None else f"{c.ratio:.3g} {name}"
+
+
+def _grouped(pairs: Sequence[tuple[str, Sequence[str]]], title: str) -> list[str]:
+    """Each message once, after the QoIs it applies to."""
+    groups: dict[str, list[str]] = {}
+    for name, items in pairs:
+        for item in items:
+            names = groups.setdefault(item, [])
+            if _code(name) not in names:
+                names.append(_code(name))
+    return _bullets([f"{', '.join(names)}: {item}" for item, names in groups.items()], title)
+
+
+def _comparison_section(report: Report) -> list[str]:
+    if not report.comparisons:
+        return []
+    lines = [
+        "## Reference comparison",
+        "",
+        "Apart from the verdict: the comparison error E = S - D sets the finest-grid value S "
+        "against a reference value D, every uncertainty at 95%. The verdict says whether S is "
+        "converged; this says how far it is from D (foam-verify docs/compare.md).",
+        "",
+    ]
+    rows: list[list[str]] = []
+    for qc in report.comparisons:
+        c = qc.comparison
+        outcome = c.outcome.value.replace("_", " ")
+        rows.append(
+            [
+                _code(qc.qoi),
+                c.kind.value,
+                f"{c.reference:.7g}",
+                _sig(c.error, 3),
+                _pct(c.relative_error),
+                _against(c),
+                outcome if c.case is None else f"{outcome} (case {c.case})",
+            ]
+        )
+    lines += _table(["QoI", "Kind", "D", "E = S - D", "E / |D|", "|E| / U", "Outcome"], rows)
+    reasons = [
+        f"{_code(qc.qoi)} against {qc.comparison.source or 'the reference'}: "
+        + "; ".join(qc.comparison.reasons)
+        for qc in report.comparisons
+    ]
+    lines += _bullets(reasons)
+    lines += _grouped([(qc.qoi, qc.comparison.warnings) for qc in report.comparisons], "Warnings")
+    return lines + _grouped([(qc.qoi, qc.comparison.notes) for qc in report.comparisons], "Notes")
 
 
 def _levels_section(report: Report) -> list[str]:
@@ -759,4 +825,12 @@ def _method_section(report: Report) -> list[str]:
         "U is the uncertainty of the finest-grid value, and the band is that value +/- U. A QoI "
         "is a clean pass only when no check fails (docs/report.md).",
     ]
+    if report.comparisons:
+        items.append(
+            "Reference comparison, apart from the verdict: |E| against U_num for an exact "
+            "reference (a code-verification check); against U_val = sqrt(U_num^2 + U_input^2 + "
+            "U_D^2) for a code or experimental reference, or U_num alone, with a warning, when a "
+            "code reference states no uncertainty; for an experiment, the case of Eça, Dowding "
+            "and Roache (2020) with their constant C (ASME V&V 20; docs/compare.md)."
+        )
     return ["## Method", "", *_bullets(items)]

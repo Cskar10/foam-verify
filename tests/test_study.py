@@ -9,14 +9,17 @@ from pathlib import Path
 
 import pytest
 
+from foam_verify.compare import Outcome, Reference, ReferenceKind
 from foam_verify.gci import GridSequence, Scope, Verdict
 from foam_verify.iterative import Verdict as IterativeVerdict
 from foam_verify.study import (
     Profile,
     QoI,
+    QoIReference,
     StudyError,
     assess_study,
     cell_count,
+    compare_references,
     load_study,
     patch_faces,
     patch_types,
@@ -384,6 +387,92 @@ def test_manifest_errors(study_dir: Path, edit: Callable[[str], str], message: s
     path = study_dir / "study.toml"
     path.write_text(edit(path.read_text()))
     with pytest.raises(StudyError, match=message):
+        load_study(study_dir)
+
+
+# --- references -------------------------------------------------------------------------
+
+REFERENCE = '\n[[reference]]\nqoi = "pavg"\nkind = "code"\nvalue = 1.0\nsource = "a table"\n'
+EXPERIMENT = (
+    '\n[[reference]]\nqoi = "pavg"\nkind = "experiment"\nvalue = 1.1\nuncertainty = 0.05\n'
+    'standard_uncertainty = 0.025\ninput_uncertainty = 0.01\nc = 7\nsource = "a rig"\n'
+)
+
+
+def add_references(study_dir: Path, *tables: str) -> None:
+    path = study_dir / "study.toml"
+    path.write_text(path.read_text() + "".join(tables))
+
+
+def test_references_are_read_with_their_options(study_dir: Path) -> None:
+    assert load_study(study_dir).references == ()
+    add_references(study_dir, REFERENCE, EXPERIMENT)
+    code, experiment = load_study(study_dir).references
+    assert code == QoIReference("pavg", Reference(1.0, ReferenceKind.CODE, source="a table"))
+    assert experiment.reference == Reference(
+        1.1, ReferenceKind.EXPERIMENT, uncertainty=0.05, standard_uncertainty=0.025, source="a rig"
+    )
+    assert (experiment.input_uncertainty, experiment.c) == (0.01, 7.0)
+
+
+def test_references_are_compared_with_the_finest_grid_value(study_dir: Path) -> None:
+    # phi = 1 + 0.5 h^2: the exact limit is 1, so E is the fine grid's discretisation error.
+    add_references(study_dir, REFERENCE.replace('kind = "code"', 'kind = "exact"'), EXPERIMENT)
+    study = load_study(study_dir)
+    result = assess_study(study)
+    exact, experiment = compare_references(study, result)
+    gci = result.qois[0].gci
+    assert (exact.qoi, exact.comparison.simulation) == ("pavg", gci.phi[0])
+    assert exact.comparison.numerical == gci.uncertainty
+    assert exact.comparison.error == pytest.approx(phi(0.1) - 1.0)
+    assert exact.comparison.outcome is Outcome.WITHIN
+    # The experiment's options reach the comparison: U_input, C and u_D.
+    c = experiment.comparison
+    assert (c.input, c.c) == (0.01, 7.0)
+    assert c.standard is not None and c.standard.validation is None  # U_input is not zero
+
+
+REFERENCE_EDITS: list[tuple[Callable[[str], str], str]] = [
+    (lambda r: r.replace('qoi = "pavg"', 'qoi = "p"'), r"'p' is not the name of a \[\[qoi\]\]"),
+    (lambda r: r.replace('qoi = "pavg"', "qoi = 1"), "is not the name"),
+    (lambda r: r.replace('qoi = "pavg"\n', ""), "qoi is required"),
+    (lambda r: r.replace('kind = "code"\n', ""), "kind is required"),
+    (lambda r: r.replace("value = 1.0\n", ""), "value is required"),
+    (lambda r: r.replace('source = "a table"\n', ""), "source is required"),
+    (lambda r: r.replace('kind = "code"', 'kind = "paper"'), "kind must be exact, code or"),
+    (lambda r: r.replace("value = 1.0", 'value = "1.0"'), "value must be a finite number"),
+    (lambda r: r.replace("value = 1.0", "value = nan"), "value must be a finite number"),
+    (lambda r: r.replace("value = 1.0", "value = true"), "value must be a finite number"),
+    (lambda r: r.replace('source = "a table"', 'source = " "'), "source must say"),
+    (lambda r: r + "uncertainty = -0.1\n", "non-negative"),
+    (lambda r: r + 'uncertainty = "1%"\n', "uncertainty must be a finite number"),
+    (
+        lambda r: r.replace('kind = "code"', 'kind = "exact"') + "uncertainty = 0.1\n",
+        "an exact reference has no uncertainty",
+    ),
+    (lambda r: r + "input_uncertainty = 0.1\n", "input uncertainty applies to experiments"),
+    (lambda r: r + "standard_uncertainty = 0.1\n", "applies to experiments only"),
+    (lambda r: r + "c = 7\n", "c applies to experiments only"),
+    (lambda r: r.replace('kind = "code"', 'kind = "experiment"'), "experimental uncertainty"),
+    (
+        lambda r: r.replace('kind = "code"', 'kind = "experiment"') + "uncertainty = 0.1\nc = 1\n",
+        "above 1",
+    ),
+    (lambda r: r + "units = 1\n", "unknown key"),
+]
+
+
+@pytest.mark.parametrize(("edit", "message"), REFERENCE_EDITS)
+def test_reference_errors(study_dir: Path, edit: Callable[[str], str], message: str) -> None:
+    add_references(study_dir, edit(REFERENCE))
+    with pytest.raises(StudyError, match=message):
+        load_study(study_dir)
+
+
+def test_reference_must_be_an_array_of_tables(study_dir: Path) -> None:
+    path = study_dir / "study.toml"
+    path.write_text(path.read_text().replace("dim = 2\n", "dim = 2\nreference = 1\n"))
+    with pytest.raises(StudyError, match="array of tables"):
         load_study(study_dir)
 
 

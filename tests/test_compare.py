@@ -11,6 +11,7 @@ from foam_verify.compare import (
     Outcome,
     Reference,
     ReferenceKind,
+    check_reference,
     compare,
     compare_result,
 )
@@ -180,6 +181,23 @@ def test_bad_numbers() -> None:
         compare(1.0, -0.1, Reference(1.0, EXACT))
     with pytest.raises(ValueError, match="experiments only"):
         compare(1.0, 0.1, Reference(1.0, CODE, standard_uncertainty=0.1))
+
+
+def test_check_reference_applies_the_rules_without_a_simulation() -> None:
+    # A study manifest calls it on loading, before any value is read.
+    check_reference(Reference(1.0, CODE))
+    check_reference(experiment(0.025), input_uncertainty=0.1, c=7.0)
+    for reference, options, message in (
+        (Reference(math.inf, CODE), {}, "finite"),
+        (Reference(1.0, EXACT, uncertainty=0.1), {}, "no uncertainty"),
+        (Reference(1.0, EXPERIMENT), {}, "experimental uncertainty"),
+        (Reference(1.0, CODE), {"input_uncertainty": 0.1}, "experiments only"),
+        (Reference(1.0, CODE, standard_uncertainty=0.1), {}, "experiments only"),
+        (Reference(1.0, CODE, uncertainty=-0.1), {}, "non-negative"),
+        (Reference(1.0, CODE), {"c": 0.5}, "above 1"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            check_reference(reference, **options)
 
 
 def test_zero_reference_has_no_relative_error() -> None:

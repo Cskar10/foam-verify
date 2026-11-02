@@ -151,29 +151,16 @@ def _times(ratio: float | None, name: str) -> str:
     return f"|E| = {_sig(ratio)} {name}" if ratio is not None else f"{name} = 0 < |E|"
 
 
-def compare(
-    simulation: float,
-    numerical: float | None,
-    reference: Reference,
-    *,
-    method: Method = Method.GCI,
-    input_uncertainty: float = 0.0,
-    c: float = DEFAULT_C,
-) -> Comparison:
-    """Compare a simulation value S, with its 95% numerical uncertainty U_num, to a reference.
+def check_reference(
+    reference: Reference, *, input_uncertainty: float = 0.0, c: float = DEFAULT_C
+) -> None:
+    """Raise ValueError when a reference, with the options to compare with it, is unusable.
 
-    method is how U_num was obtained (foam_verify.gci.Method); it sets the divisor for the
-    standard uncertainty of an experiment comparison. input_uncertainty is U_input at 95%, for
-    experiments only: an exact or code reference solves the same problem with the same inputs.
-    c is Eça, Dowding and Roache's constant for experiments, 10 by default ("typically", one
-    order of magnitude); they cite 7 for problems without high-risk decisions.
+    compare() calls this; a study manifest calls it too, so a bad reference fails on loading.
     """
     kind = ReferenceKind(reference.kind)
-    method = Method(method)
-    for value, name in ((simulation, "simulation"), (reference.value, "the reference value")):
-        if not math.isfinite(value):
-            raise ValueError(f"{name} must be finite")
-    _non_negative(numerical, "the numerical uncertainty")
+    if not math.isfinite(reference.value):
+        raise ValueError("the reference value must be finite")
     _non_negative(reference.uncertainty, "the reference uncertainty")
     _non_negative(reference.standard_uncertainty, "the reference standard uncertainty")
     _non_negative(input_uncertainty, "the input uncertainty")
@@ -193,6 +180,31 @@ def compare(
         )
     if reference.standard_uncertainty is not None and kind is not ReferenceKind.EXPERIMENT:
         raise ValueError("a standard uncertainty for the reference applies to experiments only")
+
+
+def compare(
+    simulation: float,
+    numerical: float | None,
+    reference: Reference,
+    *,
+    method: Method = Method.GCI,
+    input_uncertainty: float = 0.0,
+    c: float = DEFAULT_C,
+) -> Comparison:
+    """Compare a simulation value S, with its 95% numerical uncertainty U_num, to a reference.
+
+    method is how U_num was obtained (foam_verify.gci.Method); it sets the divisor for the
+    standard uncertainty of an experiment comparison. input_uncertainty is U_input at 95%, for
+    experiments only: an exact or code reference solves the same problem with the same inputs.
+    c is Eça, Dowding and Roache's constant for experiments, 10 by default ("typically", one
+    order of magnitude); they cite 7 for problems without high-risk decisions.
+    """
+    kind = ReferenceKind(reference.kind)
+    method = Method(method)
+    if not math.isfinite(simulation):
+        raise ValueError("simulation must be finite")
+    _non_negative(numerical, "the numerical uncertainty")
+    check_reference(reference, input_uncertainty=input_uncertainty, c=c)
 
     d = reference.value
     e = simulation - d

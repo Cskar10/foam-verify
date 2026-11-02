@@ -524,6 +524,104 @@
       }
     }
   ],
+  "comparisons": [
+    {
+      "qoi": "u(y=0.5)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "outside_uncertainty",
+        "simulation": -0.208891821513,
+        "reference": -0.20581,
+        "error": -0.003081821513000016,
+        "relative_error": -0.014974109678830066,
+        "numerical": 0.00032787104580841477,
+        "input": 0.0,
+        "reference_uncertainty": null,
+        "validation": null,
+        "ratio": 9.399492734716258,
+        "needed": 0.003064330989842677,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = -0.00308 is beyond the simulation's numerical uncertainty (|E| = 9.4 U_num); the reference states no uncertainty, and would need one of at least 0.00306 for the two to agree"
+        ],
+        "warnings": [
+          "the reference states no uncertainty, so U_val is incomplete"
+        ],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.5000 (grid point 65 of 129)"
+      }
+    },
+    {
+      "qoi": "u(y=0.4531)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "outside_uncertainty",
+        "simulation": -0.213682485519,
+        "reference": -0.2109,
+        "error": -0.002782485518999983,
+        "relative_error": -0.013193387951635766,
+        "numerical": 0.0003789297284814572,
+        "input": 0.0,
+        "reference_uncertainty": null,
+        "validation": null,
+        "ratio": 7.343011935618409,
+        "needed": 0.0027565627009588545,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = -0.00278 is beyond the simulation's numerical uncertainty (|E| = 7.34 U_num); the reference states no uncertainty, and would need one of at least 0.00276 for the two to agree"
+        ],
+        "warnings": [
+          "the reference states no uncertainty, so U_val is incomplete"
+        ],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.4531 (grid point 59 of 129)"
+      }
+    },
+    {
+      "qoi": "u(y=0.8516)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "outside_uncertainty",
+        "simulation": 0.236393042113,
+        "reference": 0.23151,
+        "error": 0.004883042113000002,
+        "relative_error": 0.021092143376096075,
+        "numerical": 0.0001256576970833321,
+        "input": 0.0,
+        "reference_uncertainty": null,
+        "validation": null,
+        "ratio": 38.859872704508724,
+        "needed": 0.00488142503993406,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = 0.00488 is beyond the simulation's numerical uncertainty (|E| = 38.9 U_num); the reference states no uncertainty, and would need one of at least 0.00488 for the two to agree"
+        ],
+        "warnings": [
+          "the reference states no uncertainty, so U_val is incomplete"
+        ],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129)"
+      }
+    }
+  ],
   "result": {
     "name": "lid-driven-cavity-re100",
     "dim": 2,

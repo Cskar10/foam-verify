@@ -153,6 +153,7 @@ def test_report_prints_markdown(capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert out.startswith("# Verification report: square-duct\n")
     assert "**Clean pass.** 1 of 1 quantity of interest is a clean pass." in out
+    assert "## Reference comparison" in out
 
 
 def test_report_json_from_the_manifest_path(capsys: pytest.CaptureFixture[str]) -> None:

@@ -109,6 +109,38 @@
       }
     }
   ],
+  "comparisons": [
+    {
+      "qoi": "fRe",
+      "comparison": {
+        "kind": "exact",
+        "outcome": "within_uncertainty",
+        "simulation": 56.899724578704,
+        "reference": 56.90830753911475,
+        "error": -0.008582960410748797,
+        "relative_error": -0.00015082086925269171,
+        "numerical": 0.010770340967144163,
+        "input": 0.0,
+        "reference_uncertainty": 0.0,
+        "validation": 0.010770340967144163,
+        "ratio": 0.7969070280069911,
+        "needed": null,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "the reference is exact, so E = S - D = -0.00858 is the numerical error itself; |E| = 0.797 U_num, so the numerical uncertainty bounds it"
+        ],
+        "warnings": [],
+        "notes": [
+          "an exact reference makes this a code-verification check (V&V 20, para. 1-6)"
+        ],
+        "source": "the series solution for the square duct (Shah and London 1978), foam_verify.exact.rectangular_duct_fre(1.0)"
+      }
+    }
+  ],
   "result": {
     "name": "square-duct",
     "dim": 2,
