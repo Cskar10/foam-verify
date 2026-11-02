@@ -39,5 +39,6 @@ scale = -800.0
 [[reference]]
 qoi = "fRe"
 kind = "exact"
+label = "Shah and London (1978)"
 value = 56.90830753911475
 source = "the series solution for the square duct (Shah and London 1978), foam_verify.exact.rectangular_duct_fre(1.0)"

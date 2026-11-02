@@ -527,6 +527,7 @@
   "comparisons": [
     {
       "qoi": "u(y=0.5)",
+      "label": "Ghia et al. (1982)",
       "comparison": {
         "kind": "code",
         "outcome": "outside_uncertainty",
@@ -559,6 +560,7 @@
     },
     {
       "qoi": "u(y=0.4531)",
+      "label": "Ghia et al. (1982)",
       "comparison": {
         "kind": "code",
         "outcome": "outside_uncertainty",
@@ -591,6 +593,7 @@
     },
     {
       "qoi": "u(y=0.8516)",
+      "label": "Ghia et al. (1982)",
       "comparison": {
         "kind": "code",
         "outcome": "outside_uncertainty",
@@ -619,6 +622,134 @@
           "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
         ],
         "source": "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129)"
+      }
+    },
+    {
+      "qoi": "u(y=0.5)",
+      "label": "Marchi et al. (2009)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "within_uncertainty",
+        "simulation": -0.208891821513,
+        "reference": -0.2091491418,
+        "error": 0.00025732028699998466,
+        "relative_error": 0.0012303195929249788,
+        "numerical": 0.00032787104580841477,
+        "input": 0.0,
+        "reference_uncertainty": 8.6e-09,
+        "validation": 0.000327871045921203,
+        "ratio": 0.7848216248464533,
+        "needed": null,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = 0.000257, |E| = 0.785 U_val: the two solutions agree within their numerical uncertainties",
+          "U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000328 (E\u00e7a, Dowding and Roache 2020, Eq. 15: independent errors)"
+        ],
+        "warnings": [],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, u(0.5;0.5)"
+      }
+    },
+    {
+      "qoi": "u_min",
+      "label": "Marchi et al. (2009)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "within_uncertainty",
+        "simulation": -0.21376046214827643,
+        "reference": -0.2140417,
+        "error": 0.0002812378517235703,
+        "relative_error": 0.0013139395347895775,
+        "numerical": 0.00036586606096394446,
+        "input": 0.0,
+        "reference_uncertainty": 1.6e-06,
+        "validation": 0.0003658695594952834,
+        "ratio": 0.7686833857168592,
+        "needed": null,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = 0.000281, |E| = 0.769 U_val: the two solutions agree within their numerical uncertainties",
+          "U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000366 (E\u00e7a, Dowding and Roache 2020, Eq. 15: independent errors)"
+        ],
+        "warnings": [],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, umin"
+      }
+    },
+    {
+      "qoi": "v_max",
+      "label": "Marchi et al. (2009)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "within_uncertainty",
+        "simulation": 0.17936485525044468,
+        "reference": 0.179572814,
+        "error": -0.0002079587495553148,
+        "relative_error": -0.0011580747938566849,
+        "numerical": 0.00025677180793114845,
+        "input": 0.0,
+        "reference_uncertainty": 2.7e-08,
+        "validation": 0.0002567718093506968,
+        "ratio": 0.809897122589834,
+        "needed": null,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = -0.000208, |E| = 0.81 U_val: the two solutions agree within their numerical uncertainties",
+          "U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000257 (E\u00e7a, Dowding and Roache 2020, Eq. 15: independent errors)"
+        ],
+        "warnings": [],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmax"
+      }
+    },
+    {
+      "qoi": "v_min",
+      "label": "Marchi et al. (2009)",
+      "comparison": {
+        "kind": "code",
+        "outcome": "within_uncertainty",
+        "simulation": -0.25358500906011505,
+        "reference": -0.253804,
+        "error": 0.00021899093988492213,
+        "relative_error": 0.0008628348642453317,
+        "numerical": 0.00027472101049891284,
+        "input": 0.0,
+        "reference_uncertainty": 1.1e-05,
+        "validation": 0.0002749411457194863,
+        "ratio": 0.7965011541355531,
+        "needed": null,
+        "case": null,
+        "model_error_bound": null,
+        "model_error_sign": null,
+        "c": null,
+        "standard": null,
+        "reasons": [
+          "E = S - D = 0.000219, |E| = 0.797 U_val: the two solutions agree within their numerical uncertainties",
+          "U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000275 (E\u00e7a, Dowding and Roache 2020, Eq. 15: independent errors)"
+        ],
+        "warnings": [],
+        "notes": [
+          "a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model"
+        ],
+        "source": "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmin"
       }
     }
   ],

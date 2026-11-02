@@ -14,15 +14,15 @@ foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; gr
 
 Apart from the verdict: the comparison error E = S - D sets the finest-grid value S against a reference value D, every uncertainty at 95%. The verdict says whether S is converged; this says how far it is from D (foam-verify docs/compare.md).
 
-| QoI | Kind | D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
-|---|---|---|---|---|---|---|
-| `fRe` | exact | 56.90831 | -0.00858 | -0.015% | 0.797 U_num | within uncertainty |
+| QoI | Reference | Kind | D +/- U_D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
+|---|---|---|---|---|---|---|---|
+| `fRe` | Shah and London (1978) | exact | 56.90831 | -0.00858 | -0.015% | 0.797 U_num | within uncertainty |
 
 - `fRe` against the series solution for the square duct (Shah and London 1978), foam_verify.exact.rectangular_duct_fre(1.0): the reference is exact, so E = S - D = -0.00858 is the numerical error itself; |E| = 0.797 U_num, so the numerical uncertainty bounds it
 
 Notes:
 
-- `fRe`: an exact reference makes this a code-verification check (V&V 20, para. 1-6)
+- Shah and London (1978) on `fRe`: an exact reference makes this a code-verification check (V&V 20, para. 1-6)
 
 ## Levels
 

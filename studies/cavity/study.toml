@@ -67,21 +67,65 @@ component = "y"
 # vertical line through the geometric centre, the Re = 100 column, at their 129 x 129 grid
 # points 65, 59 and 110. Copied from the paper. Their values are a numerical solution with no
 # stated uncertainty, so each comparison is code-to-code. Their tables give values at grid
-# points only, so the extrema above, fitted between probes, have no reference here.
+# points only, so the extrema above, fitted between probes, have no Ghia reference.
 [[reference]]
 qoi = "u(y=0.5)"
 kind = "code"
+label = "Ghia et al. (1982)"
 value = -0.20581
 source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.5000 (grid point 65 of 129)"
 
 [[reference]]
 qoi = "u(y=0.4531)"
 kind = "code"
+label = "Ghia et al. (1982)"
 value = -0.21090
 source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.4531 (grid point 59 of 129)"
 
 [[reference]]
 qoi = "u(y=0.8516)"
 kind = "code"
+label = "Ghia et al. (1982)"
 value = 0.23151
 source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129)"
+
+# Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Re = 100: the
+# values of Table 6 (p. 194), from a 1024 x 1024 finite-volume solution with up to nine
+# Richardson extrapolations, and the estimated discretisation errors U of Table 7 (p. 195), copied
+# from the paper. Taking U as the 95% uncertainty U_D is our assumption: U is the difference
+# between the two finest grids' most extrapolated values (their Eq. 13), which gave U/|E| > 1
+# for every variable on a problem with a known solution, but they state no coverage for it.
+# Their extrema are the extreme face values on each grid, extrapolated; ours are fitted between
+# probes. Both estimate the extremum of the continuous profile. Their profile points are at
+# sixteenths of L, so of the three Ghia points only y = 0.5 has a value here.
+[[reference]]
+qoi = "u(y=0.5)"
+kind = "code"
+label = "Marchi et al. (2009)"
+value = -0.2091491418
+uncertainty = 8.6e-9
+source = "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, u(0.5;0.5)"
+
+[[reference]]
+qoi = "u_min"
+kind = "code"
+label = "Marchi et al. (2009)"
+value = -0.2140417
+uncertainty = 1.6e-6
+source = "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, umin"
+
+[[reference]]
+qoi = "v_max"
+kind = "code"
+label = "Marchi et al. (2009)"
+value = 0.179572814
+uncertainty = 2.7e-8
+source = "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmax"
+
+[[reference]]
+qoi = "v_min"
+kind = "code"
+label = "Marchi et al. (2009)"
+value = -0.253804
+uncertainty = 1.1e-5
+source = "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmin"

@@ -396,6 +396,7 @@ REFERENCE = '\n[[reference]]\nqoi = "pavg"\nkind = "code"\nvalue = 1.0\nsource =
 EXPERIMENT = (
     '\n[[reference]]\nqoi = "pavg"\nkind = "experiment"\nvalue = 1.1\nuncertainty = 0.05\n'
     'standard_uncertainty = 0.025\ninput_uncertainty = 0.01\nc = 7\nsource = "a rig"\n'
+    'label = " rig "\n'
 )
 
 
@@ -412,7 +413,7 @@ def test_references_are_read_with_their_options(study_dir: Path) -> None:
     assert experiment.reference == Reference(
         1.1, ReferenceKind.EXPERIMENT, uncertainty=0.05, standard_uncertainty=0.025, source="a rig"
     )
-    assert (experiment.input_uncertainty, experiment.c) == (0.01, 7.0)
+    assert (experiment.input_uncertainty, experiment.c, experiment.label) == (0.01, 7.0, "rig")
 
 
 def test_references_are_compared_with_the_finest_grid_value(study_dir: Path) -> None:
@@ -423,6 +424,7 @@ def test_references_are_compared_with_the_finest_grid_value(study_dir: Path) -> 
     exact, experiment = compare_references(study, result)
     gci = result.qois[0].gci
     assert (exact.qoi, exact.comparison.simulation) == ("pavg", gci.phi[0])
+    assert (exact.label, experiment.label) == ("a table", "rig")  # the source without a label
     assert exact.comparison.numerical == gci.uncertainty
     assert exact.comparison.error == pytest.approx(phi(0.1) - 1.0)
     assert exact.comparison.outcome is Outcome.WITHIN
@@ -458,6 +460,8 @@ REFERENCE_EDITS: list[tuple[Callable[[str], str], str]] = [
         lambda r: r.replace('kind = "code"', 'kind = "experiment"') + "uncertainty = 0.1\nc = 1\n",
         "above 1",
     ),
+    (lambda r: r + 'label = ""\n', "label must be a non-empty string"),
+    (lambda r: r + "label = 3\n", "label must be a non-empty string"),
     (lambda r: r + "units = 1\n", "unknown key"),
 ]
 

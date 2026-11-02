@@ -286,9 +286,10 @@ def test_a_comparison_stays_outside_the_verdict(tmp_path: Path) -> None:
     md = render_markdown(report)
     assert_tables_intact(md)
     assert md.index("## Verdict") < md.index("## Reference comparison") < md.index("## Levels")
-    assert "| `q` | code | 2 | -0.995 | -50% | 159 U_num | outside uncertainty |" in md
+    row = "| `q` | a far-off table | code | 2 | -0.995 | -50% | 159 U_num | outside uncertainty |"
+    assert row in md
     assert "- `q` against a far-off table: E = S - D = -0.995 is beyond" in md
-    assert "- `q`: the reference states no uncertainty, so U_val is incomplete" in md
+    assert "- a far-off table on `q`: the reference states no uncertainty, so U_val is" in md
     assert "- Reference comparison, apart from the verdict:" in md  # in the method
     data = json.loads(render_json(report))
     assert data["clean_pass"] is True
@@ -309,7 +310,8 @@ def test_a_comparison_without_an_uncertainty_is_not_judged(tmp_path: Path) -> No
     report = verification_report(with_reference(study, FAR.replace("2.0", "1.1")))
     (qc,) = report.comparisons
     assert qc.comparison.outcome is Outcome.NO_UNCERTAINTY
-    assert "| `q` | code | 1.1 | -0.100 | -9.1% | n/a | no uncertainty |" in render_markdown(report)
+    row = "| `q` | a far-off table | code | 1.1 | -0.100 | -9.1% | n/a | no uncertainty |"
+    assert row in render_markdown(report)
 
 
 def test_an_experiment_shows_its_case(tmp_path: Path) -> None:
@@ -317,9 +319,29 @@ def test_an_experiment_shows_its_case(tmp_path: Path) -> None:
     report = verification_report(with_reference(make_study(tmp_path, *CLEAN), table))
     md = render_markdown(report)
     assert_tables_intact(md)
-    row = "| `q` | experiment | 1 | 0.00500 | 0.50% | 0.762 U_val | within uncertainty (case 3b) |"
+    row = (
+        "| `q` | a far-off table | experiment | 1 +/- 0.0020 | 0.00500 | 0.50% | 0.762 U_val "
+        "| within uncertainty (case 3b) |"
+    )
     assert row in md
     assert "u_num = U_num / 1.15" in md
+
+
+def test_two_references_on_one_qoi_are_told_apart_by_their_labels(tmp_path: Path) -> None:
+    near = (
+        '\n[[reference]]\nqoi = "q"\nkind = "code"\nlabel = "Near"\nvalue = 1.004\n'
+        'uncertainty = 1e-6\nsource = "a near table"\n'
+    )
+    far = FAR.replace("kind =", 'label = "Far"\nkind =')
+    report = verification_report(with_reference(make_study(tmp_path, *CLEAN), far + near))
+    assert [(qc.qoi, qc.label) for qc in report.comparisons] == [("q", "Far"), ("q", "Near")]
+    md = render_markdown(report)
+    assert_tables_intact(md)
+    assert "| `q` | Far | code | 2 | -0.995 |" in md
+    assert "| `q` | Near | code | 1.004 +/- 1.0e-06 | 0.00100 | 0.10% | 0.16 U_val |" in md
+    # The warning is Far's alone; the note is both references'.
+    assert "- Far on `q`: the reference states no uncertainty, so U_val is incomplete" in md
+    assert "- Far on `q`; Near on `q`: a code reference makes this" in md
 
 
 def test_reports_hold_no_absolute_path_or_time(tmp_path: Path) -> None:
@@ -357,7 +379,10 @@ def test_duct_report() -> None:
     assert "| `fRe` | 56.8997 +/- 0.0108 | 0.019% | monotonic, p = 1.995 | yes |" in md
     assert "band 56.8890 to 56.9105" in md
     # The exact value bounds the error: a code-verification check, outside the verdict.
-    row = "| `fRe` | exact | 56.90831 | -0.00858 | -0.015% | 0.797 U_num | within uncertainty |"
+    row = (
+        "| `fRe` | Shah and London (1978) | exact | 56.90831 | -0.00858 | -0.015% | 0.797 U_num "
+        "| within uncertainty |"
+    )
     assert row in md
 
 
@@ -365,13 +390,23 @@ def test_cavity_report() -> None:
     report = verification_report(STUDIES / "cavity")
     assert_honest(report)
     assert report.clean_pass and report.summary == "6 of 6 quantities of interest are clean passes"
-    # Ghia et al.'s values are 7 to 39 U_num away: outside the uncertainty, and still a clean pass.
-    assert [qc.qoi for qc in report.comparisons] == ["u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)"]
-    assert {qc.comparison.outcome for qc in report.comparisons} == {Outcome.OUTSIDE}
+    # Ghia et al.'s values are 7 to 39 U_num away, Marchi et al.'s within U_val; either way the
+    # verdict stays a clean pass.
+    outcomes = [(qc.label, qc.qoi, qc.comparison.outcome) for qc in report.comparisons]
+    ghia, marchi = "Ghia et al. (1982)", "Marchi et al. (2009)"
+    assert outcomes == [
+        *((ghia, q, Outcome.OUTSIDE) for q in ("u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)")),
+        *((marchi, q, Outcome.WITHIN) for q in ("u(y=0.5)", "u_min", "v_max", "v_min")),
+    ]
     md = render_markdown(report)
     assert_tables_intact(md)
-    row = "| `u(y=0.8516)` | code | 0.23151 | 0.00488 | 2.1% | 38.9 U_num | outside uncertainty |"
-    assert row in md
+    rows = [
+        "| `u(y=0.8516)` | Ghia et al. (1982) | code | 0.23151 | 0.00488 | 2.1% | 38.9 U_num "
+        "| outside uncertainty |",
+        "| `v_min` | Marchi et al. (2009) | code | -0.253804 +/- 1.1e-05 | 0.000219 | 0.086% "
+        "| 0.797 U_val | within uncertainty |",
+    ]
+    assert all(row in md for row in rows)
 
 
 def test_pitzdaily_report_refuses_a_clean_pass_and_says_why() -> None:

@@ -46,3 +46,9 @@ compares them with the finest-grid values, apart from the verdict.
   Table I, p. 398, the Re = 100 column, their 129 x 129 grid points 65, 59 and 110). Copied from
   the paper and checked against the printed page. Kind `code`: a numerical solution with no
   stated uncertainty.
+- Lid-driven cavity, Re = 100: u at the centre -0.2091491418, u_min -0.2140417, v_max
+  0.179572814 and v_min -0.253804, with estimated errors 8.6e-9, 1.6e-6, 2.7e-8 and 1.1e-5
+  (Marchi, Suero and Araki 2009, J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7,
+  pp. 194-195, the Re = 100 column; open access). Copied from the paper and checked against the
+  printed pages. Kind `code`, with each estimated error taken as the 95% uncertainty U_D, an
+  assumption that `study.toml` explains.

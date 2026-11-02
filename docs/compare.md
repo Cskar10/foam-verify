@@ -129,16 +129,23 @@ A study lists its reference values in `study.toml`, one `[[reference]]` table ea
 [[reference]]
 qoi = "u(y=0.5)"           # the name of a [[qoi]]
 kind = "code"              # exact | code | experiment
-value = -0.20581
-source = "Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100"
+label = "Marchi et al. (2009)"   # optional: how the report names it
+value = -0.2091491418
+uncertainty = 8.6e-9       # U_D at 95%
+source = "Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7, Re = 100"
 ```
 
 `qoi`, `kind`, `value` and `source` are required: a reference that does not say where it comes
 from cannot be checked. The optional keys follow the rules above. `uncertainty` is $U_D$ at 95%,
 optional for a code reference and required for an experiment; `standard_uncertainty` ($u_D$),
-`input_uncertainty` ($U_\text{input}$ at 95%) and `c` apply to experiments only. A QoI can have
-several references, or none. A reference that breaks a rule stops the study from loading, with
-the reason.
+`input_uncertainty` ($U_\text{input}$ at 95%) and `c` apply to experiments only. `label` is a
+short name for the report's table, the source by default. A QoI can have several references, or
+none; the labels tell them apart. A reference that breaks a rule stops the study from loading,
+with the reason.
+
+A published error estimate is not always a 95% uncertainty. When a reference states its error
+some other way, say how it was turned into `uncertainty` in a comment beside it, as the cavity's
+`study.toml` does for Marchi et al.'s estimates.
 
 The report lists the comparisons in a section of their own, after the verdict, and in its JSON
 as `comparisons` ([report.md](report.md)). They are no part of the verdict, and never change the
@@ -147,14 +154,18 @@ reference. Folding one into the other would make a code-to-code disagreement loo
 convergence failure, and a lucky agreement look like verification. Keeping them apart is
 foam-verify's convention.
 
-The committed studies give one comparison of each kind they can:
+The committed studies:
 
 - The square duct against its exact f Re, kind `exact`: $\lvert E\rvert = 0.797\,U_\text{num}$,
   within the uncertainty.
+- The cavity's u at the centre and its three extrema against Marchi et al. (2009), kind `code`
+  with $U_D$ from their error estimates: $\lvert E\rvert$ = 0.77 to 0.81 $U_\text{val}$, within
+  the uncertainty.
 - The cavity's three points against Ghia et al.'s Table I, kind `code`: $\lvert E\rvert$ = 7 to
-  39 $U_\text{num}$, outside the uncertainty. Ghia et al. state no uncertainty, so the comparison
-  cannot say which solution carries the difference; the
-  [cavity README](../studies/cavity/README.md#against-ghia-et-al-1982) discusses it.
+  39 $U_\text{num}$, outside the uncertainty. Ghia et al. state no uncertainty, so this comparison
+  alone cannot say which solution carries the difference. At y = 0.5, Marchi et al.'s value
+  puts it on Ghia's side. The
+  [cavity README](../studies/cavity/README.md#against-two-reference-solutions) discusses both.
 
 ## Not covered
 

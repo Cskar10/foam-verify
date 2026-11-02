@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from foam_verify.compare import Outcome, ReferenceKind
+from foam_verify.compare import Comparison, Outcome, ReferenceKind
 from foam_verify.consistency import settings_consistency
 from foam_verify.exact import rectangular_duct_fre
 from foam_verify.gci import Verdict
@@ -50,6 +50,8 @@ def test_duct_reference_is_the_series_solution() -> None:
 
 
 CAVITY = STUDIES / "cavity"
+# The labels of the cavity's two reference solutions in its study.toml.
+GHIA, MARCHI = "Ghia et al. (1982)", "Marchi et al. (2009)"
 
 
 def test_cavity_every_qoi_converges_monotonically_near_second_order() -> None:
@@ -109,9 +111,9 @@ def test_cavity_references_sit_at_the_probed_points() -> None:
         for x, y in re.findall(r"# Probe \d+ \((\S+) (\S+) \S+\)", header)
     ]
     columns = {q.name: q.column for q in study.qois}
-    names = [ref.qoi for ref in study.references]
-    assert names == ["u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)"]  # no extremum has one
-    for ref in study.references:
+    ghia = [ref for ref in study.references if ref.label == GHIA]
+    assert [ref.qoi for ref in ghia] == ["u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)"]
+    for ref in ghia:
         assert ref.reference.kind is ReferenceKind.CODE and ref.reference.uncertainty is None
         match = re.search(r"y = (\d\.\d{4}) \(grid point (\d+) of 129\)", ref.reference.source)
         assert match is not None, ref.qoi
@@ -120,11 +122,19 @@ def test_cavity_references_sit_at_the_probed_points() -> None:
         assert f"{y:.4f}" == match.group(1) and ref.qoi == f"u(y={float(match.group(1)):g})"
 
 
-def test_cavity_differs_from_ghia_by_more_than_its_uncertainty() -> None:
+def cavity_comparisons(label: str) -> tuple[dict[str, Comparison], dict[str, tuple[float, ...]]]:
+    """The cavity's comparisons with one reference by QoI, and every QoI's values by level."""
     study = load_study(CAVITY)
     result = assess_study(study)
-    comparisons = {qc.qoi: qc.comparison for qc in compare_references(study, result)}
-    values = {q.name: q.values for q in result.qois}
+    comparisons = {
+        qc.qoi: qc.comparison for qc in compare_references(study, result) if qc.label == label
+    }
+    return comparisons, {q.name: q.values for q in result.qois}
+
+
+def test_cavity_differs_from_ghia_by_more_than_its_uncertainty() -> None:
+    comparisons, values = cavity_comparisons(GHIA)
+    assert list(comparisons) == ["u(y=0.5)", "u(y=0.4531)", "u(y=0.8516)"]
     expected = {  # E / |D| and |E| / U_num
         "u(y=0.5)": (-0.0150, 9.40),
         "u(y=0.4531)": (-0.0132, 7.34),
@@ -145,6 +155,32 @@ def test_cavity_differs_from_ghia_by_more_than_its_uncertainty() -> None:
     }.items():
         a, b = values[name][finer], values[name][coarser]
         assert min(a, b) < comparisons[name].reference < max(a, b), name
+
+
+def test_cavity_agrees_with_marchi_within_the_uncertainty() -> None:
+    # Marchi et al.'s estimated errors are 1e-8 to 1e-5 against U_num of about 3e-4, so U_val is
+    # U_num to within 0.1%, and the GCI bands hold against a far more accurate solution.
+    comparisons, _ = cavity_comparisons(MARCHI)
+    expected = {  # U_D from their Table 7, and |E| / U_val
+        "u(y=0.5)": (8.6e-9, 0.785),
+        "u_min": (1.6e-6, 0.769),
+        "v_max": (2.7e-8, 0.810),
+        "v_min": (1.1e-5, 0.797),
+    }
+    assert list(comparisons) == list(expected)
+    for name, (u_d, ratio) in expected.items():
+        c = comparisons[name]
+        assert c.outcome is Outcome.WITHIN and not c.warnings, name
+        assert c.reference_uncertainty == u_d, name
+        assert c.numerical is not None and c.validation is not None
+        assert c.validation == pytest.approx(c.numerical, rel=1e-3), name
+        assert c.ratio == pytest.approx(ratio, abs=1e-3), name
+    # At y = 0.5 Marchi et al. put Ghia's value 1.6% off, 13 times as far as this study's.
+    ghia, _ = cavity_comparisons(GHIA)
+    marchi = comparisons["u(y=0.5)"]
+    offset = ghia["u(y=0.5)"].reference - marchi.reference
+    assert offset / abs(marchi.reference) == pytest.approx(0.0160, abs=1e-4)
+    assert abs(offset) / abs(marchi.error) == pytest.approx(13.0, abs=0.1)
 
 
 def test_cavity_points_and_profiles_share_one_window() -> None:

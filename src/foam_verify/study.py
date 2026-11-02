@@ -61,6 +61,7 @@ apart from its verdict:
     kind = "experiment"        # exact | code | experiment
     value = 12.4
     source = "rig test report, run 7"   # where the value comes from
+    label = "rig, run 7"       # optional: how the report names it, the source by default
     uncertainty = 0.6          # U_D at 95%: none for exact, optional for code, required here
     standard_uncertainty = 0.3     # experiment only, optional: u_D
     input_uncertainty = 0.0    # experiment only, optional: U_input at 95%
@@ -141,6 +142,8 @@ class QoIReference:
     reference: Reference
     input_uncertainty: float = 0.0
     c: float = DEFAULT_C
+    # How the report names the reference; None to use the source.
+    label: str | None = None
 
 
 @dataclass(frozen=True)
@@ -212,6 +215,8 @@ class QoIComparison:
     """One QoI's finest-grid value and U set against one of its references."""
 
     qoi: str
+    # The reference's label, or its source when it has none.
+    label: str
     comparison: Comparison
 
 
@@ -362,6 +367,7 @@ def _parse_reference(item: object, i: int, qois: set[str]) -> QoIReference:
         "standard_uncertainty",
         "input_uncertainty",
         "c",
+        "label",
     }
     _check_keys(raw, allowed, where)
     for key in ("qoi", "kind", "value", "source"):
@@ -379,6 +385,9 @@ def _parse_reference(item: object, i: int, qois: set[str]) -> QoIReference:
         raise StudyError(f"{where}: source must say where the value comes from")
     if "c" in raw and kind is not ReferenceKind.EXPERIMENT:
         raise StudyError(f"{where}: c applies to experiments only")
+    label = raw.get("label")
+    if label is not None and (not isinstance(label, str) or not label.strip()):
+        raise StudyError(f"{where}: label must be a non-empty string")
     reference = Reference(
         value=_number(raw["value"], "value", where),
         kind=kind,
@@ -392,7 +401,9 @@ def _parse_reference(item: object, i: int, qois: set[str]) -> QoIReference:
         check_reference(reference, input_uncertainty=input_uncertainty, c=c)
     except ValueError as exc:
         raise StudyError(f"{where}: {exc}") from exc
-    return QoIReference(qoi, reference, input_uncertainty, c)
+    return QoIReference(
+        qoi, reference, input_uncertainty, c, None if label is None else label.strip()
+    )
 
 
 def load_study(path: str | Path) -> Study:
@@ -1017,6 +1028,7 @@ def compare_references(study: Study, result: StudyResult) -> tuple[QoIComparison
     return tuple(
         QoIComparison(
             ref.qoi,
+            ref.label or ref.reference.source or ref.reference.kind.value,
             compare_result(
                 by_name[ref.qoi].gci,
                 ref.reference,

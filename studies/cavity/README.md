@@ -2,9 +2,9 @@
 
 The `icoFoam` cavity at Re = 100 on four uniform grids, 20 x 20 to 160 x 160. There is no exact
 solution; this study shows the GCI behaving on a standard benchmark with corner singularities.
-foam-verify's report also compares three of the QoIs with Ghia, Ghia and Shin (1982), apart
-from the verdict. That comparison is code-to-code: Ghia's values are themselves a 129 x 129
-numerical solution ([below](#against-ghia-et-al-1982)).
+foam-verify's report also compares seven QoI values with two published numerical solutions,
+apart from the verdict: within the uncertainty against Marchi, Suero and Araki (2009), outside
+it against Ghia, Ghia and Shin (1982) ([below](#against-two-reference-solutions)).
 
 Velocities are in units of the lid speed U = 1 m/s; positions in units of the side L = 0.1 m.
 
@@ -43,12 +43,45 @@ formal order).
 - foam-verify's full report on this study is [report.md](report.md) (JSON:
   [report.json](report.json)).
 
-## Against Ghia et al. (1982)
+## Against two reference solutions
+
+`study.toml` lists values from two published solutions as references of kind `code`, and
+foam-verify's report compares each with the finest-grid value
+([docs/compare.md](../../docs/compare.md)). The comparisons are no part of the verdict above.
+
+### Marchi et al. (2009): within the uncertainty
+
+Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, solved the
+cavity with second-order finite volumes on grids up to 1024 x 1024 and up to nine Richardson
+extrapolations. Their Table 6 (p. 194) gives the values at Re = 100, and Table 7 (p. 195) an
+estimated error U for each. Four of them match QoIs here:
+
+| QoI | 160 x 160, this study | Marchi et al. | E = S - D | \|E\| / U_val |
+|---|---|---|---|---|
+| u at y = 0.5 | -0.20889 +/- 0.00033 | -0.2091491418 +/- 8.6e-9 | 0.00026 | 0.78 |
+| u_min | -0.21376 +/- 0.00037 | -0.2140417 +/- 1.6e-6 | 0.00028 | 0.77 |
+| v_max | 0.17936 +/- 0.00026 | 0.179572814 +/- 2.7e-8 | -0.00021 | 0.81 |
+| v_min | -0.25359 +/- 0.00027 | -0.253804 +/- 1.1e-5 | 0.00022 | 0.80 |
+
+All four are within the uncertainty: |E| is 0.77 to 0.81 of U_val. Their estimated errors are 25
+to 38,000 times smaller than U_num, so U_val is U_num to within 0.1%, and the comparison works
+almost like the duct's check against its exact value: the GCI bands hold against a far more
+accurate solution, with |E| at about 80% of U in both studies.
+
+Taking their U as the 95% uncertainty U_D is our assumption. U is the difference between the
+most extrapolated values on their two finest grids (their Eq. 13). On a problem with a known
+solution it exceeded the true error for every variable, and they expect it to overestimate, but
+they state no coverage for it. No reading of U changes these outcomes: U_val cannot fall below
+U_num, and |E| is at most 0.81 U_num.
+
+Their extrema are the extreme face values on each of their grids, extrapolated; the ones here are
+fitted between probes. Both estimate the extremum of the continuous profile. Their profile points
+are at sixteenths of L, so of the three Ghia points only y = 0.5 has a value from them.
+
+### Ghia et al. (1982): outside the uncertainty
 
 The three points are grid points of Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411,
-whose Table I (p. 398) gives u there for Re = 100. `study.toml` lists the three values as
-references of kind `code`, and foam-verify's report compares each with the finest-grid value
-([docs/compare.md](../../docs/compare.md)). The comparison is no part of the verdict above.
+whose Table I (p. 398) gives u there for Re = 100:
 
 | QoI | 160 x 160, this study | Ghia et al., 129 x 129 | E = S - D | E / \|D\| | \|E\| / U_num | U_D needed |
 |---|---|---|---|---|---|---|
@@ -57,14 +90,14 @@ references of kind `code`, and foam-verify's report compares each with the fines
 | u at y = 0.8516 | 0.23639 +/- 0.00013 | 0.23151 | 0.00488 | 2.1% | 38.9 | 0.0049 |
 
 All three differ from Ghia's values by 1.3 to 2.1%, 7 to 39 times the numerical uncertainty, so
-each comparison is `outside_uncertainty`. That alone does not say which solution is off. Ghia's
-values are a numerical solution too, so E is the difference of two numerical errors, and Ghia et
-al. state no uncertainty for them, so each E is judged against U_num alone, with a warning. The
-last column is the smallest 95% uncertainty that Ghia's values would need for the two to agree:
-1.3 to 2.1% of the value.
+each comparison is `outside_uncertainty`. Ghia et al. state no uncertainty for their values, so on
+its own this comparison cannot say which solution is off: each E is judged against U_num alone,
+with a warning, and the last column is the smallest 95% uncertainty that Ghia's values would need
+for the two to agree, 1.3 to 2.1% of the value.
 
-Two observations suggest that the larger numerical error is in the reference, though a
-code-to-code comparison without the reference's uncertainty cannot show it:
+At y = 0.5, the one point both papers give, Marchi et al.'s value puts the difference on Ghia's
+side: Ghia's value is 0.0033 (1.6%) from it, 13 times as far as this study's. At the other two
+points, two observations point the same way:
 
 - This study's own error estimate is much smaller. The Richardson-extrapolated values differ
   from the fine-grid ones by 0.03 to 0.14%, and from Ghia's by 1.4 to 2.1%.
@@ -73,12 +106,10 @@ code-to-code comparison without the reference's uncertainty cannot show it:
 
 Ghia et al. used second-order central differences, with first-order upwind differences for
 convection and their second-order term added as a deferred correction (p. 393), on a uniform
-129 x 129 grid. A reference that states its uncertainty would settle the question.
-`tests/test_studies.py` checks the numbers above and that each reference sits at its probe:
-Ghia's point n is at y = (n - 1)/128 of L, so y = 64/128, 58/128 and 109/128.
-
-Ghia's tables give values at their grid points only, so the extrema (u_min, v_max and v_min),
-fitted between probes here, have no reference.
+129 x 129 grid. Their tables give values at their grid points only, so the extrema here have no
+Ghia reference. Ghia's point n is at y = (n - 1)/128 of L, so the three points are y = 64/128,
+58/128 and 109/128. `tests/test_studies.py` checks the numbers in this section and that each Ghia
+value sits at its probe.
 
 ## Case
 

@@ -112,6 +112,7 @@
   "comparisons": [
     {
       "qoi": "fRe",
+      "label": "Shah and London (1978)",
       "comparison": {
         "kind": "exact",
         "outcome": "within_uncertainty",

@@ -595,15 +595,28 @@ def _against(c: Comparison) -> str:
     return f"{name} = 0" if c.ratio is None else f"{c.ratio:.3g} {name}"
 
 
-def _grouped(pairs: Sequence[tuple[str, Sequence[str]]], title: str) -> list[str]:
-    """Each message once, after the QoIs it applies to."""
-    groups: dict[str, list[str]] = {}
-    for name, items in pairs:
+def _reference_value(c: Comparison) -> str:
+    """D, with the reference's U_D when it states one."""
+    d = f"{c.reference:.7g}"
+    u = c.reference_uncertainty
+    return d if not u else f"{d} +/- {_small(u)}"
+
+
+def _grouped(comparisons: Sequence[QoIComparison], warnings: bool, title: str) -> list[str]:
+    """Each warning or note once, after the references and QoIs it applies to."""
+    groups: dict[str, dict[str, list[str]]] = {}
+    for qc in comparisons:
+        items = qc.comparison.warnings if warnings else qc.comparison.notes
         for item in items:
-            names = groups.setdefault(item, [])
-            if _code(name) not in names:
-                names.append(_code(name))
-    return _bullets([f"{', '.join(names)}: {item}" for item, names in groups.items()], title)
+            names = groups.setdefault(item, {}).setdefault(qc.label, [])
+            if _code(qc.qoi) not in names:
+                names.append(_code(qc.qoi))
+    lines = [
+        "; ".join(f"{label} on {', '.join(names)}" for label, names in by_label.items())
+        + f": {item}"
+        for item, by_label in groups.items()
+    ]
+    return _bullets(lines, title)
 
 
 def _comparison_section(report: Report) -> list[str]:
@@ -624,23 +637,25 @@ def _comparison_section(report: Report) -> list[str]:
         rows.append(
             [
                 _code(qc.qoi),
+                qc.label,
                 c.kind.value,
-                f"{c.reference:.7g}",
+                _reference_value(c),
                 _sig(c.error, 3),
                 _pct(c.relative_error),
                 _against(c),
                 outcome if c.case is None else f"{outcome} (case {c.case})",
             ]
         )
-    lines += _table(["QoI", "Kind", "D", "E = S - D", "E / |D|", "|E| / U", "Outcome"], rows)
+    head = ["QoI", "Reference", "Kind", "D +/- U_D", "E = S - D", "E / |D|", "|E| / U", "Outcome"]
+    lines += _table(head, rows)
     reasons = [
         f"{_code(qc.qoi)} against {qc.comparison.source or 'the reference'}: "
         + "; ".join(qc.comparison.reasons)
         for qc in report.comparisons
     ]
     lines += _bullets(reasons)
-    lines += _grouped([(qc.qoi, qc.comparison.warnings) for qc in report.comparisons], "Warnings")
-    return lines + _grouped([(qc.qoi, qc.comparison.notes) for qc in report.comparisons], "Notes")
+    lines += _grouped(report.comparisons, True, "Warnings")
+    return lines + _grouped(report.comparisons, False, "Notes")
 
 
 def _levels_section(report: Report) -> list[str]:

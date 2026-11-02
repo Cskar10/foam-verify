@@ -27,12 +27,13 @@ monotonic convergence at an observed order of 1.995 and gives 56.8997 +/- 0.0108
 56.8890 to 56.9105. The actual error, 0.0086, is 80% of the stated uncertainty, and the
 Richardson extrapolation, 56.90834, is within 3.3e-5 of the exact value.
 
-**Against Ghia et al. (1982), the cavity differs by more than its uncertainty.** At three of
-Ghia, Ghia and Shin's grid points, the cavity's values differ from theirs by 1.3 to 2.1%, 7 to 39
-times its numerical uncertainty. Ghia's values are a numerical solution with no stated
-uncertainty, so the comparison is code-to-code: it cannot say which solution carries the
-difference, and the report gives it beside the verdict, not in it. Details in
-[the cavity's README](studies/cavity/README.md#against-ghia-et-al-1982).
+**The cavity against two published solutions: within one, outside the other.** Marchi, Suero
+and Araki (2009) give four of the cavity's values from a 1024 x 1024 solution with estimated errors
+of 1e-8 to 1e-5; all four are within the cavity's uncertainty, with |E| at 0.77 to 0.81 of it.
+Ghia, Ghia and Shin (1982) give three, with no stated uncertainty; they differ by 1.3 to 2.1%, 7 to
+39 times the uncertainty, and at the one point both papers give, Marchi et al. put Ghia's value
+1.6% off. Both comparisons are code-to-code, and the report gives them beside the verdict, not in
+it. Details in [the cavity's README](studies/cavity/README.md#against-two-reference-solutions).
 
 **`pitzDaily` shows the other half of the job: refusing.** Refining the mesh moves the walls
 through the switch of the wall function at y+ = 11.53, so the levels do not solve the same
@@ -95,7 +96,8 @@ its divisor. The rules and their sources are in [docs/compare.md](docs/compare.m
 
 A study can list its reference values in `study.toml`, as `[[reference]]` tables with the QoI,
 the kind, the value and its source, and `foam-verify report` then makes each comparison: the
-duct against its exact f Re, and the cavity's three points against Ghia et al.'s Table I.
+duct against its exact f Re, and the cavity against Ghia et al.'s Table I and Marchi et al.'s
+1024 x 1024 solution.
 
 ## Iterative convergence
 

@@ -19,23 +19,31 @@ foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; gr
 
 Apart from the verdict: the comparison error E = S - D sets the finest-grid value S against a reference value D, every uncertainty at 95%. The verdict says whether S is converged; this says how far it is from D (foam-verify docs/compare.md).
 
-| QoI | Kind | D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
-|---|---|---|---|---|---|---|
-| `u(y=0.5)` | code | -0.20581 | -0.00308 | -1.5% | 9.4 U_num | outside uncertainty |
-| `u(y=0.4531)` | code | -0.2109 | -0.00278 | -1.3% | 7.34 U_num | outside uncertainty |
-| `u(y=0.8516)` | code | 0.23151 | 0.00488 | 2.1% | 38.9 U_num | outside uncertainty |
+| QoI | Reference | Kind | D +/- U_D | E = S - D | E / \|D\| | \|E\| / U | Outcome |
+|---|---|---|---|---|---|---|---|
+| `u(y=0.5)` | Ghia et al. (1982) | code | -0.20581 | -0.00308 | -1.5% | 9.4 U_num | outside uncertainty |
+| `u(y=0.4531)` | Ghia et al. (1982) | code | -0.2109 | -0.00278 | -1.3% | 7.34 U_num | outside uncertainty |
+| `u(y=0.8516)` | Ghia et al. (1982) | code | 0.23151 | 0.00488 | 2.1% | 38.9 U_num | outside uncertainty |
+| `u(y=0.5)` | Marchi et al. (2009) | code | -0.2091491 +/- 8.6e-09 | 0.000257 | 0.12% | 0.785 U_val | within uncertainty |
+| `u_min` | Marchi et al. (2009) | code | -0.2140417 +/- 1.6e-06 | 0.000281 | 0.13% | 0.769 U_val | within uncertainty |
+| `v_max` | Marchi et al. (2009) | code | 0.1795728 +/- 2.7e-08 | -0.000208 | -0.12% | 0.81 U_val | within uncertainty |
+| `v_min` | Marchi et al. (2009) | code | -0.253804 +/- 1.1e-05 | 0.000219 | 0.086% | 0.797 U_val | within uncertainty |
 
 - `u(y=0.5)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.5000 (grid point 65 of 129): E = S - D = -0.00308 is beyond the simulation's numerical uncertainty (|E| = 9.4 U_num); the reference states no uncertainty, and would need one of at least 0.00306 for the two to agree
 - `u(y=0.4531)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.4531 (grid point 59 of 129): E = S - D = -0.00278 is beyond the simulation's numerical uncertainty (|E| = 7.34 U_num); the reference states no uncertainty, and would need one of at least 0.00276 for the two to agree
 - `u(y=0.8516)` against Ghia, Ghia and Shin (1982), J. Comput. Phys. 48, 387-411, Table I (p. 398), Re = 100, y = 0.8516 (grid point 110 of 129): E = S - D = 0.00488 is beyond the simulation's numerical uncertainty (|E| = 38.9 U_num); the reference states no uncertainty, and would need one of at least 0.00488 for the two to agree
+- `u(y=0.5)` against Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, u(0.5;0.5): E = S - D = 0.000257, |E| = 0.785 U_val: the two solutions agree within their numerical uncertainties; U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000328 (Eça, Dowding and Roache 2020, Eq. 15: independent errors)
+- `u_min` against Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, umin: E = S - D = 0.000281, |E| = 0.769 U_val: the two solutions agree within their numerical uncertainties; U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000366 (Eça, Dowding and Roache 2020, Eq. 15: independent errors)
+- `v_max` against Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmax: E = S - D = -0.000208, |E| = 0.81 U_val: the two solutions agree within their numerical uncertainties; U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000257 (Eça, Dowding and Roache 2020, Eq. 15: independent errors)
+- `v_min` against Marchi, Suero and Araki (2009), J. Braz. Soc. Mech. Sci. & Eng. 31(3), 186-198, Tables 6 and 7 (pp. 194-195), Re = 100, vmin: E = S - D = 0.000219, |E| = 0.797 U_val: the two solutions agree within their numerical uncertainties; U_val = sqrt(U_num^2 + U_input^2 + U_D^2) = 0.000275 (Eça, Dowding and Roache 2020, Eq. 15: independent errors)
 
 Warnings:
 
-- `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`: the reference states no uncertainty, so U_val is incomplete
+- Ghia et al. (1982) on `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`: the reference states no uncertainty, so U_val is incomplete
 
 Notes:
 
-- `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`: a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model
+- Ghia et al. (1982) on `u(y=0.5)`, `u(y=0.4531)`, `u(y=0.8516)`; Marchi et al. (2009) on `u(y=0.5)`, `u_min`, `v_max`, `v_min`: a code reference makes this a code-to-code comparison: E is the difference of two numerical errors and says nothing about the model
 
 ## Levels
 

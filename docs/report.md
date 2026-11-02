@@ -78,9 +78,10 @@ The Markdown, top to bottom:
 1. **Verdict:** the summary, one row per QoI (the finest-grid value +/- U, U relative to the
    value, the convergence of grids 1-3, clean pass or not) and what stops a clean pass.
 2. **Reference comparison,** when `study.toml` lists references: one row per reference with its
-   kind, D, E = S - D, E / |D|, |E| as a multiple of the uncertainty it is judged against (U_num
-   or U_val, named) and the outcome, then each comparison's reasons and source, and the
-   warnings and notes, each once with the QoIs it applies to.
+   label (its source when it has none), kind, D (+/- U_D when it states one), E = S - D,
+   E / |D|, |E| as a multiple of the uncertainty it is judged against (U_num or U_val, named) and
+   the outcome; then each comparison's reasons and source, and the warnings and notes, each once
+   after the references and QoIs it applies to.
 3. **Levels:** cell counts and the refinement ratio to the next coarser level (with core cells
    or first-layer heights when the scope uses them), and the dimension notes and warnings.
 4. **Settings consistency:** the files compared on every level and each difference, level by
@@ -98,7 +99,8 @@ The JSON (`schema` 1) holds `tool`, `version`, `schema`, `study`, `clean_pass`, 
 study-wide items), then `qois`, one entry per QoI with `value`, `uncertainty`, `band`,
 `relative_uncertainty`, `grid_verdict`, `method`, `checks`, `blocking` and its `definition` from
 `study.toml`. Then `comparisons`, one entry per reference in the manifest's order (empty when
-there are none), each with the `qoi` and the `comparison` that `foam_verify.compare` gives:
+there are none), each with the `qoi`, the `label` and the `comparison` that `foam_verify.compare`
+gives:
 `kind`, `outcome`, `simulation`, `reference`, `error`, the uncertainties, `ratio`, `needed`, the
 experiment fields, `reasons`, `warnings`, `notes` and `source`. Last comes `result`: everything
 `assess_study()` found, every triplet and every level's iterative result, at full precision.
