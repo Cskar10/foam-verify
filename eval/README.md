@@ -180,6 +180,31 @@ p01 and p02 in the same form, taken from the committed studies' reports and, unl
 evaluation's, written after the pilot ran. All four verdicts are right, and on p01 both values lie
 in the label's band ([`pilot/runs/scores.md`](pilot/runs/scores.md)).
 
+## The scored runs
+
+The 72 scored runs, three of each bundle in each condition, ran on 2 Nov 2026 in three batches of
+24, each batch one run of every bundle in both conditions. All ran from foam-verify at `5239b11`
+on Claude Code 2.1.312 and Claude Opus 5.5 (`claude-opus-5-5`), and all 72 count: none was set
+aside, timed out or hit the usage limit, no tool call was refused, and every bundle copy was
+unchanged. Together they took 40 minutes and $14.90 at API prices. Transcripts, index and scores
+are in [`runs/`](runs/), and [`runs/scores.md`](runs/scores.md) lists every verdict and stated
+value:
+
+| Condition | Verdict right | False trust | Sound bundles rejected | Bands holding the exact value | Median time | Median turns | Cost at API prices |
+|---|---|---|---|---|---|---|---|
+| A, the files only | 29 of 36 (81%) | 7 of 24 (29%) | 0 of 12 | 12 of 12 | 46 s | 16.5 | $12.65 |
+| B, with foam-verify | 36 of 36 (100%) | 0 of 24 (0%) | 0 of 12 | 7 of 7 | 17 s | 3 | $2.24 |
+
+Condition A trusted b02 (two grids) and b03 (refinement ratios of about 1.10) in all three runs,
+and b05 (the 80x80 grid on another convection scheme) in its second run only: it is the one
+bundle on which a condition changed its verdict between runs. Condition B gave the same verdict
+in all three runs of every bundle.
+
+Eight paths in seven of condition A's transcripts point under the home folder, where Claude Code
+saved a tool output too long to show in full; the folder exists only inside that run's sandbox.
+The user name in those paths is replaced with `user`; nothing else in any transcript differs from
+the recording.
+
 ## Building and checking
 
 ```console
