@@ -1,6 +1,7 @@
-"""Command line interface: foam-verify gci, compare and report.
+"""Command line interface: foam-verify gci, compare, report and mcp.
 
-Exit codes: 0 for a clean pass, 1 when the verdict is anything else, 2 for bad input.
+Exit codes: 0 for a clean pass, 1 when the verdict is anything else, 2 for bad input. mcp runs
+the MCP server over stdio and exits 0 when the client closes it.
 """
 
 from __future__ import annotations
@@ -141,6 +142,29 @@ def _parser() -> argparse.ArgumentParser:
         "--output",
         metavar="DIR",
         help="write report.md and report.json into DIR instead of printing",
+    )
+
+    server = sub.add_parser(
+        "mcp",
+        help="run the MCP server over stdio: read-only tools on the grid studies under --root",
+        description="Run foam-verify's MCP server over stdio, for an MCP client to start. Its "
+        "tools only read, and only under the given roots: every path is resolved, symlinks "
+        "followed, and must lie under a root, and no file above the size cap is read. Needs "
+        "the mcp extra: pip install 'foam-verify[mcp]'.",
+    )
+    server.add_argument(
+        "--root",
+        action="append",
+        required=True,
+        metavar="DIR",
+        help="a folder the tools may read under, such as a folder of studies; repeat for more",
+    )
+    server.add_argument(
+        "--max-file-mb",
+        type=float,
+        default=64.0,
+        metavar="MB",
+        help="the largest file a tool reads, in MiB (default 64)",
     )
     return parser
 
@@ -307,6 +331,21 @@ def _cmd_report(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
     return 0 if report.clean_pass else 1
 
 
+def _cmd_mcp(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    try:
+        from .server import create_server
+    except ImportError as exc:
+        parser.error(f"the MCP server needs the mcp extra ({exc}): pip install 'foam-verify[mcp]'")
+    if not args.max_file_mb > 0:
+        parser.error("--max-file-mb must be positive")
+    try:
+        server = create_server(args.root, max_bytes=int(args.max_file_mb * 2**20))
+    except ValueError as exc:
+        parser.error(str(exc))
+    server.run("stdio")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
@@ -316,6 +355,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_compare(args, parser)
     if args.command == "report":
         return _cmd_report(args, parser)
+    if args.command == "mcp":
+        return _cmd_mcp(args, parser)
     parser.error(f"unknown command {args.command}")
     return 2
 

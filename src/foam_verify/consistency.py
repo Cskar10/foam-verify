@@ -28,6 +28,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from . import access
 from .foamdict import (
     DEFAULT_MAX_BYTES,
     Entry,
@@ -115,6 +116,7 @@ def _settings_files(case: Path) -> dict[str, Path]:
         folder = case / sub
         if not folder.is_dir():
             continue
+        access.checked(folder)  # inside a sandbox, a folder listed must lie under its roots
         for path in sorted(folder.iterdir()):
             name = path.name.removesuffix(".gz")
             if (

@@ -19,11 +19,12 @@ lists and dimension sets. The reader follows OpenFOAM's syntax without evaluatin
 from __future__ import annotations
 
 import copy
-import gzip
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
+
+from . import access
 
 DEFAULT_MAX_BYTES = 64 * 2**20
 MAX_INCLUDE_DEPTH = 8
@@ -134,12 +135,10 @@ def read_dict(
 
 
 def _read_text(path: Path, max_bytes: int) -> str:
-    opener = gzip.open if path.name.endswith(".gz") else open
-    with opener(path, "rb") as stream:
-        data = stream.read(max_bytes + 1)
-    if len(data) > max_bytes:
-        raise FoamDictError(f"{path}: larger than {max_bytes} bytes")
-    return data.decode("latin-1")
+    try:
+        return access.read_text(path, "latin-1", max_bytes)
+    except access.FileTooLarge as exc:
+        raise FoamDictError(str(exc)) from exc
 
 
 def _store(into: FoamDict, key: str, value: Entry) -> None:

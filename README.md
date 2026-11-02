@@ -5,9 +5,10 @@ convergence index (GCI), iterative convergence of the quantities you report, set
 across grid levels, and comparison with reference data, with the uncertainty stated.
 
 **Status: early development.** The GCI engine, the `study.toml` reader, the iterative
-convergence and settings consistency checks, the `report` command and the comparison with
-reference data, from numbers (`compare`) or from a study's `study.toml` into its report, exist.
-A read-only MCP server comes next.
+convergence and settings consistency checks, the `report` command, the comparison with
+reference data, from numbers (`compare`) or from a study's `study.toml` into its report, and a
+read-only MCP server (`mcp`) exist. Tests of every MCP tool through an MCP client come next,
+then the agent evaluation.
 
 ## Results
 
@@ -98,6 +99,21 @@ A study can list its reference values in `study.toml`, as `[[reference]]` tables
 the kind, the value and its source, and `foam-verify report` then makes each comparison: the
 duct against its exact f Re, and the cavity against Ghia et al.'s Table I and Marchi et al.'s
 1024 x 1024 solution.
+
+## MCP server
+
+```console
+$ uv run --extra mcp foam-verify mcp --root studies
+```
+
+`foam-verify mcp` serves these checks to an MCP client, such as Claude Code or Claude Desktop,
+over stdio, as seven read-only tools: `list_studies`, `study_summary`, `grid_convergence`,
+`iterative_convergence`, `settings_consistency`, `compare_reference` and
+`verification_report`. Each returns JSON with the verdict, the numbers behind it and the
+reasons. The tools read only under the `--root` folders: every path is resolved, symlinks
+followed, and must lie under a root, and no file above the size cap (64 MiB by default) is read.
+They write nothing, start no process and use no network. Setup for clients, the tools and the
+sandbox are in [docs/mcp.md](docs/mcp.md).
 
 ## Iterative convergence
 

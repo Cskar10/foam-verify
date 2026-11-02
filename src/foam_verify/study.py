@@ -72,7 +72,6 @@ A QoI can have several references, or none.
 
 from __future__ import annotations
 
-import gzip
 import math
 import re
 import tomllib
@@ -80,6 +79,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 
+from . import access
 from .compare import (
     DEFAULT_C,
     Comparison,
@@ -412,7 +412,7 @@ def load_study(path: str | Path) -> Study:
     manifest = path / MANIFEST if path.is_dir() else path
     root = manifest.parent
     try:
-        raw = tomllib.loads(manifest.read_text(encoding="utf-8"))
+        raw = tomllib.loads(access.read_text(manifest))
     except FileNotFoundError as exc:
         raise StudyError(f"no {MANIFEST} at {manifest}") from exc
     except tomllib.TOMLDecodeError as exc:
@@ -504,11 +504,9 @@ def load_study(path: str | Path) -> Study:
 def _read_head(path: Path, size: int = 4096) -> str:
     gz = path.with_name(path.name + ".gz")
     if path.is_file():
-        with path.open("rb") as fh:
-            data = fh.read(size)
+        data = access.read_head(path, size)
     elif gz.is_file():
-        with gzip.open(gz, "rb") as fh:
-            data = fh.read(size)
+        data = access.read_head(gz, size)
     else:
         raise StudyError(f"{path} not found")
     return data.decode("latin-1")
@@ -594,7 +592,7 @@ def _read_table(path: Path, qoi: QoI) -> tuple[list[float], list[float]]:
     xs: list[float] = []
     ys: list[float] = []
     index: int | None = None
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for n, line in enumerate(access.read_text(path).splitlines(), start=1):
         stripped = line.strip()
         if not stripped:
             continue
@@ -619,7 +617,7 @@ def read_series(case: Path, qoi: QoI) -> Series:
     A restart writes a new folder under postProcessing/<name>/<startTime>/; rows that a later
     file covers again are taken from the later file.
     """
-    case = case.resolve()
+    case = access.checked(case)
     files = sorted(
         (_inside(p, case, "qoi file") for p in case.glob(qoi.file) if p.is_file()),
         key=lambda p: (_start_time(p), str(p)),
@@ -696,7 +694,7 @@ def _read_raw(path: Path, qoi: QoI) -> Profile:
         )
     width: int | None = None
     points: list[tuple[float, float]] = []
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for n, line in enumerate(access.read_text(path).splitlines(), start=1):
         parts = line.split()
         if not parts or parts[0].startswith("#"):
             continue
@@ -732,7 +730,7 @@ def _read_profiles(path: Path, qoi: QoI, *, last_only: bool = False) -> list[Pro
     axis = qoi.axis if qoi.axis is not None else 0
     coords: dict[int, float] = {}
     rows: list[tuple[int, str]] = []
-    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for n, line in enumerate(access.read_text(path).splitlines(), start=1):
         stripped = line.strip()
         match = _PROBE.match(stripped)
         if match:
@@ -752,6 +750,7 @@ def _read_profiles(path: Path, qoi: QoI, *, last_only: bool = False) -> list[Pro
 
 
 def _profile_files(case: Path, qoi: QoI) -> list[Path]:
+    access.checked(case)
     files = sorted(
         (_inside(p, case, "qoi file") for p in case.glob(qoi.file) if p.is_file()),
         key=lambda p: (_start_time(p), str(p)),
