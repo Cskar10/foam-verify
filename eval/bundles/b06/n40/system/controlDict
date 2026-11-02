@@ -1,0 +1,62 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     simpleFoam;
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         8000;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   8000;
+purgeWrite      0;
+writeFormat     ascii;
+writePrecision  12;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable false;
+
+functions
+{
+    wallShearStress
+    {
+        type            wallShearStress;
+        libs            (fieldFunctionObjects);
+        patches         (walls);
+        executeControl  timeStep;
+        writeControl    writeTime;
+        log             false;
+    }
+
+    wallStress
+    {
+        type            surfaceFieldValue;
+        libs            (fieldFunctionObjects);
+        regionType      patch;
+        name            walls;
+        operation       areaAverage;
+        fields          (wallShearStress);
+        writeFields     false;
+        writeControl    timeStep;
+        writeInterval   10;
+        writePrecision  12;
+        log             false;
+    }
+
+    residuals
+    {
+        type            solverInfo;
+        libs            (utilityFunctionObjects);
+        fields          (U p);
+        executeControl  timeStep;
+        executeInterval 10;  // solverInfo writes whenever it executes
+        writeControl    timeStep;
+        writeInterval   10;
+    }
+}

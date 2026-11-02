@@ -1,0 +1,133 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     simpleFoam;
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         8000;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   8000;
+purgeWrite      0;
+writeFormat     ascii;
+writePrecision  12;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable false;
+
+functions
+{
+    // Total pressure p + |U|^2/2, kinematic like p (rhoInf 1), for the pressure loss.
+    totalPressure
+    {
+        type            pressure;
+        libs            (fieldFunctionObjects);
+        mode            total;
+        rho             rhoInf;
+        rhoInf          1;
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+        log             false;
+    }
+
+    // Inlet minus outlet area averages of p and of the total pressure, as in v2512's
+    // pressureDifferencePatch template.
+    pressureDrop
+    {
+        type            multiFieldValue;
+        libs            (fieldFunctionObjects);
+        operation       subtract;
+        writeControl    timeStep;
+        writeInterval   10;
+        writePrecision  12;
+        log             false;
+        functions
+        {
+            inlet
+            {
+                type            surfaceFieldValue;
+                libs            (fieldFunctionObjects);
+                regionType      patch;
+                name            inlet;
+                operation       areaAverage;
+                fields          (p total(p));
+                writeFields     false;
+                writeControl    timeStep;
+                writeInterval   10;
+                log             false;
+            }
+            outlet
+            {
+                type            surfaceFieldValue;
+                libs            (fieldFunctionObjects);
+                regionType      patch;
+                name            outlet;
+                operation       areaAverage;
+                fields          (p total(p));
+                writeFields     false;
+                writeControl    timeStep;
+                writeInterval   10;
+                log             false;
+            }
+        }
+    }
+
+    wallShearStress
+    {
+        type            wallShearStress;
+        libs            (fieldFunctionObjects);
+        patches         (lowerWall);
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    writeTime;
+        log             false;
+    }
+
+    lowerWallShear
+    {
+        type            surfaces;
+        libs            (sampling);
+        surfaceFormat   raw;
+        formatOptions   { raw { precision 12; } }
+        fields          (wallShearStress);
+        interpolate     false;
+        timeStart       6000;
+        writeControl    timeStep;
+        writeInterval   200;
+        surfaces
+        {
+            lowerWall
+            {
+                type            patch;
+                patches         (lowerWall);
+            }
+        }
+    }
+
+    yPlus
+    {
+        type            yPlus;
+        libs            (fieldFunctionObjects);
+        writeControl    writeTime;
+        log             false;
+    }
+
+    residuals
+    {
+        type            solverInfo;
+        libs            (utilityFunctionObjects);
+        fields          (U p k epsilon);
+        executeControl  timeStep;
+        executeInterval 10;  // solverInfo writes whenever it executes
+        writeControl    timeStep;
+        writeInterval   10;
+    }
+}

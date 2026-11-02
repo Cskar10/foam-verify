@@ -170,6 +170,16 @@ profile = "min"
 axis = "x"
 component = "y"
 """,
+    "v_max": """\
+# The maximum of v on the horizontal centreline (255 probes, spacing L/256, parabola at the
+# maximum).
+[[qoi]]
+name = "v_max"
+file = "postProcessing/horizontalCentreline/*/U"
+profile = "max"
+axis = "x"
+component = "y"
+""",
     "fRe": """\
 # Darcy f Re = 8 tau_w D_h / (nu Ubar) = 800 tau_w with D_h = 1, nu = 0.01, Ubar = 1. With
 # this function object's sign convention the x component is negative for flow along +x, hence
@@ -181,6 +191,15 @@ column = "areaAverage(wallShearStress)"
 component = "x"
 reduction = "last"
 scale = -800.0
+""",
+    "dp0": """\
+# Total-pressure loss: inlet minus outlet area averages of p + |U|^2/2, the mean over the last
+# 10% of the samples.
+[[qoi]]
+name = "dp0"
+file = "postProcessing/pressureDrop/*/multiFieldValue.dat"
+column = "Group1"
+reduction = "window_mean"
 """,
     "dp": """\
 # Static pressure difference, inlet minus outlet area averages, the mean over the last 10% of
@@ -222,6 +241,10 @@ def pitz(cells: str, run: str | None = None) -> Level:
     return Level(cells, f"n{cells}", run)
 
 
+DUCT_LEVELS = tuple(square(n) for n in (160, 80, 40, 20))
+CAVITY_LEVELS = DUCT_LEVELS
+PITZ_LEVELS = tuple(pitz(c) for c in ("139k", "62k", "28k", "12k"))
+
 BUNDLE_LIST = (
     Bundle(
         "b01",
@@ -230,6 +253,7 @@ BUNDLE_LIST = (
         "u(y=0.8516)",
         tuple(square(n, "cavity-t1") for n in (160, 80, 40, 20)),
     ),
+    Bundle("b02", "duct", DUCT_HEAD, "fRe", DUCT_LEVELS[:2]),
     Bundle(
         "b03",
         "duct",
@@ -237,6 +261,7 @@ BUNDLE_LIST = (
         "fRe",
         (square(160), *(square(n, "duct-r11") for n in (145, 132, 120))),
     ),
+    Bundle("b04", "pitzDaily", PITZ_HEAD, "dp0", PITZ_LEVELS[1:]),
     Bundle(
         "b05",
         "cavity",
@@ -244,6 +269,10 @@ BUNDLE_LIST = (
         "v_min",
         (square(160), square(80, "cavity-lu80"), square(40), square(20)),
     ),
+    Bundle("b06", "duct", DUCT_HEAD, "fRe", DUCT_LEVELS),
+    Bundle("b07", "cavity", CAVITY_HEAD, "u(y=0.5)", CAVITY_LEVELS[:3]),
+    Bundle("b08", "pitzDaily", PITZ_HEAD, "dp0", PITZ_LEVELS),
+    Bundle("b09", "cavity", CAVITY_HEAD, "v_max", CAVITY_LEVELS),
     Bundle(
         "b10",
         "cavity",
@@ -251,6 +280,7 @@ BUNDLE_LIST = (
         "u(y=0.5)",
         (square(160, "cavity-t1"), square(80), square(40), square(20)),
     ),
+    Bundle("b11", "duct", DUCT_HEAD, "fRe", DUCT_LEVELS[:3]),
     Bundle(
         "b12",
         "pitzDaily",

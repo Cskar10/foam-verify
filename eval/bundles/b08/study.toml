@@ -1,0 +1,31 @@
+# pitzDaily: the backward-facing step, simpleFoam, k-epsilon with wall functions. Pressures are
+# kinematic (m^2/s^2).
+name = "pitzDaily"
+dim = 2            # one cell thick, empty front and back
+formal_order = 2
+refined = "mesh"
+grid_sequence = "structured"
+
+[[levels]]
+name = "139k"
+path = "n139k"
+
+[[levels]]
+name = "62k"
+path = "n62k"
+
+[[levels]]
+name = "28k"
+path = "n28k"
+
+[[levels]]
+name = "12k"
+path = "n12k"
+
+# Total-pressure loss: inlet minus outlet area averages of p + |U|^2/2, the mean over the last
+# 10% of the samples.
+[[qoi]]
+name = "dp0"
+file = "postProcessing/pressureDrop/*/multiFieldValue.dat"
+column = "Group1"
+reduction = "window_mean"

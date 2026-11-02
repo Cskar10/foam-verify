@@ -16,8 +16,17 @@ from typing import Any
 
 import pytest
 
+from foam_verify.gci import Verdict
 from foam_verify.report import Status, verification_report
-from foam_verify.study import QoI, Series, Study, cell_count, load_study, read_series
+from foam_verify.study import (
+    QoI,
+    Series,
+    Study,
+    assess_study,
+    cell_count,
+    load_study,
+    read_series,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 EVAL = ROOT / "eval"
@@ -196,3 +205,71 @@ def test_foam_verify_agrees_with_the_label(label: dict[str, Any]) -> None:
         (verdict,) = report.qois
         failed = {c.name for c in verdict.checks if c.status is Status.FAIL}
         assert failed & CHECKS[label["reasons"][0]], (label["id"], failed)
+
+
+# --- the bundles cut from the committed studies ---------------------------------------------
+
+CUT = {  # bundle: the committed study and the levels it holds, finest first
+    "b02": ("duct", ("n160", "n80")),
+    "b04": ("pitzDaily", ("n62k", "n28k", "n12k")),
+    "b06": ("duct", ("n160", "n80", "n40", "n20")),
+    "b07": ("cavity", ("n160", "n80", "n40")),
+    "b08": ("pitzDaily", ("n139k", "n62k", "n28k", "n12k")),
+    "b09": ("cavity", ("n160", "n80", "n40", "n20")),
+    "b11": ("duct", ("n160", "n80", "n40")),
+}
+# What a sound bundle's band must hold, from outside foam-verify: the duct's exact f Re (the
+# series solution), or Marchi, Suero and Araki's (2009) value.
+EXACT_FRE = 56.90830753911475
+OUTSIDE = {"b06": EXACT_FRE, "b11": EXACT_FRE, "b07": -0.2091491418, "b09": 0.179572814}
+
+
+def half_unit(x: float) -> float:
+    """Half a unit in the last decimal place that x is written with."""
+    return 0.5 * 10.0 ** -len(repr(x).split(".")[1])
+
+
+@pytest.mark.parametrize("bundle", sorted(CUT))
+def test_a_cut_bundle_holds_the_committed_levels_unchanged(bundle: str) -> None:
+    folder = built(bundle)
+    study, levels = CUT[bundle]
+    assert sorted(p.name for p in folder.iterdir() if p.is_dir()) == sorted(levels)
+    assert [level.path.name for level in load_study(folder).levels] == list(levels)
+    for level in levels:
+        assert same_tree(folder / level, STUDIES / study / level), level
+
+
+@pytest.mark.parametrize("bundle", sorted(OUTSIDE))
+def test_a_sound_bundle_gives_its_label_s_result_whose_band_holds_the_reference(
+    bundle: str,
+) -> None:
+    label = BY_ID[bundle]
+    assert label["verdict"] == "trustworthy"
+    (verdict,) = verification_report(built(bundle)).qois
+    assert verdict.value == pytest.approx(label["value"], abs=half_unit(label["value"]))
+    assert verdict.uncertainty is not None and verdict.band is not None
+    assert verdict.uncertainty == pytest.approx(
+        label["uncertainty"], abs=half_unit(label["uncertainty"])
+    )
+    low, high = verdict.band
+    assert low <= OUTSIDE[bundle] <= high
+    if "exact" in label:
+        assert label["exact"] == EXACT_FRE
+
+
+def test_b04_the_loss_diverges_over_the_three_coarser_levels() -> None:
+    (q,) = assess_study(load_study(built("b04"))).qois
+    fine, medium, coarse = q.values
+    assert fine - medium == pytest.approx(0.602, abs=5e-4)
+    assert medium - coarse == pytest.approx(0.5555, abs=1e-4)  # the label rounds it to 0.556
+    assert (fine - medium) / (medium - coarse) == pytest.approx(1.08, abs=5e-3)
+
+
+def test_b08_the_finest_triplet_converges_slowly_and_the_coarser_one_diverges() -> None:
+    (q,) = assess_study(load_study(built("b08"))).qois
+    gci = q.gci
+    assert gci.verdict is Verdict.MONOTONIC and gci.richardson is not None
+    assert gci.richardson.p == pytest.approx(0.85, abs=0.01)  # the formal order is 2
+    assert gci.uncertainty is not None
+    assert gci.uncertainty / abs(q.values[0]) == pytest.approx(0.08, abs=0.005)
+    assert gci.triplets[1].verdict is Verdict.DIVERGENT
