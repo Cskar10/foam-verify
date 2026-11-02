@@ -170,6 +170,16 @@ profile = "min"
 axis = "x"
 component = "y"
 """,
+    "u_min": """\
+# The minimum of u on the vertical centreline (255 probes, spacing L/256, parabola at the
+# minimum).
+[[qoi]]
+name = "u_min"
+file = "postProcessing/verticalCentreline/*/U"
+profile = "min"
+axis = "y"
+component = "x"
+""",
     "v_max": """\
 # The maximum of v on the horizontal centreline (255 probes, spacing L/256, parabola at the
 # maximum).
@@ -200,6 +210,19 @@ name = "dp0"
 file = "postProcessing/pressureDrop/*/multiFieldValue.dat"
 column = "Group1"
 reduction = "window_mean"
+""",
+    "xR/H": """\
+# Reattachment length in step heights (H = 25.4 mm): the last change of sign of the lower-wall
+# shear stress along x, from the 11 samples written over the last 2000 iterations.
+[[qoi]]
+name = "xR/H"
+file = "postProcessing/lowerWallShear/*/wallShearStress_lowerWall.raw"
+profile = "last_crossing"
+axis = "x"
+component = "x"
+scale = 39.37007874015748
+window = 1.0
+min_samples = 11
 """,
     "dp": """\
 # Static pressure difference, inlet minus outlet area averages, the mean over the last 10% of
@@ -291,6 +314,16 @@ BUNDLE_LIST = (
 )
 
 
+# Two pilot bundles, for trying the agent harness (eval/run_agents.py) and the scorer before
+# any scored run. Their QoIs are ones no evaluation bundle asks about, so the pilot shows
+# nothing of the evaluation's answers. They are not part of the evaluation.
+PILOT = HERE / "pilot" / "bundles"
+PILOT_LIST = (
+    Bundle("p01", "cavity", CAVITY_HEAD, "u_min", CAVITY_LEVELS),
+    Bundle("p02", "pitzDaily", PITZ_HEAD, "xR/H", PITZ_LEVELS),
+)
+
+
 def manifest(bundle: Bundle) -> str:
     levels = "".join(
         f'\n[[levels]]\nname = "{lv.name}"\npath = "{lv.folder}"\n' for lv in bundle.levels
@@ -313,7 +346,7 @@ def collect_level(bundle: Bundle, level: Level, dest: Path) -> None:
 
 
 def collect() -> None:
-    for bundle in BUNDLE_LIST:
+    for bundle, root in [(b, BUNDLES) for b in BUNDLE_LIST] + [(b, PILOT) for b in PILOT_LIST]:
         missing = [
             f"{lv.run}/{lv.folder}"
             for lv in bundle.levels
@@ -322,7 +355,7 @@ def collect() -> None:
         if missing:
             print(f"{bundle.id}: not run yet: {', '.join(missing)}")
             continue
-        dest = BUNDLES / bundle.id
+        dest = root / bundle.id
         if dest.exists():
             shutil.rmtree(dest)
         dest.mkdir(parents=True)

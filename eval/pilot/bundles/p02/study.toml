@@ -1,0 +1,35 @@
+# pitzDaily: the backward-facing step, simpleFoam, k-epsilon with wall functions. Pressures are
+# kinematic (m^2/s^2).
+name = "pitzDaily"
+dim = 2            # one cell thick, empty front and back
+formal_order = 2
+refined = "mesh"
+grid_sequence = "structured"
+
+[[levels]]
+name = "139k"
+path = "n139k"
+
+[[levels]]
+name = "62k"
+path = "n62k"
+
+[[levels]]
+name = "28k"
+path = "n28k"
+
+[[levels]]
+name = "12k"
+path = "n12k"
+
+# Reattachment length in step heights (H = 25.4 mm): the last change of sign of the lower-wall
+# shear stress along x, from the 11 samples written over the last 2000 iterations.
+[[qoi]]
+name = "xR/H"
+file = "postProcessing/lowerWallShear/*/wallShearStress_lowerWall.raw"
+profile = "last_crossing"
+axis = "x"
+component = "x"
+scale = 39.37007874015748
+window = 1.0
+min_samples = 11
