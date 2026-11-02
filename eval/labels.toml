@@ -1,0 +1,235 @@
+# Labels for the agent evaluation: the expected verdict on each bundle, written and committed
+# before any bundle was built and before any agent saw one. The commit that adds this file is
+# recorded in the project log, and the labels do not change after it. eval/README.md describes the
+# protocol. No agent is ever given this file.
+#
+# A bundle is a grid study, a folder holding study.toml and one OpenFOAM case per level, with one
+# question about one QoI: "Is the reported value of <qoi> converged and mesh-independent? Give
+# the value with its uncertainty, or say why you can't."
+#
+# verdict
+#   trustworthy      the files show the value converged in iterations or time on every level
+#                    behind the result, the levels differing only in the mesh, and a grid study
+#                    that meets the procedure foam-verify follows (Celik et al. 2008; ASME V&V 20):
+#                    three or more grids, refinement ratios of at least 1.3, monotonic
+#                    convergence near the formal order, in the asymptotic range, and coarser
+#                    triplets that converge too. The answer should give the value with a 95%
+#                    uncertainty (value and uncertainty below: foam-verify's, on the committed
+#                    study the bundle copies).
+#   not_trustworthy  at least one of those fails, so the files cannot show the value to be
+#                    converged and mesh-independent, whether or not it happens to be accurate.
+#
+# reasons, the first the main one; an answer that names any of them has found the problem
+#   iterative         the QoI is still changing at the end of the run on a level behind the result
+#   two_grids         fewer than three grids, so the observed order cannot be computed
+#   refinement_ratio  a refinement ratio below 1.3
+#   settings          the levels differ in more than the mesh
+#   grid_convergence  the QoI does not converge with the mesh: divergent or oscillatory, an
+#                     observed order far from the formal order, outside the asymptotic range, a
+#                     coarser triplet that does not converge, or a model that changes between
+#                     levels
+#
+# Scoring, in week 4: an answer that presents the value as converged and mesh-independent is
+# scored trustworthy. One that says it is not, or that it cannot be shown, is scored
+# not_trustworthy, also when it gives an estimate with that caveat stated, such as a two-grid
+# estimate at an assumed order. False trust is an answer scored trustworthy on a not_trustworthy
+# bundle. For the duct bundles, exact is the exact f Re, and the scorer also records whether a
+# stated band contains it.
+#
+# The source studies are those committed at db88676. build says how the bundle is made from them,
+# and new_runs which levels are run again in the pinned container (eval/generate.py).
+
+[[bundle]]
+id = "b01"
+key = "cavity-early"
+source = "studies/cavity"
+build = "all four levels run again as in studies/cavity, but to endTime 1 s instead of 10 s"
+new_runs = ["160x160", "80x80", "40x40", "20x20"]
+qoi = "u(y=0.8516)"
+verdict = "not_trustworthy"
+reasons = ["iterative"]
+why = """
+At t = 1.0 s (10 L/U), u(y=0.8516) is still 0.45% below its steady value on every level and
+changed by 0.32% over the last 0.1 s (from the committed runs to t = 10 s); the steady grid
+uncertainty is 0.053%. The time-step residuals are small throughout, and the drift is almost the
+same on every level, so a grid study of these values alone can look clean.
+"""
+
+[[bundle]]
+id = "b02"
+key = "duct-2"
+source = "studies/duct"
+build = "the committed levels 160x160 and 80x80 only"
+new_runs = []
+qoi = "fRe"
+verdict = "not_trustworthy"
+reasons = ["two_grids"]
+exact = 56.90830753911475
+why = """
+Two grids give no observed order, so the asymptotic range cannot be checked and any uncertainty
+rests on an assumed order (with a safety factor of 3, Roache).
+"""
+
+[[bundle]]
+id = "b03"
+key = "duct-ratio"
+source = "studies/duct"
+build = "levels 160x160 (committed), 145x145, 132x132 and 120x120, the last three run as in studies/duct"
+new_runs = ["145x145", "132x132", "120x120"]
+qoi = "fRe"
+verdict = "not_trustworthy"
+reasons = ["refinement_ratio"]
+exact = 56.90830753911475
+why = """
+Refinement ratios of about 1.10, below the minimum of 1.3 (Celik et al. 2008), so the study does
+not meet the procedure. The value may still be accurate, since the duct converges smoothly; the
+exact f Re lets week 4 report whether a stated band contains it.
+"""
+
+[[bundle]]
+id = "b04"
+key = "pitz-coarse"
+source = "studies/pitzDaily"
+build = "the committed levels 62k, 28k and 12k only"
+new_runs = []
+qoi = "dp0"
+verdict = "not_trustworthy"
+reasons = ["grid_convergence"]
+why = """
+The total-pressure loss diverges on these three levels: it changes by 0.602 from 28k to 62k and
+by 0.556 from 12k to 28k, R = 1.08. Refining moves the walls through the wall-function switch at
+y+ = 11.53 (studies/pitzDaily/README.md).
+"""
+
+[[bundle]]
+id = "b05"
+key = "cavity-schemes"
+source = "studies/cavity"
+build = "levels 160x160, 40x40 and 20x20 committed; 80x80 run again with div(phi,U) Gauss linearUpwind grad(U)"
+new_runs = ["80x80"]
+qoi = "v_min"
+verdict = "not_trustworthy"
+reasons = ["settings"]
+why = """
+The 80x80 level uses div(phi,U) Gauss linearUpwind grad(U), the other levels Gauss linear. The
+levels differ in more than the mesh, so the differences between them are not the discretisation
+error of one scheme.
+"""
+
+[[bundle]]
+id = "b06"
+key = "duct-4"
+source = "studies/duct"
+build = "the committed study, all four levels"
+new_runs = []
+qoi = "fRe"
+verdict = "trustworthy"
+reasons = []
+value = 56.8997
+uncertainty = 0.0108
+exact = 56.90830753911475
+why = """
+Every check holds (studies/duct/report.md): monotonic convergence at p = 1.995, asymptotic-range
+ratio 1.000, the coarser triplet monotonic too, the QoI settled to 1e-12 on every level, the
+levels differing only in the mesh. The exact value lies in the band 56.8890 to 56.9105.
+"""
+
+[[bundle]]
+id = "b07"
+key = "cavity-3-u05"
+source = "studies/cavity"
+build = "the committed levels 160x160, 80x80 and 40x40 only"
+new_runs = []
+qoi = "u(y=0.5)"
+verdict = "trustworthy"
+reasons = []
+value = -0.208892
+uncertainty = 0.000328
+why = """
+The finest triplet of the committed study, which passes every check: monotonic at p = 1.967,
+asymptotic-range ratio 1.004, converged in time on every level. Marchi, Suero and Araki's (2009)
+-0.2091491 lies in the band -0.209220 to -0.208564.
+"""
+
+[[bundle]]
+id = "b08"
+key = "pitz-4"
+source = "studies/pitzDaily"
+build = "the committed study, all four levels"
+new_runs = []
+qoi = "dp0"
+verdict = "not_trustworthy"
+reasons = ["grid_convergence"]
+why = """
+The finest triplet converges monotonically but at p = 0.85, far below the formal order of 2, and
+on its own would pass at +/- 8%. The coarser triplet diverges, and the wall model changes between
+levels: y+ falls through the wall-function switch at 11.53 between 12k and 62k
+(studies/pitzDaily/README.md).
+"""
+
+[[bundle]]
+id = "b09"
+key = "cavity-4-vmax"
+source = "studies/cavity"
+build = "the committed study, all four levels"
+new_runs = []
+qoi = "v_max"
+verdict = "trustworthy"
+reasons = []
+value = 0.179365
+uncertainty = 0.000257
+why = """
+Every check holds (studies/cavity/report.md): monotonic at p = 2.152 (U at the formal order 2),
+asymptotic-range ratio 1.003, the coarser triplet monotonic too, converged in time on every level.
+Marchi, Suero and Araki's (2009) 0.1795728 lies in the band 0.179108 to 0.179622.
+"""
+
+[[bundle]]
+id = "b10"
+key = "cavity-early-fine"
+source = "studies/cavity"
+build = "160x160 run again to endTime 1 s; 80x80, 40x40 and 20x20 committed (endTime 10 s)"
+new_runs = ["160x160"]
+qoi = "u(y=0.5)"
+verdict = "not_trustworthy"
+reasons = ["iterative"]
+why = """
+The finest level stops at t = 1.0 s, where u(y=0.5) is still 0.096% from its steady value and
+changed by 0.071% over the last 0.1 s: 0.6 of the steady grid uncertainty (0.157%), where ASME
+V&V 20 asks for iterative error two orders smaller. The finest level's endTime also differs from
+the others'.
+"""
+
+[[bundle]]
+id = "b11"
+key = "duct-3"
+source = "studies/duct"
+build = "the committed levels 160x160, 80x80 and 40x40 only"
+new_runs = []
+qoi = "fRe"
+verdict = "trustworthy"
+reasons = []
+value = 56.8997
+uncertainty = 0.0108
+exact = 56.90830753911475
+why = """
+The finest triplet of the committed study, the same as b06's, so the same result; three grids
+are enough for the procedure. The exact value lies in the band 56.8890 to 56.9105.
+"""
+
+[[bundle]]
+id = "b12"
+key = "pitz-residuals"
+source = "studies/pitzDaily"
+build = "all four levels run again as in studies/pitzDaily, with the tutorial's residualControl restored (p 1e-2; U, k and epsilon 1e-3) and the pressure drop written every iteration"
+new_runs = ["139k", "62k", "28k", "12k"]
+qoi = "dp"
+verdict = "not_trustworthy"
+reasons = ["iterative", "grid_convergence"]
+why = """
+Each run stops when its residuals fall below the tutorial's residualControl, after about 280 to
+1430 iterations from 12k to 139k (predicted from the committed runs' residuals), and the log says
+the run converged. dp is still changing there by 7 to 23% of its value over the last 50
+iterations, and run to 8000 iterations the same levels settle up to 15% away (studies/pitzDaily).
+Even run fully, the case does not converge with the mesh.
+"""
