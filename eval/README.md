@@ -38,3 +38,36 @@ README, no reference values (the duct's exact f Re among them), no comments that
 wrong, and neutral names. Seven are cut from the committed studies under `studies/`; five need
 new runs in the pinned container (`studies/README.md`), made by
 [`generate.py`](generate.py) and [`run.sh`](run.sh).
+
+## Building and checking
+
+```console
+$ python3 eval/generate.py setup
+$ podman run --rm -v "$PWD":/work:z -w /work --entrypoint /bin/bash $IMG eval/run.sh
+$ python3 eval/generate.py collect
+```
+
+`$IMG` is the pinned image in `studies/README.md`. The new runs take about 7.5 minutes on 24
+cores. `eval/build/`, the full cases, is not committed.
+
+[`tests/test_eval.py`](../tests/test_eval.py) checks every built bundle against its label from
+its files and the committed studies, not from foam-verify: a run stopped early reproduces the
+committed run's values up to its stop, sample for sample; a changed setting is the only
+difference from the committed case; the refinement ratios and cell counts are what the label
+says. It also checks that no bundle holds a report, a README or a telling comment. Last, it
+records foam-verify's own verdict on each bundle: it must match the label, failing a check that
+finds the label's main reason.
+
+## As built
+
+- **b12** (built 2 Nov): the label quotes values predicted from the committed runs' residuals,
+  sampled every 10 iterations, at iterations 280, 440, 820 and 1430. The runs stopped at 279,
+  440, 811 and 1419. There dp changes by 6.8 to 22% of its settled value over the last 50
+  iterations (the label says 7 to 23%) and lies up to 12.6% from it (the label says 15%). The
+  verdict and the reasons are unaffected, and the label stays as committed.
+- **The cavity bundles** read their point QoIs from `postProcessing/ghiaPoints`, the name the
+  committed runs gave those probes. An agent may compare the values with Ghia et al.'s (1982)
+  from memory, and those differ from the converged solution by 1.3 to 2.1% at all three points
+  (`studies/cavity/README.md`). The name is the same in both conditions.
+- foam-verify's own verdict matches the label on every bundle built so far, failing the check
+  that finds the label's main reason.

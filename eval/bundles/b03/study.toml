@@ -1,0 +1,33 @@
+# Square duct, fully developed laminar flow, Re = 100.
+name = "square-duct"
+dim = 2            # the cross-section is refined; the one cyclic cell along the flow is not
+formal_order = 2
+refined = "mesh"
+grid_sequence = "structured"
+
+[[levels]]
+name = "160x160"
+path = "n160"
+
+[[levels]]
+name = "145x145"
+path = "n145"
+
+[[levels]]
+name = "132x132"
+path = "n132"
+
+[[levels]]
+name = "120x120"
+path = "n120"
+
+# Darcy f Re = 8 tau_w D_h / (nu Ubar) = 800 tau_w with D_h = 1, nu = 0.01, Ubar = 1. With
+# this function object's sign convention the x component is negative for flow along +x, hence
+# the minus sign.
+[[qoi]]
+name = "fRe"
+file = "postProcessing/wallStress/*/surfaceFieldValue.dat"
+column = "areaAverage(wallShearStress)"
+component = "x"
+reduction = "last"
+scale = -800.0
