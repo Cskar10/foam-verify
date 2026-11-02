@@ -21,6 +21,9 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: a scorer test reads the labels from the commit that fixed them (90d5c4f).
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: ${{ matrix.python-version }}
