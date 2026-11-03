@@ -3,11 +3,15 @@ the sandbox it runs in, and how a batch reads transcripts and decides to stop.""
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import os
+import socket
 import sys
 import time
 import tomllib
+import urllib.error
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -239,7 +243,9 @@ def fake_batch(
 ) -> tuple[int, list[tuple[str, str]]]:
     calls: list[tuple[str, str]] = []
 
-    def run_one(bundle: Path, condition: str, model: str, transcript: Path) -> dict[str, Any]:
+    def run_one(
+        bundle: Path, condition: str, model: str, transcript: Path, server: Any = None
+    ) -> dict[str, Any]:
         calls.append((bundle.name, condition))
         transcript.parent.mkdir(parents=True, exist_ok=True)
         transcript.write_text("{}\n")
@@ -338,6 +344,29 @@ def test_a_timed_out_run_counts_and_is_not_run_again(
     assert calls == [("p01", "B"), ("p02", "A"), ("p02", "B")]
 
 
+def test_keep_going_runs_on_past_a_timeout_but_not_past_a_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    timed_out = record(timed_out=True, is_error=None, exit_code=-9, final=None)
+    calls: list[str] = []
+
+    def run_one(
+        bundle: Path, condition: str, model: str, transcript: Path, server: Any = None
+    ) -> dict[str, Any]:
+        calls.append(f"{bundle.name} {condition}")
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.write_text("{}\n")
+        return {**[timed_out, record(), record(is_error=True), record()][len(calls) - 1]}
+
+    monkeypatch.setattr(ra, "run_one", run_one)
+    monkeypatch.setattr(ra, "git_head", lambda: "abc123")
+    monkeypatch.setattr(ra, "token_seconds_left", lambda: 10 * 3600.0)
+    bundles = [EVAL / "pilot" / "bundles" / "p01", EVAL / "pilot" / "bundles" / "p02"]
+    done = ra.run_batch(bundles, ["A", "B"], 1, "m", tmp_path, keep_going=True)
+    assert done == 3 and calls == ["p01 A", "p01 B", "p02 A"]
+    assert index_of(tmp_path)[2]["set_aside"] == "error"
+
+
 def test_scored_runs_need_committed_code(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -356,3 +385,214 @@ def test_a_batch_will_not_start_a_run_the_login_could_expire_in(
 ) -> None:
     done, calls = fake_batch(monkeypatch, tmp_path, [record()], token_s=ra.TIMEOUT_S)
     assert done == 0 and calls == []
+
+
+def test_summarise_counts_compactions(tmp_path: Path) -> None:
+    transcript = tmp_path / "t.jsonl"
+    events = [
+        {"type": "system", "subtype": "init"},
+        {"type": "system", "subtype": "compact_boundary"},
+        {"type": "result", "is_error": False, "result": "x"},
+    ]
+    transcript.write_text("".join(json.dumps(e) + "\n" for e in events))
+    assert ra.summarise(transcript).compactions == 1
+
+
+def test_progress_events_are_dropped_and_counted(tmp_path: Path) -> None:
+    transcript = tmp_path / "t.jsonl"
+    events = [
+        {"type": "system", "subtype": "init"},
+        {"type": "system", "subtype": "thinking_tokens", "estimated_tokens": 1},
+        {"type": "system", "subtype": "thinking_tokens", "estimated_tokens": 2},
+        {"type": "assistant", "message": {"content": [{"type": "thinking", "thinking": "hm"}]}},
+        {"type": "result", "is_error": False, "result": "x"},
+    ]
+    transcript.write_text("".join(json.dumps(e) + "\n" for e in events) + "not json\n")
+    assert ra.drop_progress(transcript) == 2
+    kept = transcript.read_text().splitlines()
+    assert kept[-1] == "not json"
+    assert [json.loads(line)["type"] for line in kept[:-1]] == ["system", "assistant", "result"]
+    assert ra.drop_progress(transcript) == 0
+
+
+def test_the_home_folder_is_written_as_home_user(tmp_path: Path) -> None:
+    transcript = tmp_path / "t.jsonl"
+    saved = f"Output too large. Full output saved to: {Path.home()}/.claude/projects/-study/x.txt"
+    transcript.write_text(json.dumps({"type": "user", "content": saved}) + "\n")
+    assert ra.rename_home(transcript) == 1
+    text = transcript.read_text()
+    assert "/home/user/.claude/projects/-study/x.txt" in text and str(Path.home()) not in text
+    assert ra.rename_home(transcript) == 0
+
+
+# --- a local model ---------------------------------------------------------------------------
+
+PROPS: dict[str, Any] = {
+    "build_info": "b11678-b6334e37e",
+    "model_path": "/models/qwen/Qwen3.8-27B-UD-Q6_K.gguf",
+    "model_alias": "qwen-local",
+    "total_slots": 1,
+    "default_generation_settings": {
+        "n_ctx": 118784,
+        "params": {
+            "temperature": 0.699999988079071,
+            "top_k": 20,
+            "top_p": 0.800000011920929,
+            "min_p": 0.0,
+        },
+    },
+}
+
+
+PROCESS = {"command": ["~/llama-server", "--port", "8094"], "env": ["GGML_VK_DISABLE_COOPMAT2=1"]}
+
+
+def local(**changes: Any) -> Any:
+    record = {**ra.describe(PROPS), **PROCESS, "model_sha256": "f" * 64, **changes}
+    return ra.Server("http://127.0.0.1:8094", record)
+
+
+def same_process(url: str) -> dict[str, list[str]]:
+    return PROCESS
+
+
+def test_a_server_is_recorded_by_its_model_file_s_hash_not_its_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    weights = tmp_path / "Qwen3.8-27B-UD-Q6_K.gguf"
+    weights.write_bytes(b"weights")
+    asked: list[str] = []
+
+    def server_props(url: str) -> dict[str, Any]:
+        asked.append(url)
+        return {**PROPS, "model_path": str(weights)}
+
+    monkeypatch.setattr(ra, "server_props", server_props)
+    monkeypatch.setattr(ra, "server_process", same_process)
+    server = ra.local_server("http://127.0.0.1:8094/", "qwen-local")
+    assert server.url == "http://127.0.0.1:8094" and asked == ["http://127.0.0.1:8094"]
+    assert server.record == {
+        "build": "b11678-b6334e37e",
+        "model_file": "Qwen3.8-27B-UD-Q6_K.gguf",
+        "model_alias": "qwen-local",
+        "n_ctx": 118784,
+        "slots": 1,
+        "sampling": {"temperature": 0.7, "top_k": 20, "top_p": 0.8, "min_p": 0.0},
+        **PROCESS,
+        "model_sha256": hashlib.sha256(b"weights").hexdigest(),
+    }
+    assert str(tmp_path) not in json.dumps(server.record)
+    with pytest.raises(SystemExit, match="serves 'qwen-local', not 'other'"):
+        ra.local_server("http://127.0.0.1:8094", "other")
+
+
+def test_a_local_model_gets_its_server_and_no_login(tmp_path: Path) -> None:
+    server = local()
+    env = ra.environment(server)
+    assert env["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8094"
+    assert env["ANTHROPIC_AUTH_TOKEN"] == ra.LOCAL_TOKEN
+    assert env["ANTHROPIC_SMALL_FAST_MODEL"] == env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] == "qwen-local"
+    assert env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"] == "118784"
+    assert env["API_TIMEOUT_MS"] == str(ra.TIMEOUT_S * 1000)
+    assert env["CLAUDE_CODE_MODEL_CAPABILITIES"] == "qwen-local=-mid_conv_system"
+    assert ra.environment().items() <= env.items()
+    argv = ra.sandbox(["claude"], tmp_path, CLAUDE, server=True, local=server)
+    assert str(ra.CREDENTIALS) not in binds(argv)
+    assert {argv[i + 1]: argv[i + 2] for i, a in enumerate(argv) if a == "--setenv"} == env
+    # Claude's runs keep the login file and get none of the local settings.
+    claude = ra.sandbox(["claude"], tmp_path, CLAUDE, server=True)
+    assert binds(claude)[str(ra.CREDENTIALS)] == str(ra.CREDENTIALS)
+    local_only = ("ANTHROPIC_", "API_TIMEOUT", "CLAUDE_CODE_MAX", "CLAUDE_CODE_MODEL")
+    assert not [a for a in claude if a.startswith(local_only)]
+
+
+def test_the_server_must_answer_as_it_did_when_the_batch_started(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = local()
+    answers = iter([PROPS, {**PROPS, "default_generation_settings": {"n_ctx": 65536}}])
+
+    def server_props(url: str) -> dict[str, Any]:
+        return next(answers)
+
+    monkeypatch.setattr(ra, "server_props", server_props)
+    monkeypatch.setattr(ra, "server_process", same_process)
+    assert ra.server_problem(server) is None
+    assert "does not answer" in (ra.server_problem(server) or "")  # no params: not llama-server
+    settings = {**PROPS["default_generation_settings"], "n_ctx": 65536}
+    answers = iter([{**PROPS, "default_generation_settings": settings}])
+    assert "has changed" in (ra.server_problem(server) or "")
+
+    def gone(url: str) -> dict[str, Any]:
+        raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(ra, "server_props", gone)
+    assert "does not answer" in (ra.server_problem(server) or "")
+
+    def restarted(url: str) -> dict[str, list[str]]:
+        return {**PROCESS, "command": [*PROCESS["command"], "--reasoning-budget", "0"]}
+
+    def props(url: str) -> dict[str, Any]:
+        return PROPS
+
+    monkeypatch.setattr(ra, "server_props", props)
+    monkeypatch.setattr(ra, "server_process", restarted)
+    assert "has changed" in (ra.server_problem(server) or "")
+
+
+@pytest.mark.skipif(sys.platform != "linux" or ra.shutil.which("ss") is None, reason="needs ss")
+def test_the_server_process_is_found_by_its_port() -> None:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        port = listener.getsockname()[1]
+        found = ra.server_process(f"http://127.0.0.1:{port}")
+    own = Path(f"/proc/{os.getpid()}/cmdline").read_bytes().decode().split("\0")
+    home = str(Path.home())
+    assert found["command"] == [arg.replace(home, "~") for arg in own if arg]
+    assert all(s.startswith(("GGML_", "LLAMA_")) for s in found["env"])
+    with pytest.raises(SystemExit, match="no single local process"):
+        ra.server_process(f"http://127.0.0.1:{port}")
+
+
+def test_a_local_batch_reads_no_login_and_stops_when_the_server_does(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server = local()
+    given: list[Any] = []
+    problems = iter([None, None, "the server at http://127.0.0.1:8094 does not answer"])
+
+    def run_one(
+        bundle: Path, condition: str, model: str, transcript: Path, server: Any = None
+    ) -> dict[str, Any]:
+        given.append(server)
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.write_text("{}\n")
+        return {**record(), "condition": condition}
+
+    def no_login() -> float:
+        raise AssertionError("a local model's batch reads no login")
+
+    monkeypatch.setattr(ra, "run_one", run_one)
+    monkeypatch.setattr(ra, "git_head", lambda: "abc123")
+    monkeypatch.setattr(ra, "token_seconds_left", no_login)
+
+    def server_problem(s: Any) -> str | None:
+        return next(problems)
+
+    monkeypatch.setattr(ra, "server_problem", server_problem)
+    bundles = [EVAL / "pilot" / "bundles" / "p01", EVAL / "pilot" / "bundles" / "p02"]
+    done = ra.run_batch(bundles, ["A", "B"], 1, "qwen-local", tmp_path, server)
+    assert done == 2 and given == [server, server]
+
+
+def test_a_local_model_must_be_named(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def which(name: str) -> str:
+        return f"/usr/bin/{name}"
+
+    monkeypatch.setattr(ra.shutil, "which", which)
+    with pytest.raises(SystemExit) as stop:
+        ra.main(["--server", "http://127.0.0.1:8094", "--bundles", "b01"])
+    assert stop.value.code == 2 and "--model" in capsys.readouterr().err

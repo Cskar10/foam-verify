@@ -433,15 +433,25 @@ def test_an_unknown_bundle_or_a_missing_transcript_is_refused(tmp_path: Path) ->
 def test_the_pilot_scores_as_committed(tmp_path: Path) -> None:
     labels = sc.load_labels(sc.PILOT_LABELS)
     rows = sc.score_runs(PILOT_RUNS, labels, clean=False)
-    assert [(r["bundle"], r["condition"], r["verdict"], r["correct"]) for r in rows] == [
+    opus = [r for r in rows if r["model"] == "claude-opus-5-5"]
+    assert [(r["bundle"], r["condition"], r["verdict"], r["correct"]) for r in opus] == [
         ("p01", "A", "trustworthy", True),
         ("p01", "B", "trustworthy", True),
         ("p02", "A", "not_trustworthy", True),
         ("p02", "B", "not_trustworthy", True),
     ]
-    assert [r["value"] for r in rows] == [-0.21376, -0.21376, 6.84, 6.837916]
-    assert [r["uncertainty"] for r in rows] == [0.00037, 0.000366, None, None]
-    assert all(r["in_label_band"] for r in rows if r["bundle"] == "p01")
+    assert [r["value"] for r in opus] == [-0.21376, -0.21376, 6.84, 6.837916]
+    assert [r["uncertainty"] for r in opus] == [0.00037, 0.000366, None, None]
+    assert all(r["in_label_band"] for r in opus if r["bundle"] == "p01")
+    # The local model on p01: the first try set aside (its chat template refused Claude Code's
+    # request), then A ran out of time and B was right.
+    qwen = [r for r in rows if r["model"] == "qwen3.8-27b-ud-q6k"]
+    assert [(r["condition"], r["status"], r.get("verdict"), r.get("value")) for r in qwen] == [
+        ("A", "set_aside", None, None),
+        ("A", "timed_out", None, None),
+        ("B", "finished", "trustworthy", -0.21376),
+    ]
+    assert qwen[2]["uncertainty"] == 0.000366 and qwen[2]["in_label_band"]
     # The committed scores are what the scorer writes now.
     copy = tmp_path / "runs"
     shutil.copytree(PILOT_RUNS, copy)
@@ -455,3 +465,33 @@ def test_the_command_line_refuses_what_it_cannot_score(
 ) -> None:
     assert sc.main(["--runs", str(tmp_path)]) == 2
     assert "no runs.jsonl" in capsys.readouterr().err
+
+
+LOCAL = {
+    "build": "b11678-b6334e37e",
+    "model_file": "q.gguf",
+    "model_alias": "m",
+    "n_ctx": 118784,
+    "slots": 1,
+    "sampling": {"temperature": 0.7, "top_k": 20, "top_p": 0.8, "min_p": 0.0},
+    "model_sha256": "f" * 64,
+}
+
+
+def test_a_local_model_has_no_cost_at_api_prices(tmp_path: Path) -> None:
+    runs = Runs(tmp_path)
+    runs.add("b06", "A", 1, [init("A"), result(YES_DUCT)], server=LOCAL, total_cost_usd=0.4)
+    rows = sc.score_runs(tmp_path, LABELS, clean=True)
+    assert rows[0]["total_cost_usd"] is None and rows[0]["correct"]
+    assert "| m | A | 1 | 10 s | 2 | - | 0 | 0 |" in sc.markdown(rows, LABELS, "the labels")
+
+
+@pytest.mark.parametrize("second", [{**LOCAL, "n_ctx": 65536}, None])
+def test_every_run_of_a_model_is_on_the_same_server(
+    second: dict[str, Any] | None, tmp_path: Path
+) -> None:
+    runs = Runs(tmp_path)
+    runs.add("b06", "A", 1, [init("A"), result(YES_DUCT)], server=LOCAL)
+    runs.add("b06", "A", 2, [init("A"), result(YES_DUCT)], server=second)
+    with pytest.raises(sc.ScoreError, match="a server other than its first run's"):
+        sc.score_runs(tmp_path, LABELS, clean=True)

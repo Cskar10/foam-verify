@@ -255,6 +255,7 @@ def score_runs(out: Path, labels: dict[str, Label], *, clean: bool) -> list[dict
         raise ScoreError(f"no runs.jsonl in {out}")
     rows: list[dict[str, Any]] = []
     slots: set[tuple[str, str, str, int]] = set()
+    servers: dict[str, Any] = {}  # by model: the local server its first run recorded, or None
     for number, text in enumerate(index.read_text(encoding="utf-8").splitlines(), start=1):
         if not text.strip():
             continue
@@ -291,6 +292,12 @@ def score_runs(out: Path, labels: dict[str, Label], *, clean: bool) -> list[dict
         if slot in slots:
             raise ScoreError(f"{where}: a second run that counts for {slot}")
         slots.add(slot)
+        server = record.get("server")
+        if servers.setdefault(str(record["model"]), server) != server:
+            raise ScoreError(
+                f"{where}: {record['model']} ran on a server other than its first run's: "
+                f"{server}, not {servers[str(record['model'])]}"
+            )
         line = final_line(summary.answer)
         if line != record.get("final"):
             raise ScoreError(f"{where}: the index's FINAL line is not the transcript's")
@@ -305,7 +312,8 @@ def score_runs(out: Path, labels: dict[str, Label], *, clean: bool) -> list[dict
                 **score(label, answer),
                 "duration_s": record.get("duration_s"),
                 "num_turns": record.get("num_turns"),
-                "total_cost_usd": record.get("total_cost_usd"),
+                # API prices are Claude's; a local model has none.
+                "total_cost_usd": None if server else record.get("total_cost_usd"),
                 "permission_denials": record.get("permission_denials"),
                 "foam_verify": record.get("foam_verify"),
             }
@@ -492,14 +500,15 @@ def markdown(rows: Sequence[dict[str, Any]], labels: dict[str, Label], source: s
         mine = [r for r in counted if r["model"] == model and r["condition"] == condition]
         times = [float(r["duration_s"]) for r in mine if r["duration_s"] is not None]
         turns = [int(r["num_turns"]) for r in mine if r["num_turns"] is not None]
-        cost = sum(float(r["total_cost_usd"] or 0) for r in mine)
+        costs = [float(r["total_cost_usd"]) for r in mine if r["total_cost_usd"] is not None]
+        cost = f"${sum(costs):.2f}" if costs else "-"
         refused = sum(int(r["permission_denials"] or 0) for r in mine)
         timed_out = sum(r["status"] == "timed_out" for r in mine)
         median_time = f"{statistics.median(times):.0f} s" if times else "-"
         median_turns = f"{statistics.median(turns):g}" if turns else "-"
         out.append(
             f"| {model} | {condition} | {len(mine)} | {median_time} | {median_turns} | "
-            f"${cost:.2f} | {refused} | {timed_out} |"
+            f"{cost} | {refused} | {timed_out} |"
         )
     aside = [r for r in rows if r["status"] == "set_aside"]
     if aside:

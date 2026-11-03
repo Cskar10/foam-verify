@@ -83,6 +83,42 @@ Each run is isolated three ways:
   skills or slash commands, no MCP server but foam-verify's, and an environment built from
   scratch.
 
+A local model runs through the same harness, behind llama.cpp's `llama-server`, which answers
+Anthropic's Messages API:
+
+```console
+$ uv run --extra mcp python eval/run_agents.py --server http://127.0.0.1:8094 \
+      --model qwen3.8-27b-ud-q6k --runs 1
+```
+
+Claude Code is the same binary with the same command line, and sends the local model what it
+sends Claude: the same system prompt, tools and question, with adaptive thinking at high effort.
+Only the environment differs. The server's URL and a placeholder key stand in for the login,
+so the sandbox holds no login file. Any background request names the same model. The server's
+context window is given in `CLAUDE_CODE_MAX_CONTEXT_TOKENS`: Claude Code does not know a local
+model's window, and keeps a session within the one it is given, compacting it if need be. The
+request timeout is 30 minutes, the run's own limit, since a long prompt can take a local model
+minutes. And `CLAUDE_CODE_MODEL_CAPABILITIES` tells Claude Code that the model takes no system
+message after the first. Claude Code sends Claude its environment notes (working folder,
+platform, date) as a system message after the question; Qwen's chat template refuses that
+message, so Claude Code puts the same notes at the head of the question, as system reminders.
+
+Every run on a local model records the server: as it reports itself, the llama.cpp build, the
+model file and its sha256, the context window, the slots and the sampling defaults; and the
+command line and `GGML_`/`LLAMA_` environment of the process that listens on its port, which say
+what `/props` does not (the cache types or chat template arguments, say), with the home folder
+written as `~`. A batch stops before a run if the server does not answer or has changed. With
+`--keep-going`, a batch goes on past a run that times out, which counts as always; a run set
+aside still stops it.
+
+From the local model's runs on, a transcript is Claude Code's stream-json output as it ran
+with two changes, and the run's line in `runs.jsonl` counts each. Its `thinking_tokens`
+events are dropped: each holds only a running count of thinking tokens, and `llama-server`
+streams thinking a token at a time, so Claude Code writes one per token, megabytes per run;
+the thinking itself is in the assistant messages, and the totals in the result. And the home
+folder is written as `/home/user`, as in the Opus 5.5 runs: it appears where Claude Code saved
+a tool output too long to show, in the sandbox's own home, whose path is the user's.
+
 Every run appends a line to `runs.jsonl` beside the transcripts: the bundle, condition, model and
 foam-verify commit, the time taken, the turns, the token usage and its cost at API prices, whether
 the bundle copy was unchanged, and the answer's FINAL line. The script never reads the labels. A
@@ -123,8 +159,9 @@ and condition:
 - **The protocol.** The scorer refuses to score at all if a run that counts broke the protocol:
   a working folder other than `/study`, another model, tools or servers other than the
   condition's (Read, Glob and Grep; in B also foam-verify's tools, with its server connected), a
-  bundle copy that changed, uncommitted code, a second run for the same slot, or a line of
-  `runs.jsonl` that disagrees with its transcript.
+  bundle copy that changed, uncommitted code, a second run for the same slot, a line of
+  `runs.jsonl` that disagrees with its transcript, or a run of a model on a server other than
+  the one its first run recorded.
 - **The verdict** is read from the answer's FINAL line alone: the last line that starts with
   `FINAL:` (after any Markdown marks, in any case) and names `converged`. The rest of the answer
   is not read, so an answer whose text and FINAL line disagree is scored by its line.
@@ -151,6 +188,8 @@ and condition:
   committed for that reading.
 - **Rates come with their counts**, per model and condition. Three runs of one bundle are not
   independent, so the table by bundle shows every verdict.
+- **Cost** is Claude Code's own count at API prices, for Claude. A local model has none, and
+  its runs show `-`.
 
 ## Pilot
 
@@ -179,6 +218,43 @@ The pilot also tries the scorer, against [`pilot/labels.toml`](pilot/labels.toml
 p01 and p02 in the same form, taken from the committed studies' reports and, unlike the
 evaluation's, written after the pilot ran. All four verdicts are right, and on p01 both values lie
 in the label's band ([`pilot/runs/scores.md`](pilot/runs/scores.md)).
+
+### The local model
+
+On 3 Nov 2026 p01 also ran on Qwen3.8 27B (`qwen3.8-27b-ud-q6k`: Unsloth's UD-Q6_K GGUF,
+sha256 `c9c206812fbe4ac7b76a729e25928b63f2ae89d37f69da7a71c20aec763cd436`), served by
+llama.cpp b11678 (Vulkan) on an RTX 5090 Laptop GPU (24 GB):
+
+```console
+$ GGML_VK_DISABLE_COOPMAT2=1 llama-server -m Qwen3.8-27B-UD-Q6_K.gguf --alias qwen3.8-27b-ud-q6k \
+    --device Vulkan1 -ngl 99 -fit off -c 118784 -ctk q8_0 -ctv q4_0 -fa on -b 2048 -ub 512 \
+    -np 1 -t 8 --jinja --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0 --host 127.0.0.1 --port 8094
+```
+
+The cache types are what fits a 118,784-token window beside the weights, and the coopmat2 path is
+off because with it this file's prompt processing collapses past about 12,000 tokens. The server
+ignores Claude Code's `thinking` and `effort` fields, so the model thinks as its chat template
+does by default, at effort `xhigh`; the template also maps the `high` that Claude Code asks for to
+`xhigh`.
+
+- **The first run was set aside.** Qwen's chat template refused Claude Code's request (a system
+  message after the question), and the server answered every try with an error. With
+  `CLAUDE_CODE_MODEL_CAPABILITIES` (Running the agents, above) the runs went through.
+- **Condition B was right**, in 44 s and 3 turns, with foam-verify's value and U
+  (−0.21376 ± 0.000366), as Opus 5.5 gave.
+- **Condition A gave no answer in 30 minutes**, which counts as no verdict; Opus 5.5 took 102 s.
+  The agent read the raw probe files a few lines at a time (25 tool calls), thought for about
+  12,000 tokens at about 21 tokens a second, filled the window, and Claude Code was compacting
+  the session when the time ran out.
+- **Thinking off does not change that.** A trial with thinking off at the server
+  (`--chat-template-kwargs '{"enable_thinking":false}'`), outside the record, had made 38 tool
+  calls and been compacted once after 12 minutes on p01 in condition A, with no answer yet. The
+  scored runs keep the thinking that Claude Code asks for, as Opus 5.5 had.
+
+These runs predate three changes to the harness. Their `thinking_tokens` events were dropped, and
+the home folder written as `/home/user`, afterwards with the harness's own functions
+(`drop_progress`, `rename_home`), and their index lines count both; and their server record
+lacks the command line and environment that it now holds.
 
 ## The scored runs
 
