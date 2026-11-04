@@ -75,7 +75,8 @@ show one thing:
 **Rerun from scratch.** On 4 Nov 2026 all twelve cases ran again from a fresh clone, in the same
 pinned image, following each study's README. Apart from the dates, host names, process IDs and
 run times in the solver logs, every committed output came back byte-identical, and the three
-reports regenerated unchanged.
+reports regenerated unchanged. foam-verify's MCP server, asked for each study's report over stdio
+as an agent's client would, gives the same verdicts.
 
 **Does the duct's uncertainty band contain the exact answer? Yes.** For fully developed laminar
 flow in a square duct, the Darcy friction factor is f Re = 56.9083 (the series solution, Shah and
