@@ -280,3 +280,5 @@ Apache-2.0; only its answers are committed.
 ## Author
 
 [Chris Skarakis](https://www.linkedin.com/in/chris-skarakis-511276217/)
+
+Built with AI assistance; the tests and the published reference values carry the claims.
