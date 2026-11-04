@@ -258,13 +258,16 @@ lacks the command line and environment that it now holds.
 
 ## The scored runs
 
-The 72 scored runs, three of each bundle in each condition, ran on 2 Nov 2026 in three batches of
-24, each batch one run of every bundle in both conditions. All ran from foam-verify at `5239b11`
-on Claude Code 2.1.312 and Claude Opus 5.5 (`claude-opus-5-5`), and all 72 count: none was set
-aside, timed out or hit the usage limit, no tool call was refused, and every bundle copy was
-unchanged. Together they took 40 minutes and $14.90 at API prices. Transcripts, index and scores
-are in [`runs/`](runs/), and [`runs/scores.md`](runs/scores.md) lists every verdict and stated
-value:
+Each model ran 72 scored runs, three of each bundle in each condition, in three batches of 24,
+each batch one run of every bundle in both conditions. Transcripts, index and scores are in
+[`runs/`](runs/), and [`runs/scores.md`](runs/scores.md) lists every verdict and stated value.
+
+### Claude Opus 5.5
+
+Claude Opus 5.5's runs (`claude-opus-5-5`) ran on 2 Nov 2026, all from foam-verify at `5239b11`
+on Claude Code 2.1.312, and all 72 count: none was set aside, timed out or hit the usage limit,
+no tool call was refused, and every bundle copy was unchanged. Together they took 40 minutes and
+$14.90 at API prices:
 
 | Condition | Verdict right | False trust | Sound bundles rejected | Bands holding the exact value | Median time | Median turns | Cost at API prices |
 |---|---|---|---|---|---|---|---|
@@ -280,6 +283,38 @@ Eight paths in seven of condition A's transcripts point under the home folder, w
 saved a tool output too long to show in full; the folder exists only inside that run's sandbox.
 The user name in those paths is replaced with `user`; nothing else in any transcript differs from
 the recording.
+
+### Qwen3.8 27B, the local model
+
+Qwen3.8 27B's runs (`qwen3.8-27b-ud-q6k`) ran on 3 and 4 Nov 2026, all from foam-verify at
+`43dbc32` on Claude Code 2.1.312 and one server, started with the command under
+[The local model](#the-local-model); its record is the same in every run. The first batch ran
+its twelve runs in condition B before its twelve in A. All 72 count, and one more run was set
+aside: in b07's second run in condition A, Claude Code's compaction of the session failed, the
+model's summary coming back empty ("summarization produced empty response"), and Claude Code
+ended the run with an error. The slot ran again, and that run counts. No tool call was refused
+and every bundle copy was unchanged. Together they took 19.7 hours:
+
+| Condition | Verdict right | False trust | Sound bundles rejected | No verdict | Bands holding the exact value | Median time |
+|---|---|---|---|---|---|---|
+| A, the files only | 4 of 36 (11%) | 0 of 24 (0%) | 0 of 12 | 32 | 2 of 2 | 30 min, the limit |
+| B, with foam-verify | 35 of 36 (97%) | 0 of 24 (0%) | 0 of 12 | 1 | 9 of 9 | 72 s |
+
+Every verdict the model gave was right, 39 of 39; each run without one reached the 30-minute
+limit. In condition A it answered four times in 36 runs, after 23 to 27 minutes: b03 and b11 in
+the first run, b04 in the second and b06 in the third, no bundle twice. Its false trust of none
+in A therefore rests on two verdicts on the 24 runs of broken bundles. Most of what it wrote was
+thinking, 93% of the characters in condition A and 87% in B, at about 23 tokens a second, and
+Claude Code compacted seven of its runs in A and one in B, once each. In condition B it gave
+the same verdict in all three runs of eleven bundles. On b10 it asked foam-verify for the report
+and then read the raw probe histories in every run: the first run reached the limit, and the
+other two said no after 15 and 13 minutes.
+
+The index and scores already held the earlier runs' lines, not yet committed, and the harness
+counts any change to a tracked file as uncommitted code. So at each start after the first, those
+three files were kept out of that check (moved aside, or marked unchanged for git); the code was
+`43dbc32`'s throughout. The harness wrote the home folder as `/home/user` in nine places in five
+transcripts, counted by `home_paths_renamed` in the index.
 
 ## Building and checking
 
