@@ -72,7 +72,10 @@ show one thing:
 | Lid-driven cavity, Re = 100 | six velocities on the centrelines | a clean pass; published values within the uncertainty, or the difference explained | clean pass, all six | [report](studies/cavity/report.md) |
 | `pitzDaily`, k-epsilon with wall functions | two pressure differences, reattachment length | a refusal if refinement moves y+ through the wall-function range | refused: none of the three converges with the mesh | [report](studies/pitzDaily/report.md) |
 
-<<RERUN>>
+**Rerun from scratch.** On 4 Nov 2026 all twelve cases ran again from a fresh clone, in the same
+pinned image, following each study's README. Apart from the dates, host names, process IDs and
+run times in the solver logs, every committed output came back byte-identical, and the three
+reports regenerated unchanged.
 
 **Does the duct's uncertainty band contain the exact answer? Yes.** For fully developed laminar
 flow in a square duct, the Darcy friction factor is f Re = 56.9083 (the series solution, Shah and
