@@ -17,10 +17,10 @@ the scorer are committed, and a pilot has tried the harness and the scorer
 Three grid studies, run in a pinned OpenFOAM v2512 container and committed with their outputs
 under [`studies/`](studies/README.md), each with foam-verify's report beside it:
 
-| Study | Quantities of interest | Verdict | Report |
-|---|---|---|---|
-| Square duct, fully developed laminar flow | f Re, known exactly | clean pass: f Re = 56.8997 +/- 0.0108 | [report](studies/duct/report.md) |
-| Lid-driven cavity, Re = 100 | six velocities on the centrelines | clean pass, all six | [report](studies/cavity/report.md) |
+| Study                                        | Quantities of interest             | Verdict                                            | Report                               |
+| -------------------------------------------- | ---------------------------------- | -------------------------------------------------- | ------------------------------------ |
+| Square duct, fully developed laminar flow    | f Re, known exactly                | clean pass: f Re = 56.8997 +/- 0.0108              | [report](studies/duct/report.md)      |
+| Lid-driven cavity, Re = 100                  | six velocities on the centrelines  | clean pass, all six                                | [report](studies/cavity/report.md)    |
 | `pitzDaily`, k-epsilon with wall functions | pressure loss, reattachment length | refused: none of the three converges with the mesh | [report](studies/pitzDaily/report.md) |
 
 **Does the duct's uncertainty band contain the exact answer? Yes.** For fully developed laminar
@@ -36,13 +36,13 @@ of 1e-8 to 1e-5; all four are within the cavity's uncertainty, with |E| at 0.77 
 Ghia, Ghia and Shin (1982) give three, with no stated uncertainty; they differ by 1.3 to 2.1%, 7 to
 39 times the uncertainty, and at the one point both papers give, Marchi et al. put Ghia's value
 1.6% off. Both comparisons are code-to-code, and the report gives them beside the verdict, not in
-it. Details in [the cavity's README](studies/cavity/README.md#against-two-reference-solutions).
+it. Details in [the cavity&#39;s README](studies/cavity/README.md#against-two-reference-solutions).
 
 **`pitzDaily` shows the other half of the job: refusing.** Refining the mesh moves the walls
 through the switch of the wall function at y+ = 11.53, so the levels do not solve the same
 equations. The total-pressure loss converges monotonically on the three finest grids, and on its
 own that triplet would pass at +/- 8%; the coarser triplet diverges, and foam-verify refuses the
-clean pass. Details in [the study's README](studies/pitzDaily/README.md).
+clean pass. Details in [the study&#39;s README](studies/pitzDaily/README.md).
 
 ## Verification report
 
@@ -152,5 +152,3 @@ $ make reports   # regenerate the reports under studies/
 ## Author
 
 [Chris Skarakis](https://www.linkedin.com/in/chris-skarakis-511276217/)
-
-Built with AI assistance; the tests and the published reference values carry the claims.
