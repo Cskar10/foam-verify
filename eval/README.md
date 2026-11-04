@@ -13,8 +13,8 @@ alone? Each agent gets one bundle and one question:
 
 The measures are the false-trust rate (the agent calls a value trustworthy that the label says is
 not), the verdict accuracy, and on the duct bundles whether a stated band contains the exact
-value. With twelve bundles every rate is given with its counts. The runs and the scoring are
-week 4's; this folder holds what they need.
+value. With twelve bundles every rate is given with its counts. The results, 72 scored runs on
+each of two models, are under [The scored runs](#the-scored-runs).
 
 ## Labels first
 

@@ -2,26 +2,77 @@
 
 Read-only verification of OpenFOAM results. It answers "can I trust this number?": grid
 convergence index (GCI), iterative convergence of the quantities you report, settings consistency
-across grid levels, and comparison with reference data, with the uncertainty stated.
+across grid levels, and comparison with reference data, with the uncertainty stated. A CLI and a
+Python library, with a read-only MCP server that gives the same checks to AI agents.
 
-**Status: early development.** The GCI engine, the `study.toml` reader, the iterative
-convergence and settings consistency checks, the `report` command, the comparison with
-reference data, from numbers (`compare`) or from a study's `study.toml` into its report, and a
-read-only MCP server (`mcp`) exist, the server tested tool by tool through an MCP client. The
-agent evaluation is ready to run: its labels, its twelve bundles, a sandboxed run harness and
-the scorer are committed, and a pilot has tried the harness and the scorer
-([eval/](eval/README.md)).
+**Status: v0.1.0.** The GCI engine, the `study.toml` reader, the iterative convergence and
+settings consistency checks, the comparison with reference data, the `report` command and the MCP
+server, with 608 tests; three grid studies, and an agent evaluation of 144 scored runs on two
+models, committed with their outputs.
 
-## Results
+## Does it help an AI agent judge a grid study?
+
+Yes, on the evaluation committed here. Each agent gets one bundle, a grid study as foam-verify
+reads it (`study.toml` and one OpenFOAM case per grid level, with its logs and function-object
+output), and one question:
+
+> Is the reported value of `<qoi>` converged and mesh-independent? Give the value with its
+> uncertainty, or say why you can't.
+
+In condition A the agent may read every file in the bundle and nothing else; in condition B it
+also has foam-verify's MCP server. Of the twelve bundles, four are sound and eight are not, and
+the labels were committed before any bundle was built or any agent saw one. Each bundle ran three
+times in each condition, on two models:
+
+| Model | Condition | Verdict right | False trust | Sound bundles rejected | No verdict | Median time |
+|---|---|---|---|---|---|---|
+| Claude Opus 5.5 | A, the files only | 29 of 36 | 7 of 24 | 0 of 12 | 0 | 46 s |
+| Claude Opus 5.5 | B, with foam-verify | 36 of 36 | 0 of 24 | 0 of 12 | 0 | 17 s |
+| Qwen3.8 27B, local | A, the files only | 4 of 36 | 0 of 24 | 0 of 12 | 32 | 30 min, the limit |
+| Qwen3.8 27B, local | B, with foam-verify | 35 of 36 | 0 of 24 | 0 of 12 | 1 | 72 s |
+
+False trust is the verdict trustworthy on a bundle labelled not trustworthy. A run that reaches
+the 30-minute limit has no verdict, which is never right.
+
+With foam-verify, the agents gave the right verdict in 71 of 72 runs and no wrong verdict; the
+other run ran out of time. Without it, Claude Opus 5.5 called a broken study converged in 7 of 24
+runs, and the local model rarely finished within 30 minutes.
+
+- **Opus's misses repeat.** Without the tool it trusted b02, a study on two grids, and b03, with
+  refinement ratios of about 1.10, in all three runs, and b05, whose 80 x 80 grid uses another
+  convection scheme, in one. With the tool it trusted none. Its numbers were not the problem: on
+  b02 and b03 its value and band held the exact f Re. Its verdict was: it called the value
+  mesh-independent when the study cannot show that, and that is the error that matters when
+  there is no exact answer to check against.
+- **The local model is slow without the tool, not wrong.** It ran out of time in 32 of 36 runs.
+  The four verdicts it gave were all right, too few to give an error rate.
+- **The local model with foam-verify did better than Opus 5.5 without it:** 35 of 36 right and no
+  false trust, against 29 of 36 and 7.
+- **Nothing went the other way.** For neither model did any bundle score worse with the tool, and
+  no sound bundle was rejected in any of the 144 runs: the zero false trust was not bought by
+  rejecting everything.
+- **The tool is also cheaper.** Opus's 36 runs with it cost $2.24 at API prices, against $12.65
+  without.
+
+Claude Opus 5.5 (`claude-opus-5-5`) ran through Claude Code 2.1.312 on 2 Nov 2026. Qwen3.8 27B
+(Unsloth's UD-Q6_K GGUF) ran on 3 and 4 Nov through the same harness and sandbox, served by
+llama.cpp b11678 on an RTX 5090 Laptop GPU (24 GB) at about 23 tokens a second. The labels, the
+harness, the scorer's rules, every transcript and the scores are in [eval/](eval/README.md); what
+this evaluation cannot show is under [Limits](#limits).
+
+## Does the uncertainty band hold the exact answer?
 
 Three grid studies, run in a pinned OpenFOAM v2512 container and committed with their outputs
-under [`studies/`](studies/README.md), each with foam-verify's report beside it:
+under [`studies/`](studies/README.md), each with foam-verify's report beside it. Each was chosen to
+show one thing:
 
-| Study                                        | Quantities of interest             | Verdict                                            | Report                               |
-| -------------------------------------------- | ---------------------------------- | -------------------------------------------------- | ------------------------------------ |
-| Square duct, fully developed laminar flow    | f Re, known exactly                | clean pass: f Re = 56.8997 +/- 0.0108              | [report](studies/duct/report.md)      |
-| Lid-driven cavity, Re = 100                  | six velocities on the centrelines  | clean pass, all six                                | [report](studies/cavity/report.md)    |
-| `pitzDaily`, k-epsilon with wall functions | pressure loss, reattachment length | refused: none of the three converges with the mesh | [report](studies/pitzDaily/report.md) |
+| Study | Quantities of interest | Expected | foam-verify's verdict | Report |
+|---|---|---|---|---|
+| Square duct, fully developed laminar flow | f Re, known exactly | a clean pass whose band holds the exact value | clean pass: f Re = 56.8997 +/- 0.0108, band holds 56.9083 | [report](studies/duct/report.md) |
+| Lid-driven cavity, Re = 100 | six velocities on the centrelines | a clean pass; published values within the uncertainty, or the difference explained | clean pass, all six | [report](studies/cavity/report.md) |
+| `pitzDaily`, k-epsilon with wall functions | two pressure differences, reattachment length | a refusal if refinement moves y+ through the wall-function range | refused: none of the three converges with the mesh | [report](studies/pitzDaily/report.md) |
+
+<<RERUN>>
 
 **Does the duct's uncertainty band contain the exact answer? Yes.** For fully developed laminar
 flow in a square duct, the Darcy friction factor is f Re = 56.9083 (the series solution, Shah and
@@ -36,13 +87,79 @@ of 1e-8 to 1e-5; all four are within the cavity's uncertainty, with |E| at 0.77 
 Ghia, Ghia and Shin (1982) give three, with no stated uncertainty; they differ by 1.3 to 2.1%, 7 to
 39 times the uncertainty, and at the one point both papers give, Marchi et al. put Ghia's value
 1.6% off. Both comparisons are code-to-code, and the report gives them beside the verdict, not in
-it. Details in [the cavity&#39;s README](studies/cavity/README.md#against-two-reference-solutions).
+it. Details in [the cavity's README](studies/cavity/README.md#against-two-reference-solutions).
 
 **`pitzDaily` shows the other half of the job: refusing.** Refining the mesh moves the walls
 through the switch of the wall function at y+ = 11.53, so the levels do not solve the same
 equations. The total-pressure loss converges monotonically on the three finest grids, and on its
 own that triplet would pass at +/- 8%; the coarser triplet diverges, and foam-verify refuses the
-clean pass. Details in [the study&#39;s README](studies/pitzDaily/README.md).
+clean pass. Details in [the study's README](studies/pitzDaily/README.md). foam-verify passed the
+loss at first: see [What broke](#what-broke).
+
+## Reproduce
+
+Three commands give the headline numbers from the committed outputs and transcripts, with git,
+[uv](https://docs.astral.sh/uv/) and Python 3.11 or later:
+
+```console
+$ git clone https://github.com/Cskar10/foam-verify && cd foam-verify
+$ uv run foam-verify report studies/duct      # the duct's verdict and band
+$ python3 eval/score.py                       # the evaluation's scores, from the transcripts
+```
+
+`eval/score.py` writes `eval/runs/scores.md` and `scores.jsonl` again, and `git status` then shows
+no change. To rerun the duct's OpenFOAM cases with the pinned image, three more commands and
+about 7 minutes: [studies/duct/README.md](studies/duct/README.md#reproduce). To run the agents
+again, with Claude Code and a Claude login, or llama-server for a local model:
+[eval/README.md](eval/README.md#running-the-agents).
+
+## What broke
+
+- **foam-verify passed `pitzDaily`'s pressure loss at first.** The three finest grids converge
+  monotonically and gave 16.48 +/- 1.31 (8%), a clean pass under the rule foam-verify had then,
+  while the coarser triplet diverges. With four or more grids, a coarser triplet that does not
+  converge monotonically now blocks the clean pass ([docs/gci.md](docs/gci.md)).
+- **The iterative check called converged noise drifting** in 5 of 800 synthetic histories: a few
+  short noise cycles late in the window moved the cycle mean further than the samples range. In
+  that case the check now falls back to least squares; over 3,456 test series this changed no
+  correct verdict ([docs/iterative.md](docs/iterative.md)).
+- **OpenFOAM's `icoFoam` cavity tutorial runs at Re = 10, not 100** (nu = 0.01, L = 0.1, U = 1).
+  The study sets nu = 0.001 to match Ghia et al.'s Re = 100.
+- **The duct's residuals never converged.** Uy, Uz and p are zero up to round-off, so their
+  normalised residuals divide noise by noise and stay between 0.016 and 0.55, while f Re had
+  settled thousands of iterations before the end. foam-verify judges the quantity reported, not
+  the residuals.
+- **An absolute `file` pattern for a QoI in `study.toml` crashed the CLI** with a traceback. The
+  manifest now refuses it when it loads.
+- **A test passed locally and failed in CI.** The test that checks the labels against the commit
+  that froze them found no such commit in GitHub's shallow checkout, so CI failed on two pushes;
+  the workflow now fetches the full history.
+- **The local model needed two workarounds.** Qwen's chat template refused the system message
+  that Claude Code sends after the question, so for local models the harness has Claude Code put
+  those notes into the question. In one run Claude Code's compaction of the session came back
+  empty; that run was set aside and the slot run again, as the scorer's rules allow.
+
+## Limits
+
+- **The GCI is an estimate under assumptions:** a smooth solution, and grids in the asymptotic
+  range. Each report says which checks held; `pitzDaily` shows what happens when they don't.
+- **One OpenFOAM build.** Every study and bundle ran on OpenFOAM v2512 (openfoam.com) from one
+  pinned image. Function-object output differs between versions, and between openfoam.com and
+  openfoam.org; only this build's is tested.
+- **A small evaluation.** Twelve bundles, one question, and labels written by the author. Three
+  runs of one bundle are not independent, so Opus's gain rests on three bundles, b02, b03 and
+  b05: three better and none worse, which chance alone gives one time in eight. The local
+  model's gain covers all twelve bundles, but it mostly measures that the model cannot finish
+  alone within 30 minutes on this hardware.
+- **Only faults foam-verify checks for.** The broken bundles fail on iterative convergence, two
+  grids, the refinement ratio, grid convergence or settings. The evaluation shows that agents use
+  the tool and report what it finds; it does not show that the tool catches faults outside that
+  list, or how it does on studies built by others.
+- **foam-verify was never wrong here.** With the tool, both models mostly reported its result, in
+  a median of 3 or 4 turns, so a bug in it would likely pass straight through. Its correctness
+  rests on the tests and the published reference values, not on the evaluation.
+- **Models change.** Another model, or another version of these two, may answer differently.
+  Every transcript is committed, so the answers can be read, not just counted.
 
 ## Verification report
 
@@ -148,6 +265,14 @@ $ make setup     # uv sync
 $ make ci        # ruff + pytest
 $ make reports   # regenerate the reports under studies/
 ```
+
+## Licence
+
+MIT ([LICENSE](LICENSE)). The `cavity` and `pitzDaily` studies are built from OpenFOAM v2512's
+tutorials by the generator scripts under `studies/`; OpenFOAM itself (GPL-3.0) is not distributed
+here, only run from its public image. The reference values are quoted, with page numbers, from the
+papers named in [studies/README.md](studies/README.md#reference-values). Qwen3.8 27B is
+Apache-2.0; only its answers are committed.
 
 ## Author
 

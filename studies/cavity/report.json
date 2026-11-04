@@ -1,6 +1,6 @@
 {
   "tool": "foam-verify",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "schema": 1,
   "study": "lid-driven-cavity-re100",
   "clean_pass": true,

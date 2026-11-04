@@ -1,6 +1,6 @@
 # Verification report: pitzDaily
 
-foam-verify 0.0.1, from `study.toml`: 4 levels, finest first; refined = mesh; grid sequence structured; refined directions d = 2; formal order 2.
+foam-verify 0.1.0, from `study.toml`: 4 levels, finest first; refined = mesh; grid sequence structured; refined directions d = 2; formal order 2.
 
 ## Verdict
 
